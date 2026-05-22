@@ -70,7 +70,9 @@ export function Navbar() {
         {/* CTA + Mobile Toggle */}
         <div className="flex items-center gap-3">
           <a
-            href="#"
+            href="https://jbcicirrzswhzfabjwiz.supabase.co/storage/v1/object/public/cv/cv/1779442019833-CV_Faris_Maulana_Details.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
             className="hidden md:inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber/30 text-amber font-mono text-xs hover:bg-amber/10 transition-all"
           >
             <Download size={12} />
@@ -112,7 +114,9 @@ export function Navbar() {
                 </button>
               ))}
               <a
-                href="#"
+                href="https://jbcicirrzswhzfabjwiz.supabase.co/storage/v1/object/public/cv/cv/1779442019833-CV_Faris_Maulana_Details.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-2 text-amber font-mono text-sm"
               >
                 <Download size={14} />

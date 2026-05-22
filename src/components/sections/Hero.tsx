@@ -71,7 +71,9 @@ export function Hero() {
             View Projects
           </a>
           <a
-            href="#"
+            href="https://jbcicirrzswhzfabjwiz.supabase.co/storage/v1/object/public/cv/cv/1779442019833-CV_Faris_Maulana_Details.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-amber/30 text-amber font-mono text-sm hover:bg-amber/10 transition-all duration-300"
           >
             <Download size={14} />
