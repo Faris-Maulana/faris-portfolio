@@ -113,12 +113,12 @@ function NeuralMesh() {
     return () => window.removeEventListener('mousemove', onMove)
   }, [])
 
+  const mouseTarget = useMemo(() => new THREE.Vector2(0, 0), [])
+
   useFrame(({ clock }) => {
     uniforms.uTime.value = clock.getElapsedTime()
-    uniforms.uMouse.value.lerp(
-      new THREE.Vector2(mouse.current[0], mouse.current[1]),
-      0.05
-    )
+    mouseTarget.set(mouse.current[0], mouse.current[1])
+    uniforms.uMouse.value.lerp(mouseTarget, 0.05)
   })
 
   return (

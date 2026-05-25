@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Send, Mail, MapPin, Clock, CheckCircle, Loader2 } from 'lucide-react'
+import { Send, Mail, MapPin, Clock, Loader2 } from 'lucide-react'
 import { SITE_CONFIG } from '@/lib/constants'
 
 const schema = z.object({
@@ -17,6 +17,41 @@ const schema = z.object({
 })
 
 type FormData = z.infer<typeof schema>
+
+function TerminalSuccess() {
+  const lines = [
+    { text: '> CONNECTING to maulanafaris016@gmail.com...', delay: 0 },
+    { text: '\u2713 SMTP handshake: 250 OK', delay: 600, color: '#39ff14' },
+    { text: '> ROUTING to WhatsApp +62-812-8404-9172...', delay: 1000 },
+    { text: '\u2713 Fonnte delivery: QUEUED', delay: 1600, color: '#39ff14' },
+    { text: '> Message logged to database...', delay: 2000 },
+    { text: '\u2713 TRANSMISSION COMPLETE', delay: 2600, color: '#00f5ff' },
+  ]
+
+  return (
+    <div className="glass rounded-2xl p-6 font-mono text-xs space-y-2">
+      {lines.map((line, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: line.delay / 1000, duration: 0.3 }}
+          style={{ color: line.color || '#8fa8b8' }}
+        >
+          {line.text}
+        </motion.div>
+      ))}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 3.2 }}
+        className="pt-2 border-t border-border-glass text-cyan/60"
+      >
+        {'>'} Faris will respond within 24h. Stay on frequency.
+      </motion.div>
+    </div>
+  )
+}
 
 export function Contact() {
   const [submitted, setSubmitted] = useState(false)
@@ -58,7 +93,7 @@ export function Contact() {
     <section id="contact" className="section">
       <div className="container">
         <div className="mb-12">
-          <span className="section-heading-tag">{'// SIGNAL'}</span>
+          <p className="section-heading-tag">{'// initiate.connection'}</p>
           <h2 className="section-heading gradient-text">Transmit Message</h2>
           <div className="fiber-line mt-4" />
         </div>
@@ -123,23 +158,7 @@ export function Contact() {
           <div className="lg:col-span-3">
             <div className="glass rounded-2xl p-6 border border-border-glass">
               {submitted ? (
-                <div className="text-center py-12">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200 }}
-                  >
-                    <CheckCircle size={48} className="mx-auto mb-4 text-green" />
-                  </motion.div>
-                  <h3 className="text-lg font-display font-semibold text-text-primary mb-2">Message Delivered!</h3>
-                  <p className="text-sm text-text-muted mb-6">Your message has been sent to Faris&apos;s WhatsApp &amp; Email.</p>
-                  <button
-                    onClick={() => setSubmitted(false)}
-                    className="px-4 py-2 rounded-full border border-cyan/30 text-cyan font-mono text-sm hover:bg-cyan/10 transition-all"
-                  >
-                    Send Another
-                  </button>
-                </div>
+                <TerminalSuccess />
               ) : (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                   <input {...register('honeypot')} className="absolute opacity-0 h-0 w-0" tabIndex={-1} autoComplete="off" />

@@ -37,6 +37,10 @@ function TiltCard({ project, index }: { project: Project; index: number }) {
 
   const glowX = useTransform(sRotY, [-15, 15], ['0%', '100%'])
   const glowY = useTransform(sRotX, [-15, 15], ['0%', '100%'])
+  const glowBackground = useTransform(
+    [glowX, glowY],
+    ([x, y]: string[]) => `radial-gradient(circle at ${x} ${y}, rgba(${hexToRgb(neon)},0.08), transparent 60%)`
+  )
 
   const handleMove = (e: React.MouseEvent) => {
     const rect = ref.current?.getBoundingClientRect()
@@ -77,10 +81,7 @@ function TiltCard({ project, index }: { project: Project; index: number }) {
         <motion.div
           className="absolute inset-0 rounded-2xl pointer-events-none z-10 opacity-0 hover:opacity-100 transition-opacity"
           style={{
-            background: useTransform(
-              [glowX, glowY],
-              ([x, y]) => `radial-gradient(circle at ${x} ${y}, rgba(${hexToRgb(neon)},0.08), transparent 60%)`
-            ),
+            background: glowBackground,
           }}
         />
 

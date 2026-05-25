@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence, useInView, useMotionValue, useTransform, animate } from 'framer-motion'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { GlassCard } from '@/components/ui/GlassCard'
 import { NeonBadge } from '@/components/ui/NeonBadge'
-import { useScrollAnimation } from '@/hooks/useScrollAnimation'
 import { QUANT_CASE_STUDIES } from '@/lib/constants'
 
 
@@ -16,7 +15,7 @@ const accentMap: Record<string, string> = {
   green: '#39ff14',
 }
 
-function MiniChart({ type, accent }: { type: string; accent: string }) {
+function MiniChart({ type, accent, chartInView }: { type: string; accent: string; chartInView: boolean }) {
   const color = accentMap[accent] || accentMap.cyan
 
   if (type === 'line') {
@@ -27,9 +26,20 @@ function MiniChart({ type, accent }: { type: string; accent: string }) {
     const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
     return (
       <svg viewBox="0 0 100 65" className="w-full h-20">
-        <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" opacity={0.6} />
+        <motion.path
+          d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"
+          initial={{ pathLength: 0 }}
+          animate={chartInView ? { pathLength: 1 } : {}}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+          style={{ opacity: 0.6 }}
+        />
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="2.5" fill={color} opacity={0.8} />
+          <motion.circle
+            key={i} cx={p.x} cy={p.y} r="2.5" fill={color}
+            initial={{ opacity: 0 }}
+            animate={chartInView ? { opacity: 0.8 } : {}}
+            transition={{ delay: 0.8 + i * 0.08 }}
+          />
         ))}
       </svg>
     )
@@ -38,8 +48,19 @@ function MiniChart({ type, accent }: { type: string; accent: string }) {
   if (type === 'survival') {
     return (
       <svg viewBox="0 0 100 65" className="w-full h-20">
-        <path d="M 0 10 L 20 10 L 40 15 L 60 30 L 80 55 L 100 62" fill="none" stroke={color} strokeWidth="2" opacity={0.6} />
-        <path d="M 0 65 L 0 10 Q 20 8 40 15 Q 60 30 80 55 Q 90 60 100 62 L 100 65 Z" fill={`${color}10`} />
+        <motion.path
+          d="M 0 10 L 20 10 L 40 15 L 60 30 L 80 55 L 100 62" fill="none" stroke={color} strokeWidth="2"
+          initial={{ pathLength: 0 }}
+          animate={chartInView ? { pathLength: 1 } : {}}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+          style={{ opacity: 0.6 }}
+        />
+        <motion.path
+          d="M 0 65 L 0 10 Q 20 8 40 15 Q 60 30 80 55 Q 90 60 100 62 L 100 65 Z" fill={`${color}10`}
+          initial={{ opacity: 0 }}
+          animate={chartInView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.8, delay: 0.6 }}
+        />
       </svg>
     )
   }
@@ -47,8 +68,19 @@ function MiniChart({ type, accent }: { type: string; accent: string }) {
   if (type === 'tradeoff') {
     return (
       <svg viewBox="0 0 100 65" className="w-full h-20">
-        <path d="M 0 55 Q 30 50 50 30 Q 70 15 100 10" fill="none" stroke={color} strokeWidth="2" opacity={0.6} />
-        <circle cx="50" cy="30" r="4" fill={color} opacity={0.9} />
+        <motion.path
+          d="M 0 55 Q 30 50 50 30 Q 70 15 100 10" fill="none" stroke={color} strokeWidth="2"
+          initial={{ pathLength: 0 }}
+          animate={chartInView ? { pathLength: 1 } : {}}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+          style={{ opacity: 0.6 }}
+        />
+        <motion.circle
+          cx="50" cy="30" r="4" fill={color}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={chartInView ? { scale: 1, opacity: 0.9 } : {}}
+          transition={{ delay: 0.8, type: 'spring' }}
+        />
       </svg>
     )
   }
@@ -56,20 +88,46 @@ function MiniChart({ type, accent }: { type: string; accent: string }) {
   return (
     <svg viewBox="0 0 100 65" className="w-full h-20">
       {[0, 25, 50, 75, 100].map((x, i) => (
-        <rect key={i} x={x + 5} y={65 - (i + 1) * 10} width="15" height={(i + 1) * 10} rx="2" fill={color} opacity={(i + 1) * 0.15} />
+        <motion.rect
+          key={i} x={x + 5} y={65 - (i + 1) * 10} width="15" height={(i + 1) * 10} rx="2" fill={color}
+          initial={{ scaleY: 0, transformOrigin: 'bottom' }}
+          animate={chartInView ? { scaleY: 1 } : {}}
+          transition={{ delay: i * 0.08 + 0.3 }}
+          style={{ opacity: (i + 1) * 0.15 }}
+        />
       ))}
     </svg>
   )
 }
 
+function AnimatedCounter({ value, accent, inView }: { value: string; accent: string; inView: boolean }) {
+  const num = parseFloat(value.replace(/[^0-9.]/g, ''))
+  const suffix = value.replace(/[0-9.]/g, '')
+  const count = useMotionValue(0)
+  const rounded = useTransform(count, (v) => Math.round(v) + suffix)
+
+  useEffect(() => {
+    if (inView) {
+      const controls = animate(count, num, { duration: 1.5, ease: 'easeOut' })
+      return controls.stop
+    }
+  }, [inView, count, num])
+
+  return <motion.span style={{ color: accentMap[accent] || accentMap.cyan }}>{rounded}</motion.span>
+}
+
 export function QuantPortfolio() {
   const [expanded, setExpanded] = useState<number | null>(null)
-  const { ref, inView, variants, itemVariants } = useScrollAnimation()
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const inView = useInView(sectionRef, { once: true })
 
   return (
     <section id="research" className="section">
-      <div className="container" ref={ref}>
-        <motion.div variants={variants} initial="hidden" animate={inView ? 'visible' : 'hidden'}>
+      <div className="container" ref={sectionRef}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+        >
           <p className="section-heading-tag">{'// quant.research_output'}</p>
           <h2 className="section-heading mb-3">
             <span className="gradient-text">Quantitative</span> Research Portfolio
@@ -83,9 +141,9 @@ export function QuantPortfolio() {
           {QUANT_CASE_STUDIES.map((study, i) => (
             <motion.div
               key={study.title}
-              variants={itemVariants}
-              initial="hidden"
-              animate={inView ? 'visible' : 'hidden'}
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: i * 0.1 }}
             >
               <GlassCard className="h-full">
                 <div className="flex items-start justify-between mb-3">
@@ -95,13 +153,13 @@ export function QuantPortfolio() {
 
                 <h3 className="font-display font-semibold text-text-primary mb-3">{study.title}</h3>
 
-                <MiniChart type={study.chartType} accent={study.accent} />
+                <MiniChart type={study.chartType} accent={study.accent} chartInView={inView} />
 
                 <div className="grid grid-cols-3 gap-2 my-4">
                   {Object.entries(study.metrics).map(([key, val]) => (
                     <div key={key} className="text-center">
                       <div className="text-lg font-display font-bold" style={{ color: accentMap[study.accent] }}>
-                        {val}
+                        <AnimatedCounter value={val} accent={study.accent} inView={inView} />
                       </div>
                       <div className="text-[9px] font-mono text-text-muted uppercase tracking-wider">{key}</div>
                     </div>

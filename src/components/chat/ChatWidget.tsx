@@ -8,9 +8,8 @@ import { cn } from '@/lib/utils'
 
 export function ChatWidget() {
   const { isOpen, toggle, messages, isLoading, sendMessage, hasNewReply, isOnline } = useChatSession()
-  const inputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputValueRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -27,7 +26,7 @@ export function ChatWidget() {
   }, [isOpen])
 
   const handleSend = () => {
-    const input = inputValueRef.current
+    const input = inputRef.current
     if (!input || !input.value.trim() || isLoading) return
     sendMessage(input.value)
     input.value = ''
@@ -141,7 +140,7 @@ export function ChatWidget() {
             <div className="p-3 border-t border-border-glass">
               <div className="flex gap-2">
                 <input
-                  ref={inputValueRef}
+                  ref={inputRef}
                   type="text"
                   placeholder="Ask about Faris's work..."
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}

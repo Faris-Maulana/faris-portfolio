@@ -95,10 +95,6 @@ export function Hero() {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden grid-bg">
       <ParticleField />
 
-      <div className="ambient-blob ambient-blob-1" />
-      <div className="ambient-blob ambient-blob-2" />
-      <div className="ambient-blob ambient-blob-3" />
-
       <motion.div
         style={{ x: layer1x, y: layer1y }}
         className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
@@ -230,18 +226,12 @@ export function Hero() {
             { icon: LinkedinIcon, href: SITE_CONFIG.linkedin,          label: 'LinkedIn' },
             { icon: Mail,         href: `mailto:${SITE_CONFIG.email}`, label: 'Email' },
           ].map(({ icon: Icon, href, label }) => (
-            <MagneticButton key={label} href={href} aria-label={label}>
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cursor="hover"
-                className="flex flex-col items-center gap-1.5 text-text-muted hover:text-cyan transition-all duration-300 group"
-                aria-label={label}
-              >
-                <Icon size={18} className="group-hover:scale-110 transition-transform" />
-                <span className="text-[9px] font-mono tracking-widest opacity-60 group-hover:opacity-100">{label}</span>
-              </a>
+            <MagneticButton key={label} href={href} target="_blank" rel="noopener noreferrer"
+              aria-label={label}
+              className="flex flex-col items-center gap-1.5 text-text-muted hover:text-cyan transition-all duration-300 group"
+            >
+              <Icon size={18} className="group-hover:scale-110 transition-transform" />
+              <span className="text-[9px] font-mono tracking-widest opacity-60 group-hover:opacity-100">{label}</span>
             </MagneticButton>
           ))}
         </motion.div>

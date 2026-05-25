@@ -4,6 +4,10 @@ import { Toaster } from 'sonner'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { CustomCursor } from '@/components/ui/CustomCursor'
+import { ScrollProgress } from '@/components/ui/ScrollProgress'
+import { AnalyticsTracker } from '@/components/AnalyticsTracker'
+import { PageSpine } from '@/components/ui/PageSpine'
+import { SmoothScrollProvider } from '@/components/providers/SmoothScrollProvider'
 import { ChatWidget } from '@/components/chat/ChatWidget'
 import './globals.css'
 
@@ -35,13 +39,18 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-full flex flex-col">
         <CustomCursor />
+        <ScrollProgress />
+        <AnalyticsTracker />
+        <PageSpine />
 
         <div className="ambient-blob ambient-blob-1" />
         <div className="ambient-blob ambient-blob-2" />
         <div className="ambient-blob ambient-blob-3" />
 
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <SmoothScrollProvider>
+          <main className="flex-1">{children}</main>
+        </SmoothScrollProvider>
         <Footer />
         <ChatWidget />
         <Toaster
