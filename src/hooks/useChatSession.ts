@@ -2,85 +2,100 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { ChatMessage } from '@/lib/supabase/types'
+import { getOrCreateSessionId } from '@/lib/utils'
 
-const SESSION_KEY = 'aria_session_id'
-const MESSAGES_KEY = 'aria_messages'
+const MESSAGES_KEY = 'aria_chat_messages_v2'
 
 export function useChatSession() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [sessionId, setSessionId] = useState<string>('')
+  const [isOpen,      setIsOpen]      = useState(false)
+  const [messages,    setMessages]    = useState<ChatMessage[]>([])
+  const [isLoading,   setIsLoading]   = useState(false)
   const [hasNewReply, setHasNewReply] = useState(false)
-  const initDone = useRef(false)
+  const [isOnline,    setIsOnline]    = useState(true)
+  const [visitorName, setVisitorName] = useState<string>('')
+  const sessionId = useRef<string>('')
+  const initDone  = useRef(false)
 
   useEffect(() => {
     if (initDone.current) return
     initDone.current = true
 
-    let sid = localStorage.getItem(SESSION_KEY)
-    if (!sid) {
-      sid = crypto.randomUUID()
-      localStorage.setItem(SESSION_KEY, sid)
-    }
-    setSessionId(sid)
+    sessionId.current = getOrCreateSessionId()
 
     const saved = localStorage.getItem(MESSAGES_KEY)
     if (saved) {
       try {
-        setMessages(JSON.parse(saved))
+        const parsed = JSON.parse(saved) as ChatMessage[]
+        setMessages(parsed)
+        return
       } catch {}
-    } else {
-      const intro: ChatMessage = {
-        role: 'assistant',
-        content: "Hi! I'm ARIA — Faris's AI assistant. Ask me about his work, projects, or how to get in touch.",
-        ts: new Date().toISOString(),
-      }
-      setMessages([intro])
     }
+
+    const intro: ChatMessage = {
+      role:    'assistant',
+      content: "Hi! I'm ARIA — Faris's AI assistant. I can tell you about his work, projects, and experience. What brings you here today?",
+      ts:      new Date().toISOString(),
+    }
+    setMessages([intro])
   }, [])
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return
 
-    const userMsg: ChatMessage = { role: 'user', content: content.trim(), ts: new Date().toISOString() }
+    const userMsg: ChatMessage = {
+      role:    'user',
+      content: content.trim(),
+      ts:      new Date().toISOString(),
+    }
     const updated = [...messages, userMsg]
     setMessages(updated)
     setIsLoading(true)
 
     try {
       const res = await fetch('/api/chat', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: updated.map(m => ({ role: m.role, content: m.content })),
-          sessionId,
+          messages:  updated.map(m => ({ role: m.role, content: m.content })),
+          sessionId: sessionId.current,
         }),
       })
 
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
       const data = await res.json()
-      const reply: ChatMessage = {
-        role: 'assistant',
-        content: data.reply || 'ARIA is unavailable right now.',
-        ts: new Date().toISOString(),
+
+      if (data.visitorName && !visitorName) {
+        setVisitorName(data.visitorName)
       }
+
+      const reply: ChatMessage = {
+        role:    'assistant',
+        content: data.reply || 'ARIA is unavailable. Email: maulanafaris016@gmail.com',
+        ts:      new Date().toISOString(),
+      }
+
       const final = [...updated, reply]
       setMessages(final)
       localStorage.setItem(MESSAGES_KEY, JSON.stringify(final))
-      setHasNewReply(true)
+
+      if (!isOpen) setHasNewReply(true)
+      setIsOnline(true)
+
     } catch {
       const errorMsg: ChatMessage = {
-        role: 'assistant',
-        content: "Sorry, I couldn't reach the AI service. Please try again or email Faris directly at maulanafaris016@gmail.com.",
-        ts: new Date().toISOString(),
+        role:    'assistant',
+        content: "Sorry, I couldn't reach the AI service right now. You can email Faris directly at maulanafaris016@gmail.com or WhatsApp +62-812-8404-9172.",
+        ts:      new Date().toISOString(),
       }
       const final = [...updated, errorMsg]
       setMessages(final)
       localStorage.setItem(MESSAGES_KEY, JSON.stringify(final))
+      setIsOnline(false)
     } finally {
       setIsLoading(false)
     }
-  }, [messages, sessionId, isLoading])
+  }, [messages, isLoading, isOpen, visitorName])
 
   const toggle = useCallback(() => {
     setIsOpen(prev => {
@@ -89,5 +104,25 @@ export function useChatSession() {
     })
   }, [])
 
-  return { isOpen, toggle, messages, isLoading, sendMessage, hasNewReply, isOnline: true }
+  const clearHistory = useCallback(() => {
+    localStorage.removeItem(MESSAGES_KEY)
+    const intro: ChatMessage = {
+      role:    'assistant',
+      content: "Hi again! What can I help you with today?",
+      ts:      new Date().toISOString(),
+    }
+    setMessages([intro])
+  }, [])
+
+  return {
+    isOpen,
+    toggle,
+    messages,
+    isLoading,
+    sendMessage,
+    hasNewReply,
+    isOnline,
+    visitorName,
+    clearHistory,
+  }
 }

@@ -1,30 +1,52 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { generateSessionId } from '@/lib/utils'
+import { getOrCreateSessionId } from '@/lib/utils'
 
 export function useAnalytics() {
-  const tracked = useRef(false)
+  const sentRef   = useRef(false)
+  const startTime = useRef(Date.now())
 
   useEffect(() => {
-    if (tracked.current) return
-    tracked.current = true
+    if (sentRef.current || typeof window === 'undefined') return
+    sentRef.current = true
 
-    const sessionId = generateSessionId()
+    const sessionId = getOrCreateSessionId()
     if (!sessionId) return
 
-    const send = () => {
-      fetch('/api/analytics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          path: window.location.pathname,
-          referrer: document.referrer || null,
-          sessionId,
-        }),
-      }).catch(() => {})
+    const send = async (durationSec?: number) => {
+      try {
+        await fetch('/api/analytics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            path:        window.location.pathname,
+            referrer:    document.referrer || null,
+            sessionId,
+            durationSec: durationSec ?? null,
+          }),
+        })
+      } catch {
+        // Silent fail — analytics is non-critical
+      }
     }
 
     send()
+
+    const onUnload = () => {
+      const duration = Math.round((Date.now() - startTime.current) / 1000)
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/analytics', JSON.stringify({
+          path:        window.location.pathname,
+          referrer:    null,
+          sessionId,
+          durationSec: duration,
+          isUnload:    true,
+        }))
+      }
+    }
+
+    window.addEventListener('beforeunload', onUnload)
+    return () => window.removeEventListener('beforeunload', onUnload)
   }, [])
 }

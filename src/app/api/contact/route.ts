@@ -23,6 +23,18 @@ export async function POST(req: NextRequest) {
       .insert({ ...data, source: 'contact_form' })
     if (dbError) throw dbError
 
+    // Save to unified visitor_leads for cross-source tracking
+    try {
+      await supabase.from('visitor_leads').upsert({
+        email:    data.email,
+        name:     data.name,
+        purpose:  'general',
+        source:   'contact_form',
+        message:  data.message.slice(0, 500),
+        notified: false,
+      }, { onConflict: 'email,source', ignoreDuplicates: false })
+    } catch {}
+
     let waSent = false
     let emailSent = false
 
