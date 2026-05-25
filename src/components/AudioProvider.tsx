@@ -15,12 +15,15 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       })
       document.removeEventListener('click', handleGesture)
       document.removeEventListener('touchstart', handleGesture)
+      document.removeEventListener('keydown', handleGesture)
     }
     document.addEventListener('click', handleGesture)
     document.addEventListener('touchstart', handleGesture)
+    document.addEventListener('keydown', handleGesture)
     return () => {
       document.removeEventListener('click', handleGesture)
       document.removeEventListener('touchstart', handleGesture)
+      document.removeEventListener('keydown', handleGesture)
     }
   }, [])
 

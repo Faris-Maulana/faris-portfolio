@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { extractEmail, detectIntent } from '@/lib/utils'
 
-// ─── System prompt ─────────────────────────────────────────────────────────
 const SYSTEM_PROMPT = `You are ARIA — the AI assistant on Faris Maulana's portfolio website.
 
 ═══ WHO YOU REPRESENT ═══
@@ -23,23 +22,8 @@ Faris Maulana — Manager of AI Engineering at PT Trans Indonesia Superkoridor (
 
 ═══ LEAD CAPTURE RULES (CRITICAL) ═══
 Your PRIMARY job beyond answering questions is to capture visitor identity.
-
 On the FIRST or SECOND visitor message, naturally ask for their name and purpose.
 Do it conversationally — weave it into your response, not as a form.
-
-Examples by intent:
-• HIRING: "That sounds like a great opportunity! Before I share more, could I get your name and the company you're reaching out from? I'll make sure Faris gets in touch personally."
-• COLLABORATION: "Love the sound of that! What's your name, and what kind of project are you working on? I'll log this for Faris."
-• TECHNICAL: Answer the question first, then: "By the way — what's your name? Faris loves connecting with engineers who ask sharp questions."
-• GENERAL: "Happy to help! I'm ARIA, Faris's assistant. What's your name so I can personalize this a bit?"
-
-If a visitor shares their EMAIL:
-• Acknowledge it: "Perfect, I've noted your email — Faris will reach out within 24 hours."
-• Do NOT repeat the email back in full.
-
-If a visitor shares their NAME:
-• Use it naturally in the rest of the conversation.
-• Include it in your response so the system can extract it.
 
 ═══ RESPONSE STYLE ═══
 • Concise: under 120 words unless a technical deep-dive is explicitly requested
@@ -56,7 +40,12 @@ If a visitor shares their NAME:
 
 const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001'
 
-// ─── Notification helpers ───────────────────────────────────────────────────
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return null
+  return createClient(url, key, { auth: { persistSession: false } })
+}
 
 async function sendEmail(subject: string, html: string): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) return false
@@ -82,45 +71,43 @@ function formatEmailHTML(opts: {
 
   const identityRows = [
     visitorName    ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Name</td><td style="font-size:12px"><strong>${visitorName}</strong></td></tr>` : '',
-    visitorEmail   ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Email</td><td style="font-size:12px"><a href="mailto:${visitorEmail}" style="color:#00f5ff">${visitorEmail}</a></td></tr>` : '',
+    visitorEmail   ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Email</td><td style="font-size:12px"><a href="mailto:${visitorEmail}" style="color:#a855f7">${visitorEmail}</a></td></tr>` : '',
     visitorCompany ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Company</td><td style="font-size:12px">${visitorCompany}</td></tr>` : '',
-    purpose        ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Intent</td><td style="font-size:12px;text-transform:uppercase;color:#00f5ff">${purpose}</td></tr>` : '',
+    purpose        ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Intent</td><td style="font-size:12px;text-transform:uppercase;color:#a855f7">${purpose}</td></tr>` : '',
   ].join('')
 
   const transcript = lastFew.map(m => `
     <div style="margin-bottom:12px">
-      <div style="font-size:10px;color:${m.role === 'user' ? '#bf5fff' : '#00f5ff'};margin-bottom:4px;font-family:monospace">
+      <div style="font-size:10px;color:${m.role === 'user' ? '#c084fc' : '#a855f7'};margin-bottom:4px;font-family:monospace">
         ${m.role === 'user' ? '👤 VISITOR' : '🤖 ARIA'}
       </div>
-      <div style="background:rgba(15,26,36,0.8);border-left:2px solid ${m.role === 'user' ? '#bf5fff' : '#00f5ff'};padding:8px 12px;border-radius:0 8px 8px 0;font-size:12px;line-height:1.5">
+      <div style="background:rgba(12,10,31,0.8);border-left:2px solid ${m.role === 'user' ? '#c084fc' : '#a855f7'};padding:8px 12px;border-radius:0 8px 8px 0;font-size:12px;line-height:1.5">
         ${m.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
       </div>
     </div>
   `).join('')
 
   return `
-    <div style="font-family:'Space Grotesk',sans-serif;background:#020408;color:#e8f4f8;padding:32px;max-width:600px;border-radius:12px;border:1px solid rgba(0,245,255,0.1)">
-      <h2 style="color:#00f5ff;font-size:18px;margin:0 0 4px">${isNew ? '🆕 New Visitor — ARIA' : '💬 ARIA Chat Update'}</h2>
-      <p style="color:#4a6272;font-size:11px;font-family:monospace;margin:0 0 20px">Session: ${sessionId}</p>
+    <div style="font-family:'Inter',sans-serif;background:#030309;color:#f3e8ff;padding:32px;max-width:600px;border-radius:12px;border:1px solid rgba(168,85,247,0.1)">
+      <h2 style="color:#a855f7;font-size:18px;margin:0 0 4px">${isNew ? '🆕 New Visitor — ARIA' : '💬 ARIA Chat Update'}</h2>
+      <p style="color:#6b5ba0;font-size:11px;font-family:monospace;margin:0 0 20px">Session: ${sessionId}</p>
       ${identityRows ? `
-        <div style="background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.1);border-radius:8px;padding:16px;margin-bottom:20px">
+        <div style="background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.1);border-radius:8px;padding:16px;margin-bottom:20px">
           <table>${identityRows}</table>
         </div>
-      ` : `<p style="color:#4a6272;font-size:12px;margin-bottom:20px">Identity not yet captured</p>`}
+      ` : `<p style="color:#6b5ba0;font-size:12px;margin-bottom:20px">Identity not yet captured</p>`}
       <div style="margin-bottom:20px">
-        <h3 style="font-size:12px;color:#8fa8b8;margin:0 0 12px;font-family:monospace;letter-spacing:0.1em">TRANSCRIPT (last ${lastFew.length} messages)</h3>
+        <h3 style="font-size:12px;color:#c4b5fd;margin:0 0 12px;font-family:monospace;letter-spacing:0.1em">TRANSCRIPT (last ${lastFew.length} messages)</h3>
         ${transcript}
       </div>
       ${visitorEmail ? `
-        <a href="mailto:${visitorEmail}" style="display:inline-block;background:rgba(0,245,255,0.1);border:1px solid rgba(0,245,255,0.3);color:#00f5ff;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:12px;font-family:monospace">
+        <a href="mailto:${visitorEmail}" style="display:inline-block;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#c084fc;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:12px;font-family:monospace">
           Reply to ${visitorName || visitorEmail} →
         </a>
       ` : ''}
     </div>
   `
 }
-
-// ─── Main handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -136,7 +123,6 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // ── Get AI response ──
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -146,8 +132,8 @@ export async function POST(req: NextRequest) {
         'X-Title':       'Faris Maulana Portfolio — ARIA',
       },
       body: JSON.stringify({
-        model:      OPENROUTER_MODEL,
-        max_tokens: 450,
+        model:       OPENROUTER_MODEL,
+        max_tokens:  450,
         temperature: 0.7,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
@@ -173,95 +159,95 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ reply: "I couldn't generate a response. Please try again." })
     }
 
-    // ── Extract visitor identity from full conversation ──
     const fullText = messages.map((m: { content: string }) => m.content).join(' ')
     const lastUserMsg = messages.filter((m: { role: string }) => m.role === 'user').slice(-1)[0]?.content || ''
-
     const extractedEmail   = extractEmail(fullText)
     const detectedIntent   = detectIntent(lastUserMsg)
     const messageCount     = messages.filter((m: { role: string }) => m.role === 'user').length
-
     const nameMatch = fullText.match(
       /(?:i[''`]?m|my name is|this is|i am|call me)\s+([A-Z][a-z]+(?: [A-Z][a-z]+)?)/
     )
-    const extractedName    = nameMatch ? nameMatch[1] : undefined
-
+    const extractedName = nameMatch ? nameMatch[1] : undefined
     const companyMatch = fullText.match(
       /(?:from|at|work(?:ing)? (?:at|for)|representing|with)\s+([A-Z][A-Za-z\s&]{2,30}?)(?:\.|,|\s*$|\s+and)/
     )
     const extractedCompany = companyMatch ? companyMatch[1].trim() : undefined
 
-    // ── Supabase: upsert chat session ──
-    const supabase = await createServerSupabaseClient()
-    const updatedMessages = [
-      ...messages,
-      { role: 'assistant', content: aiReply, ts: new Date().toISOString() }
-    ]
+    const supabase = getSupabaseAdmin()
+    let visitorEmail: string | undefined
+    let visitorName: string | undefined
+    let isNewSession = true
 
-    const { data: existingSession } = await supabase
-      .from('chat_sessions')
-      .select('id, visitor_email, visitor_name, notified')
-      .eq('session_id', sessionId)
-      .maybeSingle()
+    if (supabase) {
+      try {
+        const updatedMessages = [
+          ...messages,
+          { role: 'assistant', content: aiReply, ts: new Date().toISOString() }
+        ]
 
-    const isNewSession = !existingSession
-    const visitorEmail   = extractedEmail   || existingSession?.visitor_email   || undefined
-    const visitorName    = extractedName    || existingSession?.visitor_name    || undefined
-    const visitorCompany = extractedCompany || undefined
+        const { data: existingSession } = await supabase
+          .from('chat_sessions')
+          .select('id, visitor_email, visitor_name, notified')
+          .eq('session_id', sessionId)
+          .maybeSingle()
 
-    await supabase.from('chat_sessions').upsert({
-      session_id:       sessionId,
-      messages:         updatedMessages,
-      visitor_email:    visitorEmail    ?? null,
-      visitor_name:     visitorName     ?? null,
-      visitor_company:  visitorCompany  ?? null,
-      purpose:          detectedIntent,
-      updated_at:       new Date().toISOString(),
-    }, { onConflict: 'session_id' })
+        isNewSession = !existingSession
+        visitorEmail = extractedEmail || existingSession?.visitor_email || undefined
+        visitorName  = extractedName  || existingSession?.visitor_name  || undefined
+        const visitorCompany = extractedCompany || undefined
 
-    // ── Save to visitor_leads if email captured (upsert — no duplicates) ──
-    if (visitorEmail) {
-      await supabase.from('visitor_leads').upsert({
-        email:      visitorEmail,
-        name:       visitorName    ?? null,
-        company:    visitorCompany ?? null,
-        purpose:    detectedIntent,
-        source:     'chat',
-        session_id: sessionId,
-        message:    lastUserMsg.slice(0, 500),
-        notified:   false,
-      }, { onConflict: 'email,source', ignoreDuplicates: false })
-    }
+        await supabase.from('chat_sessions').upsert({
+          session_id:      sessionId,
+          messages:        updatedMessages,
+          visitor_email:   visitorEmail  ?? null,
+          visitor_name:    visitorName   ?? null,
+          visitor_company: visitorCompany ?? null,
+          purpose:         detectedIntent,
+          updated_at:      new Date().toISOString(),
+        }, { onConflict: 'session_id' })
 
-    // ── Send notifications ──
-    const shouldNotify = isNewSession
-      || (extractedEmail && !existingSession?.visitor_email)
-      || messageCount % 8 === 0
+        if (visitorEmail) {
+          await supabase.from('visitor_leads').upsert({
+            email:      visitorEmail,
+            name:       visitorName    ?? null,
+            company:    visitorCompany ?? null,
+            purpose:    detectedIntent,
+            source:     'chat',
+            session_id: sessionId,
+            message:    lastUserMsg.slice(0, 500),
+            notified:   false,
+          }, { onConflict: 'email,source', ignoreDuplicates: false })
+        }
 
-    if (shouldNotify) {
-      const emailHtml = formatEmailHTML({
-        sessionId, isNew: isNewSession,
-        visitorEmail, visitorName, visitorCompany,
-        purpose: detectedIntent,
-        allMessages: updatedMessages,
-      })
+        const shouldNotify = isNewSession
+          || (extractedEmail && !existingSession?.visitor_email)
+          || messageCount % 8 === 0
 
-      const emailSubject = isNewSession
-        ? `[ARIA] New visitor${visitorName ? ` — ${visitorName}` : ''} (${detectedIntent})`
-        : `[ARIA] Chat update${visitorName ? ` from ${visitorName}` : ''} — msg #${messageCount}`
+        if (shouldNotify) {
+          const emailHtml = formatEmailHTML({
+            sessionId, isNew: isNewSession,
+            visitorEmail, visitorName, visitorCompany,
+            purpose: detectedIntent,
+            allMessages: updatedMessages,
+          })
 
-      sendEmail(emailSubject, emailHtml)
+          const emailSubject = isNewSession
+            ? `[ARIA] New visitor${visitorName ? ` — ${visitorName}` : ''} (${detectedIntent})`
+            : `[ARIA] Chat update${visitorName ? ` from ${visitorName}` : ''} — msg #${messageCount}`
 
-      await supabase
-        .from('chat_sessions')
-        .update({ notified: true })
-        .eq('session_id', sessionId)
+          sendEmail(emailSubject, emailHtml)
+
+          await supabase.from('chat_sessions').update({ notified: true }).eq('session_id', sessionId)
+        }
+      } catch (dbErr) {
+        console.error('Supabase error (non-fatal):', dbErr)
+      }
     }
 
     return NextResponse.json({
-      reply:         aiReply,
+      reply:        aiReply,
       visitorName,
-      visitorEmail:  visitorEmail ? '***' : undefined,
+      visitorEmail: visitorEmail ? '***' : undefined,
     })
 
   } catch (error) {

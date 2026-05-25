@@ -160,6 +160,15 @@ export function BootSequence() {
         <div className="absolute inset-y-0 left-12 w-px bg-gradient-to-b from-transparent via-monarch/20 to-transparent" />
         <div className="absolute inset-y-0 right-12 w-px bg-gradient-to-b from-transparent via-monarch/20 to-transparent" />
 
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.6, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 font-mono text-[8px] text-monarch-hi/50 tracking-[0.3em] uppercase"
+          >
+            Click / tap to awaken
+          </motion.p>
+
         {[
           'top-8 left-8 border-t border-l',
           'top-8 right-8 border-t border-r',
