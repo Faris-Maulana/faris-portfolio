@@ -155,9 +155,9 @@ export function Experience() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <p className="section-heading-tag">{'// system.deploy_history'}</p>
+          <p className="section-heading-tag">{'// chronicle.of.conquest'}</p>
           <h2 className="section-heading">
-            <span className="gradient-text">Experience</span>
+            <span className="gradient-monarch">Experience</span>
           </h2>
         </motion.div>
 

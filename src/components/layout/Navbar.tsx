@@ -51,15 +51,15 @@ export function Navbar() {
             className="text-xl font-display font-bold group"
             data-cursor="hover"
           >
-            <span className="neon-cyan group-hover:animate-pulse">F</span>
+            <span className="text-monarch group-hover:animate-pulse">F</span>
             <span className="text-text-primary">M</span>
-            <span className="neon-cyan text-sm">.</span>
+            <span className="text-monarch text-sm">.</span>
           </button>
 
           <div ref={navRef} className="hidden md:flex items-center gap-0.5 relative">
             <motion.div
               className="absolute top-1 bottom-1 rounded-lg pointer-events-none"
-              style={{ background: 'rgba(0,245,255,0.08)', border: '1px solid rgba(0,245,255,0.15)' }}
+              style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.15)' }}
               animate={{ left: pillStyle.left, width: pillStyle.width, opacity: pillStyle.width > 0 ? 1 : 0 }}
               transition={{ type: 'spring', stiffness: 400, damping: 35 }}
             />
@@ -71,7 +71,7 @@ export function Navbar() {
                 data-cursor="hover"
                 className={cn(
                   'relative z-10 px-3.5 py-2 text-[11px] font-mono tracking-wider uppercase transition-colors duration-200',
-                  active === link.href.replace('#','') ? 'text-cyan' : 'text-text-muted hover:text-text-secondary'
+                  active === link.href.replace('#','') ? 'text-monarch' : 'text-text-muted hover:text-text-secondary'
                 )}
               >
                 {link.label}
@@ -115,7 +115,7 @@ export function Navbar() {
                 >
                   <button
                     onClick={() => handleNav(link.href)}
-                    className="block text-3xl font-display font-bold text-text-secondary hover:text-cyan transition-colors py-2 w-full"
+                    className="block text-3xl font-display font-bold text-text-secondary hover:text-monarch transition-colors py-2 w-full"
                     data-cursor="hover"
                   >
                     {link.label}

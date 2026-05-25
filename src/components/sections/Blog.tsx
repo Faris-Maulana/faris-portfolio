@@ -8,7 +8,7 @@ import { formatDate } from '@/lib/utils'
 import type { BlogPost } from '@/lib/supabase/types'
 
 // Animated waveform bar chart (simulates signal)
-function SignalWave({ color = '#00f5ff', active = false }: { color?: string; active?: boolean }) {
+function SignalWave({ color = '#a855f7', active = false }: { color?: string; active?: boolean }) {
   const bars = [4, 7, 5, 9, 6, 8, 4, 7, 5, 9, 3, 8, 6, 7, 5]
   return (
     <div className="flex items-end gap-0.5 h-6">
@@ -31,15 +31,15 @@ function SignalWave({ color = '#00f5ff', active = false }: { color?: string; act
 
 // Tag to neon color
 const TAG_COLORS: Record<string, string> = {
-  'LangGraph': '#00f5ff', 'RAG': '#00f5ff', 'LLM': '#00f5ff',
-  'Security': '#ff3e3e', 'Python': '#ffb800', 'Data Engineering': '#39ff14',
+  'LangGraph': '#a855f7', 'RAG': '#a855f7', 'LLM': '#a855f7',
+  'Security': '#f43f5e', 'Python': '#fbbf24', 'Data Engineering': '#38bdf8',
 }
 
 function PostCard({ post, index }: { post: BlogPost; index: number }) {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { once: true })
   const [hovered, setHovered] = useState(false)
-  const primaryColor = TAG_COLORS[post.tags?.[0]] || '#00f5ff'
+  const primaryColor = TAG_COLORS[post.tags?.[0]] || '#a855f7'
 
   return (
     <motion.article
@@ -52,7 +52,7 @@ function PostCard({ post, index }: { post: BlogPost; index: number }) {
       data-cursor="hover"
       className="group glass rounded-2xl overflow-hidden transition-all duration-300"
       style={{
-        borderColor: hovered ? primaryColor + '30' : 'rgba(0,245,255,0.07)',
+        borderColor: hovered ? primaryColor + '30' : 'rgba(168,85,247,0.07)',
         boxShadow: hovered ? `0 0 40px ${primaryColor}12` : 'none',
       }}
     >
@@ -89,7 +89,7 @@ function PostCard({ post, index }: { post: BlogPost; index: number }) {
         </div>
 
         <h3
-          className="font-display font-semibold text-sm text-text-primary mb-2 leading-snug group-hover:text-cyan transition-colors"
+          className="font-display font-semibold text-sm text-text-primary mb-2 leading-snug group-hover:text-monarch transition-colors"
           style={{ transitionDuration: '200ms' }}
         >
           {post.title}
@@ -128,15 +128,15 @@ function EmptyState() {
         {[1, 2, 3].map(r => (
           <motion.div
             key={r}
-            className="absolute rounded-full border border-cyan/20"
+            className="absolute rounded-full border border-monarch/20"
             animate={{ scale: [1, 2 + r * 0.5], opacity: [0.4, 0] }}
             transition={{ duration: 2, delay: r * 0.5, repeat: Infinity, ease: 'linear' }}
             style={{ width: 60, height: 60 }}
           />
         ))}
-        <Waves size={28} className="text-cyan/40" />
+        <Waves size={28} className="text-monarch/40" />
       </motion.div>
-      <p className="font-mono text-xs text-cyan/60 tracking-[0.3em] uppercase mb-2">
+      <p className="font-mono text-xs text-monarch/60 tracking-[0.3em] uppercase mb-2">
         SIGNAL INCOMING
       </p>
       <p className="font-mono text-[10px] text-text-muted max-w-xs mx-auto leading-relaxed">
@@ -175,9 +175,9 @@ export function Blog() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           className="mb-12"
         >
-          <p className="section-heading-tag">// blog.transmissions</p>
+          <p className="section-heading-tag">// missives.from.the.shadow</p>
           <h2 className="section-heading">
-            <span className="gradient-text">Writing</span>
+            <span className="gradient-monarch">Writing</span>
           </h2>
         </motion.div>
 

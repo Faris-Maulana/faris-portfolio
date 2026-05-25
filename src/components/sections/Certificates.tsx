@@ -12,7 +12,7 @@ const CATEGORIES = ['All', 'AI/ML', 'Security', 'Engineering', 'Data'] as const
 const CLEARANCE_LEVEL: Record<string, { label: string; color: string; glow: string }> = {
   'AI/ML':       { label: 'TS/SCI', color: '#bf5fff', glow: 'rgba(191,95,255,0.2)' },
   'Security':    { label: 'SECRET', color: '#ff3e3e', glow: 'rgba(255,62,62,0.2)' },
-  'Engineering': { label: 'TOP SECRET', color: '#00f5ff', glow: 'rgba(0,245,255,0.2)' },
+  'Engineering': { label: 'TOP SECRET', color: '#a855f7', glow: 'rgba(168,85,247,0.2)' },
   'Data':        { label: 'CONFIDENTIAL', color: '#39ff14', glow: 'rgba(57,255,20,0.2)' },
   'Leadership':  { label: 'CLASSIFIED', color: '#ffb800', glow: 'rgba(255,184,0,0.2)' },
   'Other':       { label: 'UNCLASSIFIED', color: '#4a6272', glow: 'rgba(74,98,114,0.1)' },
@@ -52,7 +52,7 @@ function CertCard({ cert, index }: { cert: Certificate; index: number }) {
           'glass border',
         )}
         style={{
-          borderColor: hovering ? cl.color + '40' : 'rgba(0,245,255,0.07)',
+          borderColor: hovering ? cl.color + '40' : 'rgba(168,85,247,0.07)',
           boxShadow: hovering ? `0 0 30px ${cl.glow}, 0 0 0 1px ${cl.color}20` : 'none',
         }}
       >
@@ -194,9 +194,9 @@ export function Certificates() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           className="mb-12"
         >
-          <p className="section-heading-tag">// security.clearances_verified</p>
+          <p className="section-heading-tag">// seals.of.authority</p>
           <h2 className="section-heading">
-            <span className="gradient-text">Certificates</span>
+            <span className="gradient-monarch">Certificates</span>
           </h2>
           <p className="text-text-muted text-xs font-mono mt-2 tracking-wider">
             {certs.length} credentials authenticated &middot; hover to reveal
@@ -218,8 +218,8 @@ export function Certificates() {
               className={cn(
                 'px-4 py-1.5 rounded-full font-mono text-xs border transition-all duration-300',
                 active === cat
-                  ? 'bg-cyan/12 border-cyan/40 text-cyan'
-                  : 'bg-transparent border-border-glass text-text-muted hover:text-text-secondary'
+                  ? 'bg-monarch/12 border-monarch/40 text-monarch'
+                  : 'bg-transparent border-border-shadow text-text-muted hover:text-text-secondary'
               )}
             >
               {cat}

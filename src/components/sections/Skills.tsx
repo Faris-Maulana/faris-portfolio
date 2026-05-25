@@ -11,8 +11,8 @@ interface Node extends d3.SimulationNodeDatum {
 }
 
 const colorMap: Record<string, string> = {
-  'AI & LLM': '#00f5ff', 'Data Engineering': '#39ff14', 'ML & Research': '#bf5fff',
-  'Security': '#ff3e3e', 'Programming': '#ffb800', 'BI & Analytics': '#00c8d4',
+  'AI & LLM': '#a855f7', 'Data Engineering': '#38bdf8', 'ML & Research': '#c084fc',
+  'Security': '#f43f5e', 'Programming': '#fbbf24', 'BI & Analytics': '#8b5cf6',
 }
 
 export function Skills() {
@@ -138,9 +138,9 @@ export function Skills() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           className="mb-12"
         >
-          <p className="section-heading-tag">{'// skill.constellation'}</p>
+          <p className="section-heading-tag">{'// shadow.dominion'}</p>
           <h2 className="section-heading mb-2">
-            <span className="gradient-text">Skills</span>
+            <span className="gradient-monarch">Skills</span>
           </h2>
           <p className="text-text-muted text-sm font-mono">Drag nodes · hover to illuminate · connected by expertise</p>
         </motion.div>
@@ -150,7 +150,7 @@ export function Skills() {
           animate={inView ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.22,1,0.36,1] }}
           className="glass rounded-3xl overflow-hidden"
-          style={{ border: '1px solid rgba(0,245,255,0.08)' }}
+          style={{ border: '1px solid rgba(168,85,247,0.08)' }}
         >
           <svg ref={svgRef} width="100%" style={{ display: 'block' }} />
         </motion.div>

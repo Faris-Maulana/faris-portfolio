@@ -112,13 +112,13 @@ function TiltCard({ project, index }: { project: Project; index: number }) {
           <div className="flex items-center gap-3 pt-3 border-t border-border-glass">
             {project.repo_url && (
               <a href={project.repo_url} target="_blank" rel="noopener noreferrer"
-                className="text-text-muted hover:text-cyan transition-colors" data-cursor="hover">
+                className="text-text-muted hover:text-monarch transition-colors" data-cursor="hover">
                 <GithubIcon size={15} />
               </a>
             )}
             {project.demo_url && (
               <a href={project.demo_url} target="_blank" rel="noopener noreferrer"
-                className="text-text-muted hover:text-cyan transition-colors" data-cursor="hover">
+                className="text-text-muted hover:text-monarch transition-colors" data-cursor="hover">
                 <ExternalLink size={15} />
               </a>
             )}
@@ -181,9 +181,9 @@ export function Projects() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           className="mb-10"
         >
-          <p className="section-heading-tag">{'// project.registry'}</p>
+          <p className="section-heading-tag">{'// the.arsenal'}</p>
           <h2 className="section-heading mb-6">
-            <span className="gradient-text">Projects</span>
+            <span className="gradient-monarch">Projects</span>
           </h2>
 
           <div className="flex flex-wrap gap-2">
@@ -194,8 +194,8 @@ export function Projects() {
                 data-cursor="hover"
                 className={`px-4 py-1.5 rounded-full font-mono text-xs border transition-all duration-300 ${
                   active === cat
-                    ? 'bg-cyan/12 border-cyan/40 text-cyan'
-                    : 'bg-transparent border-border-glass text-text-muted hover:text-text-secondary'
+                    ? 'bg-monarch/12 border-monarch/40 text-monarch'
+                    : 'bg-transparent border-border-shadow text-text-muted hover:text-text-secondary'
                 }`}
               >
                 {cat}
@@ -231,7 +231,7 @@ export function Projects() {
           href="https://github.com/Faris-Maulana"
           target="_blank" rel="noopener noreferrer"
           data-cursor="hover"
-          className="text-xs font-mono text-text-muted hover:text-cyan transition-colors flex items-center gap-1"
+          className="text-xs font-mono text-text-muted hover:text-monarch transition-colors flex items-center gap-1"
         >
           View all on GitHub <GithubIcon size={12} />
         </a>

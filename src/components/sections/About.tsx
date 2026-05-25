@@ -19,14 +19,14 @@ function Counter({ end, suffix = '', label }: { end: number; suffix?: string; la
   return (
     <div ref={ref} className="glass rounded-2xl p-5 relative overflow-hidden group">
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style={{ background: 'linear-gradient(135deg, rgba(0,245,255,0.04), transparent)' }} />
+        style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.04), transparent)' }} />
       <div className="relative z-10">
-        <div className="text-3xl font-display font-extrabold neon-cyan mb-1">
+        <div className="text-3xl font-display font-extrabold gradient-monarch mb-1">
           {display}{suffix}
         </div>
         <div className="text-[10px] font-mono text-text-muted tracking-wider uppercase">{label}</div>
       </div>
-      <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-cyan/20 rounded-br-2xl" />
+      <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-monarch/20 rounded-br-2xl" />
     </div>
   )
 }
@@ -76,25 +76,25 @@ function RadarChart() {
             const a = (i/N)*2*Math.PI - Math.PI/2
             return `${cx+R*r*Math.cos(a)},${cy+R*r*Math.sin(a)}`
           }).join(' ')}
-          fill="none" stroke="rgba(0,245,255,0.08)" strokeWidth="1"
+          fill="none" stroke="rgba(168,85,247,0.08)" strokeWidth="1"
         />
       ))}
       {skills.map((_, i) => {
         const a = (i/N)*2*Math.PI - Math.PI/2
         return <line key={i}
           x1={cx} y1={cy} x2={cx+R*Math.cos(a)} y2={cy+R*Math.sin(a)}
-          stroke="rgba(0,245,255,0.06)" strokeWidth="1"
+          stroke="rgba(168,85,247,0.06)" strokeWidth="1"
         />
       })}
-      <polygon points={polygon} fill="rgba(0,245,255,0.08)" stroke="#00f5ff"
-        strokeWidth="1.5" style={{ filter: 'drop-shadow(0 0 6px rgba(0,245,255,0.4))' }} />
+      <polygon points={polygon} fill="rgba(168,85,247,0.08)" stroke="#a855f7"
+        strokeWidth="1.5" style={{ filter: 'drop-shadow(0 0 6px rgba(168,85,247,0.4))' }} />
       {skills.map((s, i) => {
         const a = (i/N)*2*Math.PI - Math.PI/2
         const lx = cx + (R + 18) * Math.cos(a)
         const ly = cy + (R + 18) * Math.sin(a)
         return <text key={i} x={lx} y={ly}
           textAnchor="middle" dominantBaseline="central"
-          fill="rgba(0,245,255,0.6)" fontSize="8" fontFamily="JetBrains Mono">{s.label}</text>
+          fill="rgba(168,85,247,0.6)" fontSize="8" fontFamily="JetBrains Mono">{s.label}</text>
       })}
     </svg>
   )
@@ -120,8 +120,8 @@ export function About() {
     <section id="about" className="section" ref={sectionRef}>
       <div className="container">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} className="mb-16">
-          <p className="section-heading-tag">{'// profile.scan()'}</p>
-          <h2 className="section-heading"><span className="gradient-text">About</span></h2>
+          <p className="section-heading-tag">{'// the.archive'}</p>
+          <h2 className="section-heading"><span className="gradient-monarch">About</span></h2>
         </motion.div>
 
         <div className="grid lg:grid-cols-[1fr_1.2fr] gap-12 items-start">
@@ -152,27 +152,27 @@ export function About() {
               <div
                 ref={scanRef}
                 className="absolute left-0 right-0 h-px opacity-0"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(0,245,255,0.8), transparent)', boxShadow: '0 0 16px rgba(0,245,255,0.4)' }}
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(168,85,247,0.8), transparent)', boxShadow: '0 0 16px rgba(168,85,247,0.4)' }}
               />
             </div>
 
             <div className="glass rounded-2xl p-7 space-y-5 relative">
               {['top-0 left-0 border-t border-l','top-0 right-0 border-t border-r','bottom-0 left-0 border-b border-l','bottom-0 right-0 border-b border-r'].map((cls,i) => (
-                <div key={i} className={`absolute w-4 h-4 ${cls} border-cyan/30 rounded-sm`} />
+                <div key={i} className={`absolute w-4 h-4 ${cls} border-monarch/30 rounded-sm`} />
               ))}
 
-              <div className="font-mono text-[10px] text-cyan/50 tracking-widest">PROFILE // SCAN COMPLETE</div>
+              <div className="font-mono text-[10px] text-monarch/50 tracking-widest">ARCHIVE // ACCESS GRANTED</div>
 
               <p className="text-text-secondary leading-relaxed text-sm">
                 I&apos;m an{' '}
-                <span className="neon-cyan font-medium">AI Engineer &amp; Researcher</span>{' '}
+                <span className="text-monarch-hi font-medium">AI Engineer &amp; Researcher</span>{' '}
                 currently leading AI Engineering at{' '}
-                <span className="text-cyan">PT Trans Indonesia Superkoridor</span>,
+                <span className="text-monarch">PT Trans Indonesia Superkoridor</span>,
                 building the company&apos;s Data &amp; AI platform from zero.
               </p>
               <p className="text-text-secondary leading-relaxed text-sm">
                 My work spans the full LLM lifecycle —{' '}
-                <span className="neon-cyan">RAG systems</span>,{' '}
+                <span className="text-monarch-hi">RAG systems</span>,{' '}
                 <span className="text-violet font-medium">multi-agent LangGraph architectures</span>,{' '}
                 <span className="text-amber font-medium">medallion data engineering</span>.
                 I&apos;ve shipped AI solutions across telco, maritime, healthcare, and EdTech.
@@ -192,7 +192,7 @@ export function About() {
                   <div>
                     <div className="text-[9px] font-mono text-text-muted uppercase tracking-widest mb-0.5">Current deployment</div>
                     <p className="text-sm text-text-primary">Manager AI Engineering @ PT Trans Indonesia Superkoridor</p>
-                    <p className="text-[10px] font-mono text-cyan/60 mt-0.5">May 2026 – Present · Jakarta, Indonesia</p>
+                    <p className="text-[10px] font-mono text-monarch/60 mt-0.5">May 2026 – Present · Jakarta, Indonesia</p>
                   </div>
                 </div>
               </div>

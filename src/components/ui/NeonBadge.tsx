@@ -9,13 +9,13 @@ interface NeonBadgeProps {
   className?: string
 }
 
-const colorMap = {
-  cyan:     'bg-cyan/10 text-cyan border-cyan/20',
+const colorMap: Record<string, string> = {
+  cyan:     'bg-monarch/10 text-monarch border-monarch/20',
   green:    'bg-green/10 text-green border-green/20',
   amber:    'bg-amber/10 text-amber border-amber/20',
   violet:   'bg-violet/10 text-violet border-violet/20',
   red:      'bg-neon-red/10 text-neon-red border-neon-red/20',
-  'cyan-dim': 'bg-cyan-dim/10 text-cyan-dim border-cyan-dim/20',
+  'cyan-dim': 'bg-ice/10 text-ice border-ice/20',
   muted:    'bg-text-muted/10 text-text-muted border-text-muted/20',
 }
 

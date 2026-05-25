@@ -26,18 +26,18 @@ function NetworkMap() {
         return (
           <line key={i}
             x1={na.x} y1={na.y} x2={nb.x} y2={nb.y}
-            stroke="#00f5ff" strokeWidth="0.5" strokeDasharray="3 4"
+            stroke="#a855f7" strokeWidth="0.5" strokeDasharray="3 4"
           />
         )
       })}
       {nodes.map(n => (
         <g key={n.id}>
-          {n.primary && <circle cx={n.x} cy={n.y} r="8" fill="rgba(0,245,255,0.08)" stroke="#00f5ff" strokeWidth="0.5" />}
+          {n.primary && <circle cx={n.x} cy={n.y} r="8" fill="rgba(168,85,247,0.08)" stroke="#a855f7" strokeWidth="0.5" />}
           <circle cx={n.x} cy={n.y} r={n.primary ? 4 : 2.5}
-            fill={n.primary ? '#00f5ff' : 'rgba(0,245,255,0.4)'}
-            style={n.primary ? { filter: 'drop-shadow(0 0 4px #00f5ff)' } : undefined}
+            fill={n.primary ? '#a855f7' : 'rgba(168,85,247,0.4)'}
+            style={n.primary ? { filter: 'drop-shadow(0 0 4px #a855f7)' } : undefined}
           />
-          <text x={n.x + 8} y={n.y + 4} fill="rgba(0,245,255,0.5)"
+          <text x={n.x + 8} y={n.y + 4} fill="rgba(168,85,247,0.5)"
             fontSize="7" fontFamily="JetBrains Mono">{n.label}</text>
         </g>
       ))}
@@ -51,7 +51,7 @@ export function Footer() {
   return (
     <footer className="relative border-t border-border-glass mt-0">
       {/* Top fiber line with pulse */}
-      <div className="fiber-line absolute top-0 left-0 right-0" />
+      <div className="dagger-line absolute top-0 left-0 right-0" />
 
       <div className="container py-16">
         <div className="grid md:grid-cols-3 gap-12 items-center mb-12">
@@ -59,9 +59,9 @@ export function Footer() {
           {/* Identity */}
           <div>
             <div className="text-3xl font-display font-extrabold mb-2">
-              <span className="neon-cyan">F</span>
+              <span className="text-monarch">F</span>
               <span className="text-text-primary">M</span>
-              <span className="neon-cyan text-lg">.</span>
+              <span className="text-monarch text-lg">.</span>
             </div>
             <p className="text-text-muted text-xs font-mono leading-relaxed max-w-xs">
               AI Engineer building production intelligence systems
@@ -89,7 +89,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.15 }}
                   data-cursor="hover"
-                  className="text-text-muted hover:text-cyan transition-colors"
+                  className="text-text-muted hover:text-monarch transition-colors"
                   aria-label={label}
                 >
                   <Icon size={16} />
@@ -98,7 +98,7 @@ export function Footer() {
             </div>
             <a
               href={`mailto:${SITE_CONFIG.email}`}
-              className="font-mono text-[10px] text-text-muted hover:text-cyan transition-colors tracking-wider"
+              className="font-mono text-[10px] text-text-muted hover:text-monarch transition-colors tracking-wider"
               data-cursor="hover"
             >
               {SITE_CONFIG.email}

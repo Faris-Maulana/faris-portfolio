@@ -22,10 +22,9 @@ function TerminalSuccess() {
   const lines = [
     { text: '> CONNECTING to maulanafaris016@gmail.com...', delay: 0 },
     { text: '\u2713 SMTP handshake: 250 OK', delay: 600, color: '#39ff14' },
-    { text: '> ROUTING to WhatsApp +62-812-8404-9172...', delay: 1000 },
-    { text: '\u2713 Fonnte delivery: QUEUED', delay: 1600, color: '#39ff14' },
-    { text: '> Message logged to database...', delay: 2000 },
-    { text: '\u2713 TRANSMISSION COMPLETE', delay: 2600, color: '#00f5ff' },
+    { text: '> Logging to shadow archive...', delay: 1000 },
+    { text: '\u2713 Persisted to database', delay: 1600, color: '#a855f7' },
+    { text: '\u2713 TRANSMISSION COMPLETE', delay: 2200, color: '#a855f7' },
   ]
 
   return (
@@ -45,7 +44,7 @@ function TerminalSuccess() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 3.2 }}
-        className="pt-2 border-t border-border-glass text-cyan/60"
+        className="pt-2 border-t border-border-shadow text-monarch/60"
       >
         {'>'} Faris will respond within 24h. Stay on frequency.
       </motion.div>
@@ -93,9 +92,9 @@ export function Contact() {
     <section id="contact" className="section">
       <div className="container">
         <div className="mb-12">
-          <p className="section-heading-tag">{'// initiate.connection'}</p>
-          <h2 className="section-heading gradient-text">Transmit Message</h2>
-          <div className="fiber-line mt-4" />
+          <p className="section-heading-tag">{'// summon.the.architect'}</p>
+          <h2 className="section-heading gradient-monarch">Transmit Message</h2>
+          <div className="dagger-line mt-4 w-full" />
         </div>
 
         <div className="grid lg:grid-cols-5 gap-8">
@@ -108,33 +107,18 @@ export function Contact() {
                   href={`mailto:${SITE_CONFIG.email}`}
                   className="flex items-center gap-3 group"
                 >
-                  <div className="w-10 h-10 rounded-full glass flex items-center justify-center group-hover:border-cyan/40 transition-all">
-                    <Mail size={16} className="text-cyan" />
+                  <div className="w-10 h-10 rounded-full glass flex items-center justify-center group-hover:border-monarch/40 transition-all">
+                    <Mail size={16} className="text-monarch" />
                   </div>
                   <div>
                     <p className="text-[10px] text-text-muted font-mono">Email</p>
-                    <p className="text-sm text-text-primary group-hover:text-cyan transition-colors">{SITE_CONFIG.email}</p>
-                  </div>
-                </a>
-
-                <a
-                  href={SITE_CONFIG.whatsappLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 group"
-                >
-                  <div className="w-10 h-10 rounded-full glass flex items-center justify-center group-hover:border-green/40 transition-all">
-                    <span className="text-green font-bold text-lg">WA</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-text-muted font-mono">WhatsApp</p>
-                    <p className="text-sm text-text-primary group-hover:text-green transition-colors">{SITE_CONFIG.whatsapp}</p>
+                    <p className="text-sm text-text-primary group-hover:text-monarch transition-colors">{SITE_CONFIG.email}</p>
                   </div>
                 </a>
 
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full glass flex items-center justify-center">
-                    <MapPin size={16} className="text-violet" />
+                    <MapPin size={16} className="text-monarch" />
                   </div>
                   <div>
                     <p className="text-[10px] text-text-muted font-mono">Location</p>
@@ -213,7 +197,7 @@ export function Contact() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-cyan/10 border border-cyan/30 text-cyan font-mono text-sm hover:bg-cyan/20 transition-all disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-monarch/10 border border-monarch/30 text-monarch font-mono text-sm hover:bg-monarch/20 transition-all disabled:opacity-50"
                   >
                     {isSubmitting ? (
                       <Loader2 size={14} className="animate-spin" />

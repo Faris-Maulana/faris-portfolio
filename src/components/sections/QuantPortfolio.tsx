@@ -9,10 +9,10 @@ import { QUANT_CASE_STUDIES } from '@/lib/constants'
 
 
 const accentMap: Record<string, string> = {
-  amber: '#ffb800',
-  cyan: '#00f5ff',
-  violet: '#bf5fff',
-  green: '#39ff14',
+  amber: '#fbbf24',
+  cyan: '#a855f7',
+  violet: '#c084fc',
+  green: '#38bdf8',
 }
 
 function MiniChart({ type, accent, chartInView }: { type: string; accent: string; chartInView: boolean }) {
@@ -128,9 +128,9 @@ export function QuantPortfolio() {
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
         >
-          <p className="section-heading-tag">{'// quant.research_output'}</p>
+          <p className="section-heading-tag">{'// scrolls.of.evidence'}</p>
           <h2 className="section-heading mb-3">
-            <span className="gradient-text">Quantitative</span> Research Portfolio
+            <span className="gradient-monarch">Quantitative</span> Research Portfolio
           </h2>
           <p className="text-text-muted text-sm font-mono mb-8">
             Applied analytics across maritime, telco, healthcare, and edtech
@@ -170,7 +170,7 @@ export function QuantPortfolio() {
 
                 <button
                   onClick={() => setExpanded(expanded === i ? null : i)}
-                  className="mt-3 flex items-center gap-1 text-xs font-mono text-text-muted hover:text-cyan transition-colors"
+                  className="mt-3 flex items-center gap-1 text-xs font-mono text-text-muted hover:text-monarch transition-colors"
                 >
                   {expanded === i ? 'Show less' : 'Methodology details'}
                   {expanded === i ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
