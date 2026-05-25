@@ -70,13 +70,13 @@ export function QuantPortfolio() {
     <section id="research" className="section">
       <div className="container" ref={ref}>
         <motion.div variants={variants} initial="hidden" animate={inView ? 'visible' : 'hidden'}>
-          <h2 className="text-3xl md:text-4xl font-display font-bold mb-2">
+          <p className="section-heading-tag">{'// quant.research_output'}</p>
+          <h2 className="section-heading mb-3">
             <span className="gradient-text">Quantitative</span> Research Portfolio
           </h2>
           <p className="text-text-muted text-sm font-mono mb-8">
             Applied analytics across maritime, telco, healthcare, and edtech
           </p>
-          <div className="w-16 h-0.5 bg-cyan/50 mb-12" />
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-6">

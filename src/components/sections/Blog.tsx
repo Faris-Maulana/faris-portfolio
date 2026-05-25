@@ -33,10 +33,10 @@ export function Blog() {
     <section id="blog" className="section">
       <div className="container" ref={ref}>
         <motion.div variants={variants} initial="hidden" animate={inView ? 'visible' : 'hidden'}>
-          <h2 className="text-3xl md:text-4xl font-display font-bold mb-2">
+          <p className="section-heading-tag">{'// blog.transmissions'}</p>
+          <h2 className="section-heading">
             <span className="gradient-text">Blog</span>
           </h2>
-          <div className="w-16 h-0.5 bg-cyan/50 mb-12" />
         </motion.div>
 
         {loading ? (

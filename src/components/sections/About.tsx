@@ -1,223 +1,203 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { motion, useInView, useMotionValue, animate } from 'framer-motion'
 
-const STATS = [
-  { label: 'Years Experience', value: 5, suffix: '+' },
-  { label: 'Prod Dashboards', value: 20, suffix: '+' },
-  { label: 'Industries', value: 3, suffix: '' },
-  { label: 'Fiber Network', value: 25, suffix: 'K+ km' },
-]
-
-const COMPETENCIES = [
-  { label: 'AI/ML', pct: 95, color: '#00f5ff' },
-  { label: 'Data Eng', pct: 90, color: '#39ff14' },
-  { label: 'Security', pct: 75, color: '#ff3e3e' },
-  { label: 'BI', pct: 85, color: '#ffb800' },
-  { label: 'Backend', pct: 80, color: '#bf5fff' },
-]
-
-function AnimatedCount({ end, suffix = '' }: { end: number; suffix?: string }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-  const counted = useRef(false)
+function Counter({ end, suffix = '', label }: { end: number; suffix?: string; label: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const count = useMotionValue(0)
+  const [display, setDisplay] = useState('0')
+  const inView = useInView(ref, { once: true })
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !counted.current) {
-          counted.current = true
-          const duration = 1200
-          const steps = 30
-          const increment = end / steps
-          let current = 0
-          const interval = setInterval(() => {
-            current += increment
-            if (current >= end) {
-              setCount(end)
-              clearInterval(interval)
-            } else {
-              setCount(Math.floor(current))
-            }
-          }, duration / steps)
-        }
-      },
-      { threshold: 0.5 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [end])
-
-  return <span ref={ref}>{count}{suffix}</span>
-}
-
-function RadarRing({ pct, color }: { pct: number; color: string }) {
-  const r = 15
-  const circ = 2 * Math.PI * r
-  const offset = circ - (pct / 100) * circ
+    if (!inView) return
+    const controls = animate(count, end, { duration: 2, ease: [0.22,1,0.36,1] })
+    const unsub = count.on('change', v => setDisplay(Math.floor(v).toString()))
+    return () => { controls.stop(); unsub() }
+  }, [inView, count, end])
 
   return (
-    <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-      <circle cx="18" cy="18" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5" />
-      <circle
-        cx="18" cy="18" r={r} fill="none"
-        stroke={color} strokeWidth="2.5"
-        strokeDasharray={circ}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-      />
+    <div ref={ref} className="glass rounded-2xl p-5 relative overflow-hidden group">
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{ background: 'linear-gradient(135deg, rgba(0,245,255,0.04), transparent)' }} />
+      <div className="relative z-10">
+        <div className="text-3xl font-display font-extrabold neon-cyan mb-1">
+          {display}{suffix}
+        </div>
+        <div className="text-[10px] font-mono text-text-muted tracking-wider uppercase">{label}</div>
+      </div>
+      <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-cyan/20 rounded-br-2xl" />
+    </div>
+  )
+}
+
+function RadarChart() {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const inView = useInView(svgRef, { once: true })
+  const [progress, setProgress] = useState(0)
+
+  useEffect(() => {
+    if (!inView) return
+    const start = performance.now()
+    const duration = 1800
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1)
+      setProgress(p)
+      if (p < 1) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }, [inView])
+
+  const skills = [
+    { label: 'AI/LLM', value: 0.95 },
+    { label: 'Data Eng', value: 0.90 },
+    { label: 'Security', value: 0.75 },
+    { label: 'ML', value: 0.85 },
+    { label: 'Backend', value: 0.80 },
+    { label: 'BI', value: 0.88 },
+  ]
+  const N = skills.length
+  const cx = 110; const cy = 110; const R = 80
+
+  function getPoint(i: number, value: number) {
+    const angle = (i / N) * 2 * Math.PI - Math.PI / 2
+    const r = R * value * progress
+    return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)]
+  }
+
+  const points = skills.map((s, i) => getPoint(i, s.value))
+  const polygon = points.map(p => p.join(',')).join(' ')
+
+  return (
+    <svg ref={svgRef} viewBox="0 0 220 220" className="w-full max-w-[220px]">
+      {[0.25,0.5,0.75,1].map(r => (
+        <polygon key={r}
+          points={Array.from({length: N}, (_, i) => {
+            const a = (i/N)*2*Math.PI - Math.PI/2
+            return `${cx+R*r*Math.cos(a)},${cy+R*r*Math.sin(a)}`
+          }).join(' ')}
+          fill="none" stroke="rgba(0,245,255,0.08)" strokeWidth="1"
+        />
+      ))}
+      {skills.map((_, i) => {
+        const a = (i/N)*2*Math.PI - Math.PI/2
+        return <line key={i}
+          x1={cx} y1={cy} x2={cx+R*Math.cos(a)} y2={cy+R*Math.sin(a)}
+          stroke="rgba(0,245,255,0.06)" strokeWidth="1"
+        />
+      })}
+      <polygon points={polygon} fill="rgba(0,245,255,0.08)" stroke="#00f5ff"
+        strokeWidth="1.5" style={{ filter: 'drop-shadow(0 0 6px rgba(0,245,255,0.4))' }} />
+      {skills.map((s, i) => {
+        const a = (i/N)*2*Math.PI - Math.PI/2
+        const lx = cx + (R + 18) * Math.cos(a)
+        const ly = cy + (R + 18) * Math.sin(a)
+        return <text key={i} x={lx} y={ly}
+          textAnchor="middle" dominantBaseline="central"
+          fill="rgba(0,245,255,0.6)" fontSize="8" fontFamily="JetBrains Mono">{s.label}</text>
+      })}
     </svg>
   )
 }
 
 export function About() {
-  const ref = useRef<HTMLElement>(null)
-  const [visible, setVisible] = useState(false)
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const scanRef    = useRef<HTMLDivElement>(null)
+  const inView = useInView(sectionRef, { once: true })
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true) },
-      { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+    if (!inView || !scanRef.current) return
+    const el = scanRef.current
+    el.style.opacity = '1'
+    el.animate([
+      { top: '-2px', opacity: 1 },
+      { top: '100%', opacity: 0.4 },
+      { top: '100%', opacity: 0 }
+    ], { duration: 1600, easing: 'linear', fill: 'forwards' })
+  }, [inView])
 
   return (
-    <section id="about" className="section" ref={ref}>
+    <section id="about" className="section" ref={sectionRef}>
       <div className="container">
-        <div
-          className={`transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
-        >
-          <span className="section-heading-tag">{'// BIO'}</span>
-          <h2 className="section-heading gradient-text">Biometric Scan</h2>
-          <div className="fiber-line mt-4" />
-        </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} className="mb-16">
+          <p className="section-heading-tag">{'// profile.scan()'}</p>
+          <h2 className="section-heading"><span className="gradient-text">About</span></h2>
+        </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-8 mt-10">
-          {/* Left — Stats */}
-          <div
-            className={`grid grid-cols-2 gap-4 transition-all duration-700 delay-100 ${
-              visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            }`}
+        <div className="grid lg:grid-cols-[1fr_1.2fr] gap-12 items-start">
+          <motion.div
+            initial={{ opacity: 0, x: -24 }} animate={inView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="space-y-6"
           >
-            {STATS.map((stat) => (
-              <div key={stat.label} className="glass rounded-xl p-5 text-center border border-border-glass">
-                <span className="block text-2xl md:text-3xl font-display font-bold text-cyan">
-                  <AnimatedCount end={stat.value} suffix={stat.suffix} />
-                </span>
-                <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">{stat.label}</span>
-              </div>
-            ))}
-
-            {/* Bio panel */}
-            <div className="col-span-2 glass rounded-xl p-5 border border-border-glass space-y-3">
-              <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                I&apos;m an <span className="text-cyan">AI Engineer &amp; Researcher</span> leading AI
-                at <span className="text-cyan">PT Trans Indonesia Superkoridor</span>, building the
-                company&apos;s Data &amp; AI platform from scratch.
-              </p>
-              <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                My work spans <span className="text-cyan">RAG systems</span>,{' '}
-                <span className="text-violet">multi-agent architectures</span>, and{' '}
-                <span className="text-amber">production data engineering</span> across
-                telco, maritime, healthcare, and EdTech.
-              </p>
-              <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                I&apos;m also an active <span className="text-neon-red">smart contract security
-                researcher</span> on Sherlock, Code4rena, and Immunefi.
-              </p>
-              <div className="pt-2 border-t border-border-glass flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
-                <span className="text-[10px] font-mono text-text-muted">
-                  Manager AI Engineering @ PT Trans Indonesia Superkoridor
-                </span>
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Counter end={5}  suffix="+"     label="Years Experience" />
+              <Counter end={20} suffix="+"     label="Production Dashboards" />
+              <Counter end={3}  suffix=""      label="Industries Served" />
+              <Counter end={25} suffix="K+ km" label="Fiber Network Operated" />
             </div>
-          </div>
 
-          {/* Right — Radar */}
-          <div
-            className={`transition-all duration-700 delay-200 ${
-              visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            }`}
+            <div className="glass rounded-2xl p-6 flex flex-col items-center">
+              <p className="text-[10px] font-mono text-text-muted uppercase tracking-widest mb-4">Competency Radar</p>
+              <RadarChart />
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 24 }} animate={inView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="relative"
           >
-            <div className="glass rounded-xl p-5 md:p-6 border border-border-glass">
-              <p className="text-[10px] font-mono text-text-muted uppercase tracking-wider mb-5">Competency Radar</p>
-              <div className="flex items-center justify-center mb-6">
-                <div className="relative w-48 h-48 md:w-56 md:h-56">
-                  <svg viewBox="0 0 120 120" className="w-full h-full">
-                    {COMPETENCIES.map((s, i) => {
-                      const angle = (i / COMPETENCIES.length) * Math.PI * 2 - Math.PI / 2
-                      const r = (s.pct / 100) * 50
-                      const x = 60 + r * Math.cos(angle)
-                      const y = 60 + r * Math.sin(angle)
-                      return <line key={s.label} x1="60" y1="60" x2={x} y2={y} stroke={s.color} strokeWidth="0.8" opacity="0.25" />
-                    })}
-                    {[0.25, 0.5, 0.75, 1].map((scale) => (
-                      <polygon
-                        key={scale}
-                        points={COMPETENCIES.map((_, i) => {
-                          const angle = (i / COMPETENCIES.length) * Math.PI * 2 - Math.PI / 2
-                          const r = scale * 50
-                          return `${60 + r * Math.cos(angle)},${60 + r * Math.sin(angle)}`
-                        }).join(' ')}
-                        fill="none"
-                        stroke="rgba(0,245,255,0.08)"
-                        strokeWidth="0.5"
-                      />
-                    ))}
-                    <polygon
-                      points={COMPETENCIES.map((s, i) => {
-                        const angle = (i / COMPETENCIES.length) * Math.PI * 2 - Math.PI / 2
-                        const r = (s.pct / 100) * 50
-                        return `${60 + r * Math.cos(angle)},${60 + r * Math.sin(angle)}`
-                      }).join(' ')}
-                      fill="rgba(0,245,255,0.04)"
-                      stroke="#00f5ff"
-                      strokeWidth="1"
-                    />
-                  </svg>
-                  {COMPETENCIES.map((s, i) => {
-                    const angle = (i / COMPETENCIES.length) * Math.PI * 2 - Math.PI / 2
-                    const r = (s.pct / 100) * 50 + 2
-                    const x = 60 + r * Math.cos(angle)
-                    const y = 60 + r * Math.sin(angle)
-                    const px = (x / 120) * 100
-                    const py = (y / 120) * 100
-                    return (
-                      <div
-                        key={s.label}
-                        className="absolute w-2 h-2 rounded-full"
-                        style={{
-                          left: `${px}%`,
-                          top: `${py}%`,
-                          background: s.color,
-                          boxShadow: `0 0 8px ${s.color}`,
-                          transform: 'translate(-50%, -50%)',
-                        }}
-                      />
-                    )
-                  })}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-2xl z-20">
+              <div
+                ref={scanRef}
+                className="absolute left-0 right-0 h-px opacity-0"
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(0,245,255,0.8), transparent)', boxShadow: '0 0 16px rgba(0,245,255,0.4)' }}
+              />
+            </div>
+
+            <div className="glass rounded-2xl p-7 space-y-5 relative">
+              {['top-0 left-0 border-t border-l','top-0 right-0 border-t border-r','bottom-0 left-0 border-b border-l','bottom-0 right-0 border-b border-r'].map((cls,i) => (
+                <div key={i} className={`absolute w-4 h-4 ${cls} border-cyan/30 rounded-sm`} />
+              ))}
+
+              <div className="font-mono text-[10px] text-cyan/50 tracking-widest">PROFILE // SCAN COMPLETE</div>
+
+              <p className="text-text-secondary leading-relaxed text-sm">
+                I&apos;m an{' '}
+                <span className="neon-cyan font-medium">AI Engineer &amp; Researcher</span>{' '}
+                currently leading AI Engineering at{' '}
+                <span className="text-cyan">PT Trans Indonesia Superkoridor</span>,
+                building the company&apos;s Data &amp; AI platform from zero.
+              </p>
+              <p className="text-text-secondary leading-relaxed text-sm">
+                My work spans the full LLM lifecycle —{' '}
+                <span className="neon-cyan">RAG systems</span>,{' '}
+                <span className="text-violet font-medium">multi-agent LangGraph architectures</span>,{' '}
+                <span className="text-amber font-medium">medallion data engineering</span>.
+                I&apos;ve shipped AI solutions across telco, maritime, healthcare, and EdTech.
+              </p>
+              <p className="text-text-secondary leading-relaxed text-sm">
+                Beyond AI: active{' '}
+                <span className="text-neon-red font-medium">smart contract security researcher</span>{' '}
+                on Sherlock, Code4rena, and Immunefi — finding Solidity vulnerabilities before they become exploits.
+              </p>
+
+              <div className="pt-4 border-t border-border-glass">
+                <div className="flex items-start gap-3">
+                  <div className="relative mt-0.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-green" />
+                    <div className="absolute inset-0 rounded-full bg-green animate-ping opacity-60" />
+                  </div>
+                  <div>
+                    <div className="text-[9px] font-mono text-text-muted uppercase tracking-widest mb-0.5">Current deployment</div>
+                    <p className="text-sm text-text-primary">Manager AI Engineering @ PT Trans Indonesia Superkoridor</p>
+                    <p className="text-[10px] font-mono text-cyan/60 mt-0.5">May 2026 – Present · Jakarta, Indonesia</p>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-5 gap-2">
-                {COMPETENCIES.map((s) => (
-                  <div key={s.label} className="text-center">
-                    <div className="w-10 h-10 mx-auto mb-1">
-                      <RadarRing pct={s.pct} color={s.color} />
-                    </div>
-                    <span className="text-[8px] font-mono text-text-muted block">{s.label}</span>
-                    <span className="text-[9px] font-mono" style={{ color: s.color }}>{s.pct}%</span>
-                  </div>
-                ))}
-              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

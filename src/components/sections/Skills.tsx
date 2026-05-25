@@ -1,56 +1,173 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import dynamic from 'next/dynamic'
+import { useEffect, useRef } from 'react'
+import { useInView } from 'framer-motion'
+import { motion } from 'framer-motion'
+import * as d3 from 'd3'
+import { SKILLS } from '@/lib/constants'
 
-const ForceGraph = dynamic(() => import('@/components/ui/ForceGraph'), { ssr: false })
+interface Node extends d3.SimulationNodeDatum {
+  id: string; label: string; category: string; color: string; size: number
+}
 
-const SKILL_GROUPS = [
-  { category: 'LLM & AI', color: '#00f5ff', items: ['LLM Fine-Tuning', 'RAG', 'LangChain', 'LlamaIndex', 'Vector DBs', 'HuggingFace', 'Ollama', 'OpenAI API'] },
-  { category: 'Data Engineering', color: '#39ff14', items: ['Apache Kafka', 'Apache Spark', 'Airflow', 'dbt', 'PostgreSQL', 'MySQL', 'BigQuery', 'Snowflake'] },
-  { category: 'Backend & API', color: '#bf5fff', items: ['Python', 'TypeScript', 'Go', 'FastAPI', 'Express', 'Next.js', 'GraphQL', 'WebSockets'] },
-  { category: 'Smart Contract Security', color: '#ff3e3e', items: ['Solidity', 'Foundry', 'Slither', 'Echidna', 'CTF', 'Auditing'] },
-  { category: 'BI & Visualization', color: '#ffb800', items: ['Tableau', 'Looker', 'Metabase', 'Apache Superset', 'Power BI'] },
-  { category: 'Infrastructure', color: '#00c8d4', items: ['Docker', 'Kubernetes', 'Terraform', 'AWS', 'GCP', 'CI/CD', 'GitHub Actions'] },
-]
+const colorMap: Record<string, string> = {
+  'AI & LLM': '#00f5ff', 'Data Engineering': '#39ff14', 'ML & Research': '#bf5fff',
+  'Security': '#ff3e3e', 'Programming': '#ffb800', 'BI & Analytics': '#00c8d4',
+}
 
 export function Skills() {
-  const ref = useRef<HTMLElement>(null)
-  const [visible, setVisible] = useState(false)
+  const svgRef   = useRef<SVGSVGElement>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const inView = useInView(sectionRef, { once: true })
+  const simRef = useRef<d3.Simulation<Node, undefined> | null>(null)
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true) },
-      { threshold: 0.15 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+    if (!inView) return
+    const svg = d3.select(svgRef.current)
+    const W = svgRef.current?.clientWidth || 800
+    const H = 520
+    svg.attr('height', H)
+
+    const nodes: Node[] = []
+    nodes.push({ id: '__center__', label: 'FM', category: 'core', color: '#ffffff', size: 28 })
+    SKILLS.forEach(group => {
+      const col = colorMap[group.category] || '#4a6272'
+      group.items.forEach(item => {
+        nodes.push({ id: `${group.category}__${item}`, label: item, category: group.category, color: col, size: 9 })
+      })
+      nodes.push({ id: `__hub__${group.category}`, label: group.category.split(' ')[0], category: group.category, color: col, size: 16 })
+    })
+
+    const links: { source: string; target: string; strength: number }[] = []
+    SKILLS.forEach(group => {
+      links.push({ source: '__center__', target: `__hub__${group.category}`, strength: 0.08 })
+      group.items.forEach(item => {
+        links.push({ source: `__hub__${group.category}`, target: `${group.category}__${item}`, strength: 0.25 })
+      })
+    })
+
+    const sim = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id((d: d3.SimulationNodeDatum) => (d as Node).id).strength(l => (l as {strength: number}).strength).distance(70))
+      .force('charge', d3.forceManyBody().strength(n => (n as Node).id === '__center__' ? -600 : -80))
+      .force('center', d3.forceCenter(W / 2, H / 2))
+      .force('collision', d3.forceCollide().radius(n => (n as Node).size + 8))
+      .alphaDecay(0.025)
+    simRef.current = sim
+
+    svg.selectAll('*').remove()
+
+    const defs = svg.append('defs')
+    defs.append('filter').attr('id', 'glow').html(`
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    `)
+
+    const linkSel = svg.append('g').selectAll('line')
+      .data(links).enter().append('line')
+      .attr('stroke', d => (d.source as unknown as Node)?.color || '#4a6272')
+      .attr('stroke-opacity', d => d.strength > 0.1 ? 0.08 : 0.15)
+      .attr('stroke-width', d => d.strength > 0.1 ? 0.5 : 1)
+
+    const nodeSel = svg.append('g').selectAll('g')
+      .data(nodes).enter().append('g')
+      .attr('class', 'node')
+      .style('cursor', n => (n as Node).id === '__center__' ? 'default' : 'pointer')
+      .call(
+        d3.drag<SVGGElement, Node>()
+          .on('start', (event, d) => { if (!event.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y })
+          .on('drag',  (event, d) => { d.fx = event.x; d.fy = event.y })
+          .on('end',   (event, d) => { if (!event.active) sim.alphaTarget(0); d.fx = null; d.fy = null })
+      )
+
+    nodeSel.append('circle')
+      .attr('r', n => (n as Node).size)
+      .attr('fill', n => {
+        const node = n as Node
+        if (node.id === '__center__') return 'rgba(255,255,255,0.1)'
+        if (node.id.startsWith('__hub__')) return `${node.color}22`
+        return `${node.color}18`
+      })
+      .attr('stroke', n => (n as Node).color)
+      .attr('stroke-width', n => (n as Node).id.startsWith('__hub__') || (n as Node).id === '__center__' ? 1.5 : 0.8)
+      .attr('stroke-opacity', n => (n as Node).id === '__center__' ? 1 : 0.5)
+      .on('mouseover', function(_, n) {
+        const node = n as Node
+        d3.select(this).attr('stroke-opacity', 1).attr('filter', 'url(#glow)')
+          .transition().duration(200).attr('r', node.size * 1.4)
+      })
+      .on('mouseout', function(_, n) {
+        const node = n as Node
+        d3.select(this).attr('stroke-opacity', node.id === '__center__' ? 1 : 0.5).attr('filter', null)
+          .transition().duration(200).attr('r', node.size)
+      })
+
+    nodeSel.append('text')
+      .text(n => (n as Node).label)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('fill', n => (n as Node).color)
+      .attr('font-size', n => {
+        const node = n as Node
+        if (node.id === '__center__') return '13px'
+        if (node.id.startsWith('__hub__')) return '9px'
+        return '7.5px'
+      })
+      .attr('font-family', 'JetBrains Mono, monospace')
+      .attr('font-weight', n => (n as Node).id === '__center__' ? '700' : '400')
+      .attr('pointer-events', 'none')
+      .attr('opacity', n => {
+        const node = n as Node
+        return node.id === '__center__' || node.id.startsWith('__hub__') ? 1 : 0.8
+      })
+
+    sim.on('tick', () => {
+      linkSel
+        .attr('x1', d => ((d.source as unknown) as Node).x ?? 0).attr('y1', d => ((d.source as unknown) as Node).y ?? 0)
+        .attr('x2', d => ((d.target as unknown) as Node).x ?? 0).attr('y2', d => ((d.target as unknown) as Node).y ?? 0)
+      nodeSel.attr('transform', n => `translate(${(n as Node).x ?? 0},${(n as Node).y ?? 0})`)
+    })
+
+    return () => { sim.stop() }
+  }, [inView])
 
   return (
-    <section id="skills" className="section" ref={ref}>
+    <section id="skills" className="section" ref={sectionRef}>
       <div className="container">
-        <div
-          className={`transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          className="mb-12"
         >
-          <span className="section-heading-tag">{'// NODES'}</span>
-          <h2 className="section-heading gradient-text">Neural Constellation</h2>
-          <div className="fiber-line mt-4" />
-          <p className="text-text-secondary text-xs md:text-sm font-mono mt-4 max-w-xl">
-            A force-directed map of skills. Drag nodes to explore connections. Each cluster represents a competency domain.
-          </p>
-        </div>
+          <p className="section-heading-tag">{'// skill.constellation'}</p>
+          <h2 className="section-heading mb-2">
+            <span className="gradient-text">Skills</span>
+          </h2>
+          <p className="text-text-muted text-sm font-mono">Drag nodes · hover to illuminate · connected by expertise</p>
+        </motion.div>
 
-        <div
-            className={`mt-10 rounded-xl overflow-hidden border border-border-glass transition-all duration-700 delay-200 ${
-              visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            }`}
-            style={{ height: 480 }}
-          >
-            <ForceGraph groups={SKILL_GROUPS} />
-          </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={inView ? { opacity: 1, scale: 1 } : {}}
+          transition={{ duration: 0.8, delay: 0.2, ease: [0.22,1,0.36,1] }}
+          className="glass rounded-3xl overflow-hidden"
+          style={{ border: '1px solid rgba(0,245,255,0.08)' }}
+        >
+          <svg ref={svgRef} width="100%" style={{ display: 'block' }} />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.6 }}
+          className="mt-6 flex flex-wrap gap-4 justify-center"
+        >
+          {Object.entries(colorMap).map(([cat, color]) => (
+            <div key={cat} className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }} />
+              <span className="text-[10px] font-mono text-text-muted">{cat}</span>
+            </div>
+          ))}
+        </motion.div>
       </div>
     </section>
   )

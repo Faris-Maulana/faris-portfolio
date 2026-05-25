@@ -1,6 +1,7 @@
 'use client'
+/* eslint-disable react-hooks/immutability */
 
-import { useRef, useMemo, useEffect, useState } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -96,10 +97,10 @@ function NeuralMesh() {
   const meshRef = useRef<THREE.Mesh>(null)
   const mouse   = useRef([0, 0])
   const { viewport } = useThree()
-  const uniformsRef = useRef<{ uTime: { value: number }; uMouse: { value: THREE.Vector2 } }>({
+  const uniforms = useMemo(() => ({
     uTime:  { value: 0 },
     uMouse: { value: new THREE.Vector2(0, 0) },
-  })
+  }), [])
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -113,8 +114,8 @@ function NeuralMesh() {
   }, [])
 
   useFrame(({ clock }) => {
-    uniformsRef.current.uTime.value = clock.getElapsedTime()
-    uniformsRef.current.uMouse.value.lerp(
+    uniforms.uTime.value = clock.getElapsedTime()
+    uniforms.uMouse.value.lerp(
       new THREE.Vector2(mouse.current[0], mouse.current[1]),
       0.05
     )
@@ -126,7 +127,7 @@ function NeuralMesh() {
       <shaderMaterial
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
-        uniforms={uniformsRef.current}
+        uniforms={uniforms}
         transparent
         side={THREE.DoubleSide}
         depthWrite={false}

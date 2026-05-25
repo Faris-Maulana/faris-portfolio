@@ -1,145 +1,131 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Menu, X, Download } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Download } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [activeSection, setActiveSection] = useState('')
+  const [active, setActive] = useState('')
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 })
   const navRef = useRef<HTMLDivElement>(null)
+  const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
-
+    const onScroll = () => {
+      setScrolled(window.scrollY > 40)
       const sections = document.querySelectorAll('section[id]')
       let current = ''
-      sections.forEach((section) => {
-        const top = section.getBoundingClientRect().top
-        if (top < 250) current = section.id
-      })
-      setActiveSection(current)
+      sections.forEach(s => { if (s.getBoundingClientRect().top < 160) current = s.id })
+      setActive(current)
     }
-
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   useEffect(() => {
-    if (!navRef.current || !activeSection) return
-    const activeBtn = navRef.current.querySelector(`[data-section="${activeSection}"]`) as HTMLElement | null
-    if (activeBtn) {
-      const { offsetLeft, offsetWidth } = activeBtn
-      setPillStyle({ left: offsetLeft, width: offsetWidth })
-    }
-  }, [activeSection])
+    const btn = buttonRefs.current.get(active)
+    const nav = navRef.current
+    if (!btn || !nav) { setPillStyle({ left: 0, width: 0 }); return }
+    const nr = nav.getBoundingClientRect()
+    const br = btn.getBoundingClientRect()
+    setPillStyle({ left: br.left - nr.left, width: br.width })
+  }, [active])
 
   const handleNav = (href: string) => {
     setMobileOpen(false)
-    const el = document.querySelector(href)
-    el?.scrollIntoView({ behavior: 'smooth' })
+    document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (
-    <header
-      className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        scrolled ? 'glass border-b border-border-glass' : 'bg-transparent'
-      )}
-    >
-      <nav className="container flex items-center justify-between h-16 md:h-20">
-        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-xl font-display font-bold relative z-10">
-          <span className="text-cyan">F</span>
-          <span className="text-text-primary">M</span>
-          <span className="text-cyan" style={{ animation: 'neonPulse 2s ease-in-out infinite' }}>.</span>
-        </button>
-
-        <div ref={navRef} className="hidden md:flex items-center gap-1 relative">
-          <motion.div
-            className="absolute top-0 h-full rounded-lg bg-cyan/8 border border-cyan/15"
-            animate={{ left: pillStyle.left, width: pillStyle.width }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            style={{ pointerEvents: 'none' }}
-          />
-          {NAV_LINKS.map((link) => (
-            <button
-              key={link.href}
-              data-section={link.href.replace('#', '')}
-              onClick={() => handleNav(link.href)}
-              className={cn(
-                'px-3 py-2 text-xs font-mono rounded-lg transition-all relative z-10',
-                activeSection === link.href.replace('#', '')
-                  ? 'text-cyan'
-                  : 'text-text-muted hover:text-text-primary'
-              )}
-            >
-              {link.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <a
-            href="https://jbcicirrzswhzfabjwiz.supabase.co/storage/v1/object/public/cv/cv/1779442019833-CV_Faris_Maulana_Details.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden md:inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber/30 text-amber font-mono text-xs hover:bg-amber/10 transition-all"
-          >
-            <Download size={12} />
-            CV
-          </a>
-
+    <>
+      <header className={cn('fixed top-0 inset-x-0 z-[100] transition-all duration-400',
+        scrolled ? 'glass border-b border-border-glass py-0' : 'bg-transparent py-1'
+      )}>
+        <nav className="container flex items-center justify-between h-16">
           <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden text-text-primary"
-            aria-label="Toggle menu"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="text-xl font-display font-bold group"
+            data-cursor="hover"
           >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            <span className="neon-cyan group-hover:animate-pulse">F</span>
+            <span className="text-text-primary">M</span>
+            <span className="neon-cyan text-sm">.</span>
           </button>
-        </div>
-      </nav>
+
+          <div ref={navRef} className="hidden md:flex items-center gap-0.5 relative">
+            <motion.div
+              className="absolute top-1 bottom-1 rounded-lg pointer-events-none"
+              style={{ background: 'rgba(0,245,255,0.08)', border: '1px solid rgba(0,245,255,0.15)' }}
+              animate={{ left: pillStyle.left, width: pillStyle.width, opacity: pillStyle.width > 0 ? 1 : 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+            />
+            {NAV_LINKS.map(link => (
+              <button
+                key={link.href}
+                ref={el => { if (el) buttonRefs.current.set(link.href.replace('#',''), el) }}
+                onClick={() => handleNav(link.href)}
+                data-cursor="hover"
+                className={cn(
+                  'relative z-10 px-3.5 py-2 text-[11px] font-mono tracking-wider uppercase transition-colors duration-200',
+                  active === link.href.replace('#','') ? 'text-cyan' : 'text-text-muted hover:text-text-secondary'
+                )}
+              >
+                {link.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="hidden md:flex items-center gap-3">
+            <a href="https://jbcicirrzswhzfabjwiz.supabase.co/storage/v1/object/public/cv/cv/1779442019833-CV_Faris_Maulana_Details.pdf" download data-cursor="hover"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-mono border border-amber/30 text-amber hover:bg-amber/10 transition-all">
+              <Download size={11} /> CV
+            </a>
+          </div>
+
+          <button onClick={() => setMobileOpen(v => !v)} className="md:hidden text-text-secondary" data-cursor="hover">
+            <div className="flex flex-col gap-1.5 w-5">
+              <motion.div animate={{ rotate: mobileOpen ? 45 : 0, y: mobileOpen ? 8 : 0 }} className="h-px bg-current origin-center" />
+              <motion.div animate={{ opacity: mobileOpen ? 0 : 1 }} className="h-px bg-current" />
+              <motion.div animate={{ rotate: mobileOpen ? -45 : 0, y: mobileOpen ? -8 : 0 }} className="h-px bg-current origin-center" />
+            </div>
+          </button>
+        </nav>
+      </header>
 
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden glass border-b border-border-glass"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[99] flex flex-col justify-center items-center"
+            style={{ background: 'rgba(2,4,8,0.97)', backdropFilter: 'blur(20px)' }}
           >
-            <div className="container py-4 space-y-1">
-              {NAV_LINKS.map((link) => (
-                <button
+            <div className="space-y-2 text-center">
+              {NAV_LINKS.map((link, i) => (
+                <motion.div
                   key={link.href}
-                  onClick={() => handleNav(link.href)}
-                  className={cn(
-                    'block w-full text-left px-4 py-2 rounded-lg text-sm font-mono transition-all',
-                    activeSection === link.href.replace('#', '')
-                      ? 'text-cyan bg-cyan/5'
-                      : 'text-text-muted hover:text-text-primary hover:bg-white/5'
-                  )}
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ delay: i * 0.07, duration: 0.4 }}
                 >
-                  {link.label}
-                </button>
+                  <button
+                    onClick={() => handleNav(link.href)}
+                    className="block text-3xl font-display font-bold text-text-secondary hover:text-cyan transition-colors py-2 w-full"
+                    data-cursor="hover"
+                  >
+                    {link.label}
+                  </button>
+                </motion.div>
               ))}
-              <a
-                href="https://jbcicirrzswhzfabjwiz.supabase.co/storage/v1/object/public/cv/cv/1779442019833-CV_Faris_Maulana_Details.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 text-amber font-mono text-sm"
-              >
-                <Download size={14} />
-                Download CV
-              </a>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+    </>
   )
 }

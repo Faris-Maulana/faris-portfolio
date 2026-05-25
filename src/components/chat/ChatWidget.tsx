@@ -35,35 +35,47 @@ export function ChatWidget() {
 
   return (
     <>
-      <button
+      {/* Neural node trigger */}
+      <motion.button
         onClick={toggle}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full glass flex items-center justify-center border border-cyan/30 hover:border-cyan/60 transition-all"
-        style={{ animation: 'neonPulse 3s ease-in-out infinite' }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 flex items-center justify-center"
         aria-label="Toggle AI Chat"
+        data-cursor="hover"
+        style={{ cursor: 'none' }}
       >
-        {isOpen ? (
-          <X size={20} className="text-cyan" />
-        ) : (
+        {/* Orbital rings */}
+        {!isOpen && (
           <>
-            <div className="relative">
-              <Bot size={20} className="text-cyan" />
-              {/* Neural node pulse ring */}
-              <span className="absolute inset-[-4px] rounded-full border border-cyan/40 animate-ping opacity-30" />
-            </div>
-            {hasNewReply && (
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-green rounded-full animate-pulse" />
-            )}
+            <div className="absolute w-14 h-14 rounded-full border border-cyan/15 animate-ping" style={{ animationDuration: '2s' }} />
+            <div className="absolute w-20 h-20 rounded-full border border-cyan/06" />
           </>
         )}
-      </button>
+        {/* Core */}
+        <div className="w-14 h-14 rounded-full glass flex items-center justify-center border border-cyan/30 transition-all duration-300 hover:border-cyan/70" style={{ boxShadow: '0 0 20px rgba(0,245,255,0.15)' }}>
+          {isOpen
+            ? <X size={18} className="text-cyan" />
+            : (
+              <div className="relative">
+                <Bot size={18} className="text-cyan" />
+                {hasNewReply && <span className="absolute -top-2 -right-2 w-2.5 h-2.5 bg-green rounded-full animate-pulse" />}
+              </div>
+            )
+          }
+        </div>
+        {!isOpen && (
+          <span className="absolute -bottom-5 text-[8px] font-mono text-cyan/50 tracking-widest">ARIA</span>
+        )}
+      </motion.button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, scale: 0.85, y: 20, transformOrigin: 'bottom right' }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.85, y: 20 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 28 }}
             className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-32px)] h-[520px] max-h-[calc(100vh-120px)] glass rounded-2xl border border-cyan/20 flex flex-col overflow-hidden"
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-glass">
