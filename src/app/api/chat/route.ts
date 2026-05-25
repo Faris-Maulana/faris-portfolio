@@ -30,6 +30,8 @@ INSTRUCTIONS:
 - Always offer to help with follow-up questions
 - NEVER share personal addresses or sensitive info beyond what's listed above`
 
+const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001'
+
 async function sendToWhatsApp(name: string, message: string, sessionId: string) {
   if (!process.env.FONNTE_TOKEN) return false
   try {
@@ -79,43 +81,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid messages' }, { status: 400 })
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
+    const apiKey = process.env.OPENROUTER_API_KEY
     if (!apiKey) {
       return NextResponse.json({
         reply: "ARIA is currently offline. Faris's AI assistant API key is not configured. Please reach out directly via email at maulanafaris016@gmail.com or WhatsApp at +62-812-8404-9172."
       })
     }
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'https://faris-portfolio-red.vercel.app',
+        'X-Title': 'Faris Maulana Portfolio',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: OPENROUTER_MODEL,
         max_tokens: 400,
-        system: SYSTEM_PROMPT,
-        messages: messages.map((m: { role: string; content: string }) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content
-        }))
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...messages.map((m: { role: string; content: string }) => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content
+          }))
+        ]
       })
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Anthropic API error:', response.status, errorText)
+      console.error('OpenRouter API error:', response.status, errorText)
       return NextResponse.json({ error: 'AI service error' }, { status: 500 })
     }
 
     const data = await response.json()
-    const aiContent = data.content[0]
-    if (aiContent.type !== 'text') {
-      return NextResponse.json({ error: 'Unexpected response type' }, { status: 500 })
-    }
-    const aiReply = aiContent.text
+    const aiReply = data.choices[0]?.message?.content || ''
 
     const supabase = await createServerSupabaseClient()
     const lastUserMessage = messages[messages.length - 1]?.content || ''

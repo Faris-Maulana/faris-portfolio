@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Menu, X, Download } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
@@ -10,6 +10,8 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('')
+  const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 })
+  const navRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,7 +21,7 @@ export function Navbar() {
       let current = ''
       sections.forEach((section) => {
         const top = section.getBoundingClientRect().top
-        if (top < 200) current = section.id
+        if (top < 250) current = section.id
       })
       setActiveSection(current)
     }
@@ -27,6 +29,15 @@ export function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    if (!navRef.current || !activeSection) return
+    const activeBtn = navRef.current.querySelector(`[data-section="${activeSection}"]`) as HTMLElement | null
+    if (activeBtn) {
+      const { offsetLeft, offsetWidth } = activeBtn
+      setPillStyle({ left: offsetLeft, width: offsetWidth })
+    }
+  }, [activeSection])
 
   const handleNav = (href: string) => {
     setMobileOpen(false)
@@ -37,26 +48,31 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-[100] transition-all duration-300',
+        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
         scrolled ? 'glass border-b border-border-glass' : 'bg-transparent'
       )}
     >
       <nav className="container flex items-center justify-between h-16 md:h-20">
-        {/* Logo */}
-        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-xl font-display font-bold">
+        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-xl font-display font-bold relative z-10">
           <span className="text-cyan">F</span>
           <span className="text-text-primary">M</span>
-          <span className="text-cyan animate-pulse">.</span>
+          <span className="text-cyan" style={{ animation: 'neonPulse 2s ease-in-out infinite' }}>.</span>
         </button>
 
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-1">
+        <div ref={navRef} className="hidden md:flex items-center gap-1 relative">
+          <motion.div
+            className="absolute top-0 h-full rounded-lg bg-cyan/8 border border-cyan/15"
+            animate={{ left: pillStyle.left, width: pillStyle.width }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            style={{ pointerEvents: 'none' }}
+          />
           {NAV_LINKS.map((link) => (
             <button
               key={link.href}
+              data-section={link.href.replace('#', '')}
               onClick={() => handleNav(link.href)}
               className={cn(
-                'px-3 py-2 text-xs font-mono rounded-lg transition-all',
+                'px-3 py-2 text-xs font-mono rounded-lg transition-all relative z-10',
                 activeSection === link.href.replace('#', '')
                   ? 'text-cyan'
                   : 'text-text-muted hover:text-text-primary'
@@ -67,7 +83,6 @@ export function Navbar() {
           ))}
         </div>
 
-        {/* CTA + Mobile Toggle */}
         <div className="flex items-center gap-3">
           <a
             href="https://jbcicirrzswhzfabjwiz.supabase.co/storage/v1/object/public/cv/cv/1779442019833-CV_Faris_Maulana_Details.pdf"
@@ -89,7 +104,6 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div

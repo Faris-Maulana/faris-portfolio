@@ -3,9 +3,8 @@ import { Analytics } from '@vercel/analytics/react'
 import { Toaster } from 'sonner'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
-import { ScrollProgress } from '@/components/ui/ScrollProgress'
+import { CustomCursor } from '@/components/ui/CustomCursor'
 import { ChatWidget } from '@/components/chat/ChatWidget'
-import { AnalyticsTracker } from '@/components/AnalyticsTracker'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -35,8 +34,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-full flex flex-col">
-        <AnalyticsTracker />
-        <ScrollProgress />
+        <CustomCursor />
+
+        <div className="ambient-blob ambient-blob-1" />
+        <div className="ambient-blob ambient-blob-2" />
+        <div className="ambient-blob ambient-blob-3" />
+
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

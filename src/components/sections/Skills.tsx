@@ -1,80 +1,56 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { GlassCard } from '@/components/ui/GlassCard'
-import { useScrollAnimation } from '@/hooks/useScrollAnimation'
-import { SKILLS } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 
-const skillColors = {
-  cyan: 'border-cyan/30 text-cyan',
-  green: 'border-green/30 text-green',
-  violet: 'border-violet/30 text-violet',
-  red: 'border-neon-red/30 text-neon-red',
-  amber: 'border-amber/30 text-amber',
-  'cyan-dim': 'border-cyan-dim/30 text-cyan-dim',
-}
+const ForceGraph = dynamic(() => import('@/components/ui/ForceGraph'), { ssr: false })
 
-const glowColors = {
-  cyan: 'shadow-cyan/20',
-  green: 'shadow-green/20',
-  violet: 'shadow-violet/20',
-  red: 'shadow-neon-red/20',
-  amber: 'shadow-amber/20',
-  'cyan-dim': 'shadow-cyan-dim/20',
-}
+const SKILL_GROUPS = [
+  { category: 'LLM & AI', color: '#00f5ff', items: ['LLM Fine-Tuning', 'RAG', 'LangChain', 'LlamaIndex', 'Vector DBs', 'HuggingFace', 'Ollama', 'OpenAI API'] },
+  { category: 'Data Engineering', color: '#39ff14', items: ['Apache Kafka', 'Apache Spark', 'Airflow', 'dbt', 'PostgreSQL', 'MySQL', 'BigQuery', 'Snowflake'] },
+  { category: 'Backend & API', color: '#bf5fff', items: ['Python', 'TypeScript', 'Go', 'FastAPI', 'Express', 'Next.js', 'GraphQL', 'WebSockets'] },
+  { category: 'Smart Contract Security', color: '#ff3e3e', items: ['Solidity', 'Foundry', 'Slither', 'Echidna', 'CTF', 'Auditing'] },
+  { category: 'BI & Visualization', color: '#ffb800', items: ['Tableau', 'Looker', 'Metabase', 'Apache Superset', 'Power BI'] },
+  { category: 'Infrastructure', color: '#00c8d4', items: ['Docker', 'Kubernetes', 'Terraform', 'AWS', 'GCP', 'CI/CD', 'GitHub Actions'] },
+]
 
 export function Skills() {
-  const { ref, inView, variants, staggerVariants, itemVariants } = useScrollAnimation()
+  const ref = useRef<HTMLElement>(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true) },
+      { threshold: 0.15 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   return (
-    <section id="skills" className="section">
-      <div className="container" ref={ref}>
-        <motion.div variants={variants} initial="hidden" animate={inView ? 'visible' : 'hidden'}>
-          <h2 className="text-3xl md:text-4xl font-display font-bold mb-2">
-            <span className="gradient-text">Skills</span> & Expertise
-          </h2>
-          <div className="w-16 h-0.5 bg-cyan/50 mb-12" />
-        </motion.div>
-
-        <motion.div
-          variants={staggerVariants}
-          initial="hidden"
-          animate={inView ? 'visible' : 'hidden'}
-          className="grid md:grid-cols-2 gap-6"
+    <section id="skills" className="section" ref={ref}>
+      <div className="container">
+        <div
+          className={`transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
         >
-          {SKILLS.map((group) => (
-            <motion.div key={group.category} variants={itemVariants}>
-              <GlassCard>
-                <h3 className={cn(
-                  'font-display font-semibold text-sm mb-4',
-                  group.color === 'cyan' && 'text-cyan',
-                  group.color === 'green' && 'text-green',
-                  group.color === 'violet' && 'text-violet',
-                  group.color === 'red' && 'text-neon-red',
-                  group.color === 'amber' && 'text-amber',
-                  group.color === 'cyan-dim' && 'text-cyan-dim',
-                )}>
-                  {group.category}
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {group.items.map((skill) => (
-                    <span
-                      key={skill}
-                      className={cn(
-                        'px-3 py-1 rounded-full border text-xs font-mono transition-all duration-300 cursor-default',
-                        skillColors[group.color as keyof typeof skillColors],
-                        `hover:shadow-lg ${glowColors[group.color as keyof typeof glowColors]} hover:scale-105`
-                      )}
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </GlassCard>
-            </motion.div>
-          ))}
-        </motion.div>
+          <span className="section-heading-tag">{'// NODES'}</span>
+          <h2 className="section-heading gradient-text">Neural Constellation</h2>
+          <div className="fiber-line mt-4" />
+          <p className="text-text-secondary text-xs md:text-sm font-mono mt-4 max-w-xl">
+            A force-directed map of skills. Drag nodes to explore connections. Each cluster represents a competency domain.
+          </p>
+        </div>
+
+        <div
+            className={`mt-10 rounded-xl overflow-hidden border border-border-glass transition-all duration-700 delay-200 ${
+              visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+            }`}
+            style={{ height: 480 }}
+          >
+            <ForceGraph groups={SKILL_GROUPS} />
+          </div>
       </div>
     </section>
   )

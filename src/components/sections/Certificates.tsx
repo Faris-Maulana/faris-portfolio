@@ -98,10 +98,27 @@ export function Certificates() {
                   <p className="text-xs text-text-secondary mb-3">{cert.issuer}</p>
 
                   {cert.image_url && (
-                    <div className="relative aspect-[4/3] rounded-lg overflow-hidden mb-3 bg-deep">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={cert.image_url} alt={cert.title} className="w-full h-full object-contain" />
-                    </div>
+                    <a
+                      href={cert.verify_url || cert.image_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative aspect-[4/3] rounded-lg overflow-hidden mb-3 bg-deep block group"
+                    >
+                      {cert.image_url.endsWith('.pdf') ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-deep group-hover:bg-elevated transition-colors">
+                          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ffb800" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                          </svg>
+                          <span className="text-[10px] font-mono text-amber">View Certificate (PDF)</span>
+                        </div>
+                      ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={cert.image_url} alt={cert.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" />
+                      )}
+                    </a>
                   )}
 
                   <div className="mt-auto flex items-center justify-between">

@@ -35,17 +35,21 @@ export function ChatWidget() {
 
   return (
     <>
-      {/* Floating button */}
       <button
         onClick={toggle}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full glass flex items-center justify-center border border-cyan/30 hover:border-cyan/60 transition-all neon-pulse"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full glass flex items-center justify-center border border-cyan/30 hover:border-cyan/60 transition-all"
+        style={{ animation: 'neonPulse 3s ease-in-out infinite' }}
         aria-label="Toggle AI Chat"
       >
         {isOpen ? (
           <X size={20} className="text-cyan" />
         ) : (
           <>
-            <Bot size={20} className="text-cyan" />
+            <div className="relative">
+              <Bot size={20} className="text-cyan" />
+              {/* Neural node pulse ring */}
+              <span className="absolute inset-[-4px] rounded-full border border-cyan/40 animate-ping opacity-30" />
+            </div>
             {hasNewReply && (
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-green rounded-full animate-pulse" />
             )}
@@ -53,7 +57,6 @@ export function ChatWidget() {
         )}
       </button>
 
-      {/* Chat panel */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -63,7 +66,6 @@ export function ChatWidget() {
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-32px)] h-[520px] max-h-[calc(100vh-120px)] glass rounded-2xl border border-cyan/20 flex flex-col overflow-hidden"
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-glass">
               <div className="flex items-center gap-2">
                 <Bot size={18} className="text-cyan" />
@@ -80,7 +82,6 @@ export function ChatWidget() {
               </button>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {messages.map((msg, i) => (
                 <div key={i} className={cn('flex gap-2', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
@@ -125,7 +126,6 @@ export function ChatWidget() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
             <div className="p-3 border-t border-border-glass">
               <div className="flex gap-2">
                 <input

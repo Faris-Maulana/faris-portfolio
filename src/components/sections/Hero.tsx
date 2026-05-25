@@ -1,97 +1,138 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Mail, ChevronDown, Download } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { ChevronDown, Download } from 'lucide-react'
 import { GithubIcon, LinkedinIcon } from '@/components/ui/Icons'
 import { ParticleField } from '@/components/ui/ParticleField'
-import { TerminalText } from '@/components/ui/TerminalText'
+import { MagneticButton } from '@/components/ui/MagneticButton'
 import { SITE_CONFIG } from '@/lib/constants'
 
 export function Hero() {
+  const glitchRef = useRef<HTMLHeadingElement>(null)
+  const subtitleRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()'
+    let interval: ReturnType<typeof setInterval>
+
+    const startDecode = () => {
+      let iterations = 0
+      const original = SITE_CONFIG.name
+
+      interval = setInterval(() => {
+        if (!glitchRef.current) return
+        glitchRef.current.innerText = original
+          .split('')
+          .map((char, idx) => {
+            if (char === ' ') return ' '
+            if (idx < iterations) return original[idx] as string
+            return chars[Math.floor(Math.random() * chars.length)]
+          })
+          .join('')
+
+        if (iterations >= original.length) clearInterval(interval)
+        iterations += 1 / 3
+      }, 50)
+    }
+
+    startDecode()
+
+    const bootLines = [
+      '[BOOT] 0x7C00 — loading neural fabric kernel...',
+      '[SYS]  CPU: quantum cores detected',
+      '[NET]  synapse links established (43.2 Gbps)',
+      '[SYS]  neural interface ready',
+      '─'.repeat(36),
+    ]
+
+    if (subtitleRef.current) {
+      subtitleRef.current.innerHTML = ''
+      let lineIdx = 0
+      let charIdx = 0
+      let currentLine = ''
+
+      const typeLine = () => {
+        if (!subtitleRef.current) return
+        if (lineIdx >= bootLines.length) return
+
+        const line = bootLines[lineIdx]
+        if (!line) return
+
+        if (charIdx < line.length) {
+          currentLine += line[charIdx]
+          const lines = subtitleRef.current.querySelectorAll('.boot-line')
+          if (lines.length > 0) {
+            lines[lines.length - 1].innerHTML = currentLine + '<span class="term-cursor"></span>'
+          }
+          charIdx++
+          setTimeout(typeLine, 16)
+        } else {
+          const lines = subtitleRef.current.querySelectorAll('.boot-line')
+          if (lines.length > 0) {
+            lines[lines.length - 1].innerHTML = line
+          }
+          lineIdx++
+          charIdx = 0
+          currentLine = ''
+          if (lineIdx < bootLines.length) {
+            const div = document.createElement('div')
+            div.className = 'boot-line font-mono text-[10px] md:text-xs text-text-muted'
+            subtitleRef.current.appendChild(div)
+          }
+          setTimeout(typeLine, 200)
+        }
+      }
+
+      const firstLine = document.createElement('div')
+      firstLine.className = 'boot-line font-mono text-[10px] md:text-xs text-text-muted'
+      subtitleRef.current.appendChild(firstLine)
+      typeLine()
+    }
+
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <ParticleField />
 
       <div className="container relative z-10 text-center">
-        {/* Status badge */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="mb-6"
-        >
-          <span className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs font-mono text-green">
-            <span className="w-2 h-2 rounded-full bg-green animate-pulse" />
-            Available for opportunities
-          </span>
-        </motion.div>
+        <div className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-mono text-green border border-green/20 mb-8">
+          <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
+          SYSTEM ONLINE — accepting connections
+        </div>
 
-        {/* Name */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-5xl md:text-7xl lg:text-8xl font-display font-bold mb-4"
+        <h1
+          ref={glitchRef}
+          data-text={SITE_CONFIG.name}
+          className="glitch text-5xl md:text-7xl lg:text-8xl font-display font-bold mb-6 gradient-text"
+          style={{ minHeight: '1.2em' }}
         >
-          <span className="gradient-text">{SITE_CONFIG.name}</span>
-        </motion.h1>
+          {SITE_CONFIG.name}
+        </h1>
 
-        {/* Typewriter */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="text-xl md:text-2xl font-mono mb-4 h-8"
-        >
-          <TerminalText />
-        </motion.div>
+        <p ref={subtitleRef} className="mb-8 max-w-xl mx-auto" style={{ minHeight: '6em' }} />
 
-        {/* Tagline */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-          className="text-text-secondary text-sm md:text-base max-w-2xl mx-auto mb-8 leading-relaxed"
-        >
-          {SITE_CONFIG.tagline}
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1 }}
-          className="flex flex-wrap items-center justify-center gap-4 mb-12"
-        >
-          <a
-            href="#projects"
-            className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-cyan/10 border border-cyan/30 text-cyan font-mono text-sm hover:bg-cyan/20 transition-all duration-300"
-          >
-            <span className="absolute inset-0 rounded-full bg-cyan/5 blur-xl group-hover:blur-2xl transition-all" />
-            View Projects
-          </a>
-          <a
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
+          <MagneticButton href="#projects" className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-full border border-cyan/40 text-cyan font-mono text-sm hover:bg-cyan/10 transition-all duration-300">
+            <span className="text-cyan">$</span>
+            explore_projects
+          </MagneticButton>
+          <MagneticButton
             href="https://jbcicirrzswhzfabjwiz.supabase.co/storage/v1/object/public/cv/cv/1779442019833-CV_Faris_Maulana_Details.pdf"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-amber/30 text-amber font-mono text-sm hover:bg-amber/10 transition-all duration-300"
+            className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-full border border-amber/30 text-amber font-mono text-sm hover:bg-amber/10 transition-all duration-300"
           >
             <Download size={14} />
-            Download CV
-          </a>
-        </motion.div>
+            download_cv
+          </MagneticButton>
+        </div>
 
-        {/* Social Links */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 1.2 }}
-          className="flex items-center justify-center gap-6"
-        >
+        <div className="flex items-center justify-center gap-6">
           {[
             { icon: GithubIcon, href: SITE_CONFIG.github, label: 'GitHub' },
             { icon: LinkedinIcon, href: SITE_CONFIG.linkedin, label: 'LinkedIn' },
-            { icon: Mail, href: `mailto:${SITE_CONFIG.email}`, label: 'Email' },
           ].map(({ icon: Icon, href, label }) => (
             <a
               key={label}
@@ -101,27 +142,15 @@ export function Hero() {
               className="text-text-muted hover:text-cyan transition-colors duration-300"
               aria-label={label}
             >
-              <Icon size={20} />
+              <Icon size={18} />
             </a>
           ))}
-        </motion.div>
+        </div>
       </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="text-text-muted"
-        >
-          <ChevronDown size={24} />
-        </motion.div>
-      </motion.div>
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+        <ChevronDown size={20} className="text-text-muted animate-bounce" />
+      </div>
     </section>
   )
 }
