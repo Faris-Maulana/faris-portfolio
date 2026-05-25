@@ -2,7 +2,7 @@ export interface ChamberConfig {
   id: string
   label: string
   sectionId: string
-  fogColor: [number, number, number]
+  fogColor: string
   fogDensity: number
   ambientColor: string
   ambientIntensity: number
@@ -17,7 +17,7 @@ export const CHAMBERS: Record<string, ChamberConfig> = {
     id: 'hero',
     label: 'Throne Room',
     sectionId: 'hero',
-    fogColor: [0.01, 0.01, 0.05],
+    fogColor: '#03030d',
     fogDensity: 0.018,
     ambientColor: '#a855f7',
     ambientIntensity: 0.5,
@@ -30,7 +30,7 @@ export const CHAMBERS: Record<string, ChamberConfig> = {
     id: 'about',
     label: 'Archive Chamber',
     sectionId: 'about',
-    fogColor: [0.01, 0.02, 0.06],
+    fogColor: '#03050f',
     fogDensity: 0.015,
     ambientColor: '#38bdf8',
     ambientIntensity: 0.35,
@@ -43,7 +43,7 @@ export const CHAMBERS: Record<string, ChamberConfig> = {
     id: 'experience',
     label: 'Conquest Corridor',
     sectionId: 'experience',
-    fogColor: [0.04, 0.03, 0.01],
+    fogColor: '#0a0803',
     fogDensity: 0.012,
     ambientColor: '#fbbf24',
     ambientIntensity: 0.3,
@@ -56,7 +56,7 @@ export const CHAMBERS: Record<string, ChamberConfig> = {
     id: 'projects',
     label: 'Arsenal Vault',
     sectionId: 'projects',
-    fogColor: [0.02, 0.01, 0.04],
+    fogColor: '#05030a',
     fogDensity: 0.016,
     ambientColor: '#c084fc',
     ambientIntensity: 0.4,
@@ -69,7 +69,7 @@ export const CHAMBERS: Record<string, ChamberConfig> = {
     id: 'skills',
     label: 'Shadow Dominion',
     sectionId: 'skills',
-    fogColor: [0.005, 0.005, 0.03],
+    fogColor: '#010108',
     fogDensity: 0.02,
     ambientColor: '#7c3aed',
     ambientIntensity: 0.3,
@@ -82,7 +82,7 @@ export const CHAMBERS: Record<string, ChamberConfig> = {
     id: 'research',
     label: 'Scroll Chamber',
     sectionId: 'research',
-    fogColor: [0.01, 0.03, 0.05],
+    fogColor: '#03080d',
     fogDensity: 0.014,
     ambientColor: '#22d3ee',
     ambientIntensity: 0.4,
@@ -95,7 +95,7 @@ export const CHAMBERS: Record<string, ChamberConfig> = {
     id: 'certificates',
     label: 'Seals Hall',
     sectionId: 'certificates',
-    fogColor: [0.04, 0.03, 0.005],
+    fogColor: '#0a0801',
     fogDensity: 0.01,
     ambientColor: '#fbbf24',
     ambientIntensity: 0.5,
@@ -108,7 +108,7 @@ export const CHAMBERS: Record<string, ChamberConfig> = {
     id: 'blog',
     label: 'Missive Room',
     sectionId: 'blog',
-    fogColor: [0.03, 0.02, 0.01],
+    fogColor: '#080503',
     fogDensity: 0.012,
     ambientColor: '#f59e0b',
     ambientIntensity: 0.35,
@@ -121,7 +121,7 @@ export const CHAMBERS: Record<string, ChamberConfig> = {
     id: 'contact',
     label: 'Summoning Circle',
     sectionId: 'contact',
-    fogColor: [0.02, 0.005, 0.04],
+    fogColor: '#05010a',
     fogDensity: 0.02,
     ambientColor: '#a855f7',
     ambientIntensity: 0.6,

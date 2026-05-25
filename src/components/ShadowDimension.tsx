@@ -1,50 +1,17 @@
 'use client'
 
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PostProcessing } from '@/components/PostProcessing'
-
-const FOG_COLORS: Record<string, THREE.Color> = {
-  hero: new THREE.Color(0x010105),
-  about: new THREE.Color(0x010206),
-  experience: new THREE.Color(0x040301),
-  projects: new THREE.Color(0x020104),
-  skills: new THREE.Color(0x000103),
-  research: new THREE.Color(0x010305),
-  certificates: new THREE.Color(0x040300),
-  blog: new THREE.Color(0x030201),
-  contact: new THREE.Color(0x020004),
-}
-
-const AMBIENT_COLORS: Record<string, string> = {
-  hero: '#a855f7',
-  about: '#38bdf8',
-  experience: '#fbbf24',
-  projects: '#c084fc',
-  skills: '#7c3aed',
-  research: '#22d3ee',
-  certificates: '#fbbf24',
-  blog: '#f59e0b',
-  contact: '#a855f7',
-}
-
-const AVATAR_URL = 'https://avatars.githubusercontent.com/u/104351844?v=4'
+import { CHAMBERS } from '@/lib/chamberConfig'
 
 function CameraRig() {
   const { camera } = useThree()
-  const yTarget = useRef(0)
-
-  useEffect(() => {
-    function onScroll() {
-      yTarget.current = (window as any).__scrollY ?? 0
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   useFrame((_, delta) => {
-    const targetY = -yTarget.current * 0.002
+    const scrollY = (window as any).__scrollY ?? 0
+    const targetY = -scrollY * 0.002
     camera.position.y += (targetY - camera.position.y) * Math.min(1, delta * 4)
     camera.lookAt(0, camera.position.y, 0)
   })
@@ -57,20 +24,24 @@ function MouseParallax() {
   const rotX = useRef(0)
   const rotY = useRef(0)
 
-  useEffect(() => {
-    function onMouse(e: MouseEvent) {
-      rotX.current = (e.clientY / window.innerHeight - 0.5) * 0.05
-      rotY.current = (e.clientX / window.innerWidth - 0.5) * 0.05
-    }
-    window.addEventListener('mousemove', onMouse)
-    return () => window.removeEventListener('mousemove', onMouse)
-  }, [])
-
   useFrame((_, delta) => {
     const tx = (rotX.current - camera.rotation.x) * 0.05
     const ty = (rotY.current - camera.rotation.y) * 0.05
     camera.rotation.x += tx * Math.min(1, delta * 8)
     camera.rotation.y += ty * Math.min(1, delta * 8)
+  })
+
+  useFrame(() => {
+    const el = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2)
+    if (!el) return
+    const section = el.closest('section')
+    if (section) {
+      const rect = section.getBoundingClientRect()
+      const center = rect.top + rect.height / 2
+      const viewCenter = window.innerHeight / 2
+      const offset = (center - viewCenter) / viewCenter
+      rotX.current = offset * 0.03
+    }
   })
 
   return null
@@ -150,11 +121,10 @@ function RuneCircles() {
 }
 
 function ShadowSoldiers() {
-  const count = 4
   const positions = useMemo(() => {
     const pts: [number, number, number][] = []
-    for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2 + 0.3
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2 + 0.3
       pts.push([Math.cos(angle) * 11, -6, Math.sin(angle) * 11])
     }
     return pts
@@ -169,7 +139,6 @@ function ShadowSoldiers() {
             color="#a855f7"
             transparent
             opacity={0.04}
-            wireframe={false}
           />
         </mesh>
       ))}
@@ -181,10 +150,9 @@ function ShadowParticles() {
   const count = 5000
   const pointsRef = useRef<THREE.Points>(null!)
 
-  const { positions, colors, sizes } = useMemo(() => {
+  const { positions, colors } = useMemo(() => {
     const pos = new Float32Array(count * 3)
     const col = new Float32Array(count * 3)
-    const siz = new Float32Array(count)
     const c = new THREE.Color()
     for (let i = 0; i < count; i++) {
       pos[i * 3] = (Math.random() - 0.5) * 50
@@ -194,10 +162,9 @@ function ShadowParticles() {
       col[i * 3] = c.r
       col[i * 3 + 1] = c.g
       col[i * 3 + 2] = c.b
-      siz[i] = 0.03 + Math.random() * 0.06
     }
-    return { positions: pos, colors: col, sizes: siz }
-  }, [count])
+    return { positions: pos, colors: col }
+  }, [])
 
   useFrame((_, delta) => {
     if (!pointsRef.current) return
@@ -213,18 +180,8 @@ function ShadowParticles() {
   return (
     <points ref={pointsRef}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
-        <bufferAttribute
-          attach="attributes-color"
-          args={[colors, 3]}
-        />
-        <bufferAttribute
-          attach="attributes-size"
-          args={[sizes, 1]}
-        />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        <bufferAttribute attach="attributes-color" args={[colors, 3]} />
       </bufferGeometry>
       <pointsMaterial
         size={0.06}
@@ -239,11 +196,48 @@ function ShadowParticles() {
   )
 }
 
+function SceneController() {
+  const fogRef = useRef<THREE.FogExp2>(null!)
+  const ambientRef = useRef<THREE.AmbientLight>(null!)
+  const lerpColor = useRef(new THREE.Color())
+
+  useFrame(() => {
+    const activeId = (window as any).__activeChamber ?? 'hero'
+    const cfg = CHAMBERS[activeId] ?? CHAMBERS.hero
+
+    if (fogRef.current) {
+      lerpColor.current = new THREE.Color(cfg.fogColor)
+      fogRef.current.color.lerp(lerpColor.current, 0.03)
+      fogRef.current.density += (cfg.fogDensity - fogRef.current.density) * 0.03
+    }
+
+    if (ambientRef.current) {
+      lerpColor.current = new THREE.Color(cfg.ambientColor)
+      ambientRef.current.color.lerp(lerpColor.current, 0.03)
+      ambientRef.current.intensity += (cfg.ambientIntensity - ambientRef.current.intensity) * 0.03
+    }
+  })
+
+  return (
+    <>
+      <fogExp2
+        ref={fogRef}
+        attach="fog"
+        args={[CHAMBERS.hero.fogColor, CHAMBERS.hero.fogDensity]}
+      />
+      <ambientLight
+        ref={ambientRef}
+        color={CHAMBERS.hero.ambientColor}
+        intensity={CHAMBERS.hero.ambientIntensity}
+      />
+    </>
+  )
+}
+
 function SceneContent() {
   return (
     <>
-      <fogExp2 attach="fog" args={[FOG_COLORS.hero, 0.016]} />
-      <ambientLight color="#a855f7" intensity={0.4} />
+      <SceneController />
       <pointLight position={[0, 15, 5]} color="#a855f7" intensity={0.8} distance={40} />
       <pointLight position={[-10, -5, 10]} color="#38bdf8" intensity={0.3} distance={30} />
       <CameraRig />

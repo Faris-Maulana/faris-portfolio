@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { CHAMBERS, type ChamberConfig } from '@/lib/chamberConfig'
 import { audioEngine } from '@/hooks/useAudioEngine'
 
@@ -19,6 +19,7 @@ export function useChamber() {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
               setActiveId(id)
+              ;(window as any).__activeChamber = id
               const cfg = CHAMBERS[id]
               if (cfg) audioEngine.setDroneFrequency(cfg.audioFreq)
             }
