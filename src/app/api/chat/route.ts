@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
         'Content-Type':  'application/json',
         'Authorization': `Bearer ${apiKey}`,
         'HTTP-Referer':  process.env.NEXT_PUBLIC_SITE_URL || 'https://farismaulana.dev',
-        'X-Title':       'Faris Maulana Portfolio — ARIA',
+        'X-Title':       'Faris Maulana Portfolio - ARIA',
       },
       body: JSON.stringify({
         model:       OPENROUTER_MODEL,
