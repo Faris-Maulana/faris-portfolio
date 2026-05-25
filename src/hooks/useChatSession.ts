@@ -85,7 +85,7 @@ export function useChatSession() {
     } catch {
       const errorMsg: ChatMessage = {
         role:    'assistant',
-        content: "Sorry, I couldn't reach the AI service right now. You can email Faris directly at maulanafaris016@gmail.com or WhatsApp +62-812-8404-9172.",
+        content: "Sorry, I couldn't reach the AI service right now. You can email Faris directly at maulanafaris016@gmail.com.",
         ts:      new Date().toISOString(),
       }
       const final = [...updated, errorMsg]

@@ -12,7 +12,7 @@ Faris Maulana — Manager of AI Engineering at PT Trans Indonesia Superkoridor (
 • LLM lifecycle: RLHF, fine-tuning, red-teaming, vLLM inference, guardrails
 • Web3 security researcher: Sherlock, Code4rena, Immunefi (Solidity auditing)
 • Based in Bogor/Jakarta, Indonesia
-• Email: maulanafaris016@gmail.com | WA: +62-812-8404-9172
+• Email: maulanafaris016@gmail.com
 
 ═══ KEY PROJECTS ═══
 1. Text2SQL Multi-Agent Platform (TIS, 2026) — LangGraph + ClickHouse, PP 71/2019 compliant, air-gapped
@@ -58,22 +58,6 @@ const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001'
 
 // ─── Notification helpers ───────────────────────────────────────────────────
 
-async function sendWhatsApp(message: string): Promise<boolean> {
-  if (!process.env.FONNTE_TOKEN) return false
-  try {
-    const res = await fetch('https://api.fonnte.com/send', {
-      method: 'POST',
-      headers: { 'Authorization': process.env.FONNTE_TOKEN },
-      body: new URLSearchParams({
-        target:      process.env.OWNER_WA_NUMBER || '6281284049172',
-        message,
-        countryCode: '62',
-      }),
-    })
-    return res.ok
-  } catch { return false }
-}
-
 async function sendEmail(subject: string, html: string): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) return false
   try {
@@ -87,37 +71,6 @@ async function sendEmail(subject: string, html: string): Promise<boolean> {
     })
     return !error
   } catch { return false }
-}
-
-function formatWAAlert(opts: {
-  sessionId: string; isNew: boolean; visitorEmail?: string; visitorName?: string
-  visitorCompany?: string; purpose?: string; userMessage: string; aiReply: string
-  messageCount: number
-}): string {
-  const { sessionId, isNew, visitorEmail, visitorName, visitorCompany, purpose, userMessage, aiReply, messageCount } = opts
-
-  const header = isNew
-    ? `🆕 *NEW VISITOR — ARIA Chat*`
-    : `💬 *ARIA Chat Update* (msg #${messageCount})`
-
-  const identity = [
-    visitorName    ? `👤 *Name:* ${visitorName}` : null,
-    visitorEmail   ? `📧 *Email:* ${visitorEmail}` : null,
-    visitorCompany ? `🏢 *Company:* ${visitorCompany}` : null,
-    purpose        ? `🎯 *Intent:* ${purpose.toUpperCase()}` : null,
-  ].filter(Boolean).join('\n')
-
-  return [
-    header,
-    `🔑 Session: ${sessionId.slice(0, 8)}`,
-    identity || '🕶️ Identity: Unknown',
-    '',
-    `💬 *Visitor:*\n${userMessage.slice(0, 300)}`,
-    '',
-    `🤖 *ARIA replied:*\n${aiReply.slice(0, 300)}`,
-    '',
-    `_${isNew ? 'First contact' : `Message ${messageCount}`} — reply via email or dashboard_`,
-  ].filter(s => s !== undefined).join('\n')
 }
 
 function formatEmailHTML(opts: {
@@ -179,7 +132,7 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.OPENROUTER_API_KEY
     if (!apiKey) {
       return NextResponse.json({
-        reply: "ARIA is temporarily offline. Please reach out directly: maulanafaris016@gmail.com or WhatsApp +62-812-8404-9172."
+        reply: "ARIA is temporarily offline. Please reach out directly: maulanafaris016@gmail.com."
       })
     }
 
@@ -286,15 +239,6 @@ export async function POST(req: NextRequest) {
       || messageCount % 8 === 0
 
     if (shouldNotify) {
-      const waMessage = formatWAAlert({
-        sessionId, isNew: isNewSession,
-        visitorEmail, visitorName, visitorCompany,
-        purpose: detectedIntent,
-        userMessage: lastUserMsg,
-        aiReply,
-        messageCount,
-      })
-
       const emailHtml = formatEmailHTML({
         sessionId, isNew: isNewSession,
         visitorEmail, visitorName, visitorCompany,
@@ -306,10 +250,7 @@ export async function POST(req: NextRequest) {
         ? `[ARIA] New visitor${visitorName ? ` — ${visitorName}` : ''} (${detectedIntent})`
         : `[ARIA] Chat update${visitorName ? ` from ${visitorName}` : ''} — msg #${messageCount}`
 
-      await Promise.all([
-        sendWhatsApp(waMessage),
-        sendEmail(emailSubject, emailHtml),
-      ])
+      sendEmail(emailSubject, emailHtml)
 
       await supabase
         .from('chat_sessions')
