@@ -14,11 +14,19 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
       infinite: false,
     })
 
+    lenis.on('scroll', (e: { scroll: number }) => {
+      ;(window as any).__scrollY = e.scroll
+    })
+
     function raf(time: number) {
       lenis?.raf(time)
       requestAnimationFrame(raf)
     }
     const rafId = requestAnimationFrame(raf)
+
+    ;(window as any).__isMobile =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(pointer: coarse)').matches
 
     return () => {
       cancelAnimationFrame(rafId)

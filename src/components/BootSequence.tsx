@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { audioEngine } from '@/hooks/useAudioEngine'
 
 export function BootSequence() {
   const [phase, setPhase] = useState<'init' | 'name' | 'tagline' | 'exit' | 'done'>('init')
@@ -21,7 +22,10 @@ export function BootSequence() {
 
     const t1 = setTimeout(() => setPhase('name'),     200)
     const t2 = setTimeout(() => setPhase('tagline'), 1800)
-    const t3 = setTimeout(() => setPhase('exit'),    3400)
+    const t3 = setTimeout(() => {
+      setPhase('exit')
+      audioEngine.playBootCrescendo(3.6)
+    }, 3400)
     const t4 = setTimeout(() => {
       setPhase('done')
       sessionStorage.setItem('shadow_boot_done', '1')

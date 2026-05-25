@@ -6,6 +6,18 @@ import { Download } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
+const CHAMBER_COLORS: Record<string, string> = {
+  hero: '#a855f7',
+  about: '#38bdf8',
+  experience: '#fbbf24',
+  projects: '#c084fc',
+  skills: '#7c3aed',
+  research: '#22d3ee',
+  certificates: '#fbbf24',
+  blog: '#f59e0b',
+  contact: '#a855f7',
+}
+
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -13,6 +25,7 @@ export function Navbar() {
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 })
   const navRef = useRef<HTMLDivElement>(null)
   const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+  const chamberColor = CHAMBER_COLORS[active] ?? '#a855f7'
 
   useEffect(() => {
     const onScroll = () => {
@@ -59,7 +72,10 @@ export function Navbar() {
           <div ref={navRef} className="hidden md:flex items-center gap-0.5 relative">
             <motion.div
               className="absolute top-1 bottom-1 rounded-lg pointer-events-none"
-              style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.15)' }}
+              style={{
+                background: `${chamberColor}15`,
+                border: `1px solid ${chamberColor}30`,
+              }}
               animate={{ left: pillStyle.left, width: pillStyle.width, opacity: pillStyle.width > 0 ? 1 : 0 }}
               transition={{ type: 'spring', stiffness: 400, damping: 35 }}
             />
@@ -69,10 +85,12 @@ export function Navbar() {
                 ref={el => { if (el) buttonRefs.current.set(link.href.replace('#',''), el) }}
                 onClick={() => handleNav(link.href)}
                 data-cursor="hover"
-                className={cn(
-                  'relative z-10 px-3.5 py-2 text-[11px] font-mono tracking-wider uppercase transition-colors duration-200',
-                  active === link.href.replace('#','') ? 'text-monarch' : 'text-text-muted hover:text-text-secondary'
-                )}
+                  className={cn(
+                    'relative z-10 px-3.5 py-2 text-[11px] font-mono tracking-wider uppercase transition-colors duration-200',
+                    active === link.href.replace('#','')
+                      ? 'text-text-primary'
+                      : 'text-text-muted hover:text-text-secondary'
+                  )}
               >
                 {link.label}
               </button>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { ParticleField } from '@/components/ui/ParticleField'
+import { ShadowDimension } from '@/components/ShadowDimension'
 import { Download, ArrowDown } from 'lucide-react'
 import { GithubIcon, LinkedinIcon } from '@/components/ui/Icons'
 import { Mail } from 'lucide-react'
@@ -75,8 +75,8 @@ export function Hero() {
   }, [mx, my])
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-abyss">
-      <ParticleField />
+    <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-abyss">
+      <ShadowDimension />
 
       <motion.div
         style={{ x: layer1x, y: layer1y }}

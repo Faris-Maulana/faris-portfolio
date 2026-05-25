@@ -19,6 +19,16 @@ export function SectionDivider({ label }: { label?: string }) {
           transformOrigin: 'center',
         }}
       />
+      {inView && (
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24"
+          style={{
+            animation: 'ringBurst 1.2s ease-out forwards',
+            border: '1px solid rgba(168,85,247,0.3)',
+            borderRadius: '50%',
+          }}
+        />
+      )}
       <motion.div
         initial={{ opacity: 0, rotate: 0, scale: 0 }}
         animate={inView ? { opacity: 1, rotate: 45, scale: 1 } : {}}

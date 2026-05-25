@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { audioEngine } from '@/hooks/useAudioEngine'
 
 export function CustomCursor() {
   const coreRef  = useRef<HTMLDivElement>(null)
@@ -9,15 +10,38 @@ export function CustomCursor() {
   const pos      = useRef({ x: -100, y: -100 })
   const ring     = useRef({ x: -100, y: -100 })
   const light    = useRef({ x: -100, y: -100 })
+  const hovered  = useRef(false)
+  const trailIdx = useRef(0)
+
+  function spawnParticle(x: number, y: number) {
+    const p = document.createElement('div')
+    p.className = 'cursor-particle'
+    p.style.left = `${x}px`
+    p.style.top = `${y}px`
+    document.body.appendChild(p)
+    requestAnimationFrame(() => p.classList.add('out'))
+    setTimeout(() => p.remove(), 600)
+  }
 
   useEffect(() => {
+    let throttle = 0
     const onMove = (e: MouseEvent) => {
       pos.current = { x: e.clientX, y: e.clientY }
       const el = document.elementFromPoint(e.clientX, e.clientY)
-      const hover = el?.closest('a, button, [data-cursor="hover"], input, textarea')
-      ringRef.current?.classList.toggle('hovering', !!hover)
+      const isHover = !!el?.closest('a, button, [data-cursor="hover"], input, textarea')
+      ringRef.current?.classList.toggle('hovering', isHover)
+      if (isHover && !hovered.current) {
+        hovered.current = true
+        audioEngine.playHover()
+      }
+      if (!isHover) hovered.current = false
+      throttle++
+      if (throttle % 4 === 0) spawnParticle(e.clientX, e.clientY)
     }
     window.addEventListener('mousemove', onMove, { passive: true })
+
+    const onClick = () => audioEngine.playClick()
+    document.addEventListener('mousedown', onClick)
 
     let raf: number
     const tick = () => {
@@ -40,7 +64,11 @@ export function CustomCursor() {
       raf = requestAnimationFrame(tick)
     }
     tick()
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('mousemove', onMove) }
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mousedown', onClick)
+    }
   }, [])
 
   return (

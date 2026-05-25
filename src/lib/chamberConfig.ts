@@ -1,0 +1,133 @@
+export interface ChamberConfig {
+  id: string
+  label: string
+  sectionId: string
+  fogColor: [number, number, number]
+  fogDensity: number
+  ambientColor: string
+  ambientIntensity: number
+  audioFreq: number
+  runeActive: boolean
+  particleColor: string
+  particleSpeed: number
+}
+
+export const CHAMBERS: Record<string, ChamberConfig> = {
+  hero: {
+    id: 'hero',
+    label: 'Throne Room',
+    sectionId: 'hero',
+    fogColor: [0.01, 0.01, 0.05],
+    fogDensity: 0.018,
+    ambientColor: '#a855f7',
+    ambientIntensity: 0.5,
+    audioFreq: 72,
+    runeActive: true,
+    particleColor: '#a855f7',
+    particleSpeed: 0.3,
+  },
+  about: {
+    id: 'about',
+    label: 'Archive Chamber',
+    sectionId: 'about',
+    fogColor: [0.01, 0.02, 0.06],
+    fogDensity: 0.015,
+    ambientColor: '#38bdf8',
+    ambientIntensity: 0.35,
+    audioFreq: 96,
+    runeActive: false,
+    particleColor: '#38bdf8',
+    particleSpeed: 0.2,
+  },
+  experience: {
+    id: 'experience',
+    label: 'Conquest Corridor',
+    sectionId: 'experience',
+    fogColor: [0.04, 0.03, 0.01],
+    fogDensity: 0.012,
+    ambientColor: '#fbbf24',
+    ambientIntensity: 0.3,
+    audioFreq: 110,
+    runeActive: false,
+    particleColor: '#fbbf24',
+    particleSpeed: 0.25,
+  },
+  projects: {
+    id: 'projects',
+    label: 'Arsenal Vault',
+    sectionId: 'projects',
+    fogColor: [0.02, 0.01, 0.04],
+    fogDensity: 0.016,
+    ambientColor: '#c084fc',
+    ambientIntensity: 0.4,
+    audioFreq: 85,
+    runeActive: true,
+    particleColor: '#c084fc',
+    particleSpeed: 0.35,
+  },
+  skills: {
+    id: 'skills',
+    label: 'Shadow Dominion',
+    sectionId: 'skills',
+    fogColor: [0.005, 0.005, 0.03],
+    fogDensity: 0.02,
+    ambientColor: '#7c3aed',
+    ambientIntensity: 0.3,
+    audioFreq: 55,
+    runeActive: false,
+    particleColor: '#7c3aed',
+    particleSpeed: 0.15,
+  },
+  research: {
+    id: 'research',
+    label: 'Scroll Chamber',
+    sectionId: 'research',
+    fogColor: [0.01, 0.03, 0.05],
+    fogDensity: 0.014,
+    ambientColor: '#22d3ee',
+    ambientIntensity: 0.4,
+    audioFreq: 130,
+    runeActive: false,
+    particleColor: '#22d3ee',
+    particleSpeed: 0.2,
+  },
+  certificates: {
+    id: 'certificates',
+    label: 'Seals Hall',
+    sectionId: 'certificates',
+    fogColor: [0.04, 0.03, 0.005],
+    fogDensity: 0.01,
+    ambientColor: '#fbbf24',
+    ambientIntensity: 0.5,
+    audioFreq: 160,
+    runeActive: false,
+    particleColor: '#fbbf24',
+    particleSpeed: 0.1,
+  },
+  blog: {
+    id: 'blog',
+    label: 'Missive Room',
+    sectionId: 'blog',
+    fogColor: [0.03, 0.02, 0.01],
+    fogDensity: 0.012,
+    ambientColor: '#f59e0b',
+    ambientIntensity: 0.35,
+    audioFreq: 140,
+    runeActive: false,
+    particleColor: '#f59e0b',
+    particleSpeed: 0.2,
+  },
+  contact: {
+    id: 'contact',
+    label: 'Summoning Circle',
+    sectionId: 'contact',
+    fogColor: [0.02, 0.005, 0.04],
+    fogDensity: 0.02,
+    ambientColor: '#a855f7',
+    ambientIntensity: 0.6,
+    audioFreq: 65,
+    runeActive: true,
+    particleColor: '#a855f7',
+    particleSpeed: 0.4,
+  },
+}
