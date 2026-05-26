@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 
 const BOOT_LINES = [
@@ -14,11 +14,19 @@ const BOOT_LINES = [
 const TOTAL_DURATION = 2200
 
 export function BootSequence() {
-  const [done, setDone] = useState(false)
+  const [done, setDone] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return !!sessionStorage.getItem('system_boot_done')
+  })
   const [progress, setProgress] = useState(0)
-  const [visible, setVisible] = useState(true)
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return !sessionStorage.getItem('system_boot_done')
+  })
+  const skipRef = useRef(false)
 
   const skip = () => {
+    skipRef.current = true
     sessionStorage.setItem('system_boot_done', '1')
     setDone(true)
     document.body.style.overflow = ''
@@ -26,17 +34,13 @@ export function BootSequence() {
   }
 
   useEffect(() => {
-    const cached = sessionStorage.getItem('system_boot_done')
-    if (cached) {
-      setDone(true)
-      setVisible(false)
-      return
-    }
+    if (done) return
 
     document.body.style.overflow = 'hidden'
 
     const start = performance.now()
     const tick = (now: number) => {
+      if (skipRef.current) return
       const p = Math.min((now - start) / TOTAL_DURATION, 1)
       setProgress(p)
       if (p < 1) requestAnimationFrame(tick)
@@ -52,7 +56,7 @@ export function BootSequence() {
     return () => {
       document.body.style.overflow = ''
     }
-  }, [])
+  }, [done])
 
   if (!visible) return null
 

@@ -4,37 +4,75 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
+function createParticleGeometry(count: number) {
+  const pos = new Float32Array(count * 3)
+  const col = new Float32Array(count * 3)
+  const blue = new THREE.Color('#3b82f6')
+  const purple = new THREE.Color('#a855f7')
+
+  for (let i = 0; i < count; i++) {
+    const radius = 6 + Math.random() * 20
+    const theta = Math.random() * Math.PI * 2
+    const phi = Math.acos(2 * Math.random() - 1)
+
+    pos[i * 3] = radius * Math.sin(phi) * Math.cos(theta)
+    pos[i * 3 + 1] = (Math.random() - 0.5) * 30 - 8
+    pos[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta) - 5
+
+    const mix = Math.random()
+    const c = blue.clone().lerp(purple, mix)
+    col[i * 3] = c.r
+    col[i * 3 + 1] = c.g
+    col[i * 3 + 2] = c.b
+  }
+
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3))
+  return geo
+}
+
+function createStrands() {
+  const result: { points: THREE.Vector3[]; color: string }[] = []
+  const colors = ['#3b82f6', '#60a5fa', '#a855f7', '#7c3aed', '#2563eb']
+
+  for (let s = 0; s < 5; s++) {
+    const pts: THREE.Vector3[] = []
+    const baseY = -s * 2 - 2
+    for (let i = 0; i < 6; i++) {
+      const t = i / 5
+      pts.push(
+        new THREE.Vector3(
+          Math.sin(t * Math.PI * 2 + s) * 3 + (Math.random() - 0.5) * 2,
+          baseY + t * 8 + (Math.random() - 0.5) * 2,
+          Math.cos(t * Math.PI * 2 + s) * 2 + (Math.random() - 0.5) * 2 - 5
+        )
+      )
+    }
+    result.push({ points: pts, color: colors[s % colors.length] })
+  }
+  return result
+}
+
+function createSoldierPositions(): [number, number, number][] {
+  const positions: [number, number, number][] = []
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2
+    const radius = 7 + Math.random() * 3
+    positions.push([
+      Math.cos(angle) * radius,
+      -2 - Math.random() * 6,
+      Math.sin(angle) * radius - 5,
+    ])
+  }
+  return positions
+}
+
 function ArclightParticles({ count = 3000 }) {
   const meshRef = useRef<THREE.Points>(null)
   const clockRef = useRef(0)
 
-  const geometry = useMemo(() => {
-    const pos = new Float32Array(count * 3)
-    const col = new Float32Array(count * 3)
-    const blue = new THREE.Color('#3b82f6')
-    const purple = new THREE.Color('#a855f7')
-
-    for (let i = 0; i < count; i++) {
-      const radius = 6 + Math.random() * 20
-      const theta = Math.random() * Math.PI * 2
-      const phi = Math.acos(2 * Math.random() - 1)
-
-      pos[i * 3] = radius * Math.sin(phi) * Math.cos(theta)
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 30 - 8
-      pos[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta) - 5
-
-      const mix = Math.random()
-      const c = blue.clone().lerp(purple, mix)
-      col[i * 3] = c.r
-      col[i * 3 + 1] = c.g
-      col[i * 3 + 2] = c.b
-    }
-
-    const geo = new THREE.BufferGeometry()
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-    geo.setAttribute('color', new THREE.BufferAttribute(col, 3))
-    return geo
-  }, [count])
+  const geometry = useMemo(() => createParticleGeometry(count), [count])
 
   useFrame((_, delta) => {
     clockRef.current += delta
@@ -69,27 +107,7 @@ function ArclightParticles({ count = 3000 }) {
 function ArclightStrands() {
   const groupRef = useRef<THREE.Group>(null)
 
-  const strands = useMemo(() => {
-    const result: { points: THREE.Vector3[]; color: string }[] = []
-    const colors = ['#3b82f6', '#60a5fa', '#a855f7', '#7c3aed', '#2563eb']
-
-    for (let s = 0; s < 5; s++) {
-      const pts: THREE.Vector3[] = []
-      const baseY = -s * 2 - 2
-      for (let i = 0; i < 6; i++) {
-        const t = i / 5
-        pts.push(
-          new THREE.Vector3(
-            Math.sin(t * Math.PI * 2 + s) * 3 + (Math.random() - 0.5) * 2,
-            baseY + t * 8 + (Math.random() - 0.5) * 2,
-            Math.cos(t * Math.PI * 2 + s) * 2 + (Math.random() - 0.5) * 2 - 5
-          )
-        )
-      }
-      result.push({ points: pts, color: colors[s % colors.length] })
-    }
-    return result
-  }, [])
+  const strands = useMemo(() => createStrands(), [])
 
   const curves = useMemo(
     () =>
@@ -180,19 +198,7 @@ function GateGeometry() {
 function ShadowSoldiers() {
   const groupRef = useRef<THREE.Group>(null)
 
-  const soldierPositions = useMemo(() => {
-    const positions: [number, number, number][] = []
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2
-      const radius = 7 + Math.random() * 3
-      positions.push([
-        Math.cos(angle) * radius,
-        -2 - Math.random() * 6,
-        Math.sin(angle) * radius - 5,
-      ])
-    }
-    return positions
-  }, [])
+  const soldierPositions = useMemo(() => createSoldierPositions(), [])
 
   useFrame((_, delta) => {
     if (groupRef.current) {

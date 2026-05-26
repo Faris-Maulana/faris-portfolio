@@ -1,17 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Bloom, ChromaticAberration, Vignette, Noise } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
 
 export function PostProcessing() {
-  const [enabled, setEnabled] = useState(true)
-
-  useEffect(() => {
-    const isMobile = typeof window !== 'undefined' &&
-      window.matchMedia('(pointer: coarse)').matches
-    setEnabled(!isMobile)
-  }, [])
+  const [enabled] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return !window.matchMedia('(pointer: coarse)').matches
+  })
 
   if (!enabled) return null
 
