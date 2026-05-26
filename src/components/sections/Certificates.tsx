@@ -194,7 +194,7 @@ export function Certificates() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           className="mb-12"
         >
-          <p className="section-heading-tag">// seals.of.authority</p>
+          <p className="section-heading-tag">// TITLES_OBTAINED</p>
           <h2 className="section-heading">
             <span className="gradient-monarch">Certificates</span>
           </h2>

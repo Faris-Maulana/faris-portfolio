@@ -128,7 +128,7 @@ export function QuantPortfolio() {
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
         >
-          <p className="section-heading-tag">{'// scrolls.of.evidence'}</p>
+          <p className="section-heading-tag">{'// COMBAT_RECORDS'}</p>
           <h2 className="section-heading mb-3">
             <span className="gradient-monarch">Quantitative</span> Research Portfolio
           </h2>

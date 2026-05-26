@@ -37,8 +37,16 @@ function NetworkMap() {
             fill={n.primary ? '#a855f7' : 'rgba(168,85,247,0.4)'}
             style={n.primary ? { filter: 'drop-shadow(0 0 4px #a855f7)' } : undefined}
           />
-          <text x={n.x + 8} y={n.y + 4} fill="rgba(168,85,247,0.5)"
-            fontSize="7" fontFamily="JetBrains Mono">{n.label}</text>
+          <text
+            x={n.x + 10} y={n.y + 3}
+            textAnchor="start"
+            fill="rgba(96,165,250,0.55)"
+            fontSize="7"
+            fontFamily="JetBrains Mono, monospace"
+            letterSpacing="0.06em"
+          >
+            <tspan>{n.label}</tspan>
+          </text>
         </g>
       ))}
     </svg>

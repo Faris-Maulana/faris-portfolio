@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -35,8 +35,11 @@
   --color-border-glow:   rgba(168, 85, 247, 0.35);
   --color-border-crown:  rgba(251, 191, 36, 0.40);
 
+  --color-system-blue:     #3b82f6;
+  --color-system-blue-hi:  #60a5fa;
+  --color-system-blue-dim: #2563eb;
+
   --font-display: 'Syne', sans-serif;
-  --font-editorial: 'Cormorant Garamond', serif;
   --font-body:    'Inter', sans-serif;
   --font-mono:    'JetBrains Mono', monospace;
 }
@@ -168,10 +171,7 @@ body {
 }
 .shadow-rise { animation: shadowRise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-@keyframes circleRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes circleRotateRev { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
-.magic-circle { animation: circleRotate 60s linear infinite; }
-.magic-circle-rev { animation: circleRotateRev 80s linear infinite; }
+
 
 .dagger-line {
   position: relative;
@@ -190,12 +190,6 @@ body {
   transform: translateX(-50%);
 }
 
-.editorial {
-  font-family: var(--font-editorial);
-  font-style: italic;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-}
 
 .nameplate {
   font-family: var(--font-display);
@@ -225,10 +219,10 @@ body {
   margin-bottom: 1rem;
 }
 .section-heading-tag::before {
-  content: '\25C6';
-  color: var(--color-monarch);
-  font-size: 0.6rem;
-  filter: drop-shadow(0 0 4px var(--color-monarch));
+  content: '◆';
+  color: var(--color-system-blue);
+  font-size: 0.5rem;
+  filter: drop-shadow(0 0 4px var(--color-system-blue));
 }
 
 .cursor-core {
@@ -312,3 +306,56 @@ body {
 .neon-amber  { color: #ffb800; text-shadow: 0 0 15px rgba(255,184,0,0.6); }
 .neon-violet { color: #bf5fff; text-shadow: 0 0 15px rgba(191,95,255,0.6); }
 .neon-red    { color: #ff3e3e; text-shadow: 0 0 15px rgba(255,62,62,0.6); }
+
+/* ── Zero Limits / Solo Leveling Holographic Tokens ── */
+
+:root {
+  --ease-dogstudio: cubic-bezier(0.19, 1, 0.22, 1);
+  --panel-bg: rgba(8, 17, 25, 0.5);
+  --panel-border: rgba(59, 130, 246, 0.2);
+  --panel-border-active: rgba(59, 130, 246, 0.5);
+}
+
+/* Glitch text reveal */
+@keyframes glitchSwitch {
+  0%   { content: var(--char-0); }
+  10%  { content: var(--char-1); }
+  20%  { content: var(--char-2); }
+  30%  { content: var(--char-3); }
+  40%  { content: var(--char-4); }
+  50%  { content: var(--char-5); }
+  60%  { content: var(--char-6); }
+  70%  { content: var(--char-7); }
+  80%  { content: var(--char-8); }
+  90%  { content: var(--char-9); }
+  100% { content: var(--char-0); }
+}
+
+/* Holographic glow pulse */
+@keyframes holoPulse {
+  0%, 100% { border-color: rgba(59, 130, 246, 0.2); }
+  50%      { border-color: rgba(59, 130, 246, 0.5); }
+}
+
+/* Scan line overlay */
+.scanlines {
+  background-image: repeating-linear-gradient(
+    0deg, transparent, transparent 1px,
+    rgba(59, 130, 246, 0.03) 1px, rgba(59, 130, 246, 0.03) 2px
+  );
+  background-size: 100% 2px;
+}
+
+/* Angled clip paths */
+.clip-angled {
+  clip-path: polygon(0% 0%, 96% 0%, 100% 4%, 100% 100%, 4% 100%, 0% 96%);
+}
+.clip-angled-right {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 96%, 96% 100%, 0% 100%, 0% 4%);
+}
+
+/* Section divider data line */
+.holo-divider-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.3) 50%, transparent 100%);
+}

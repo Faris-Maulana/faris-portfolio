@@ -181,7 +181,7 @@ export function Projects() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           className="mb-10"
         >
-          <p className="section-heading-tag">{'// the.arsenal'}</p>
+          <p className="section-heading-tag">{'// INVENTORY'}</p>
           <h2 className="section-heading mb-6">
             <span className="gradient-monarch">Projects</span>
           </h2>

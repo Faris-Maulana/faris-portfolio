@@ -92,7 +92,7 @@ export function Contact() {
     <section id="contact" className="section">
       <div className="container">
         <div className="mb-12">
-          <p className="section-heading-tag">{'// summon.the.architect'}</p>
+          <p className="section-heading-tag">{'// ISSUE_QUEST'}</p>
           <h2 className="section-heading gradient-monarch">Transmit Message</h2>
           <div className="dagger-line mt-4 w-full" />
         </div>

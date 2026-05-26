@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { ShadowDimension } from '@/components/ShadowDimension'
+import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { Download, ArrowDown } from 'lucide-react'
 import { GithubIcon, LinkedinIcon } from '@/components/ui/Icons'
 import { Mail } from 'lucide-react'
@@ -10,14 +9,33 @@ import { SITE_CONFIG } from '@/lib/constants'
 
 function KineticName({ text }: { text: string }) {
   const words = text.split(' ')
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 800)
+    return () => clearTimeout(t)
+  }, [])
+
   return (
-    <h1 className="nameplate gradient-monarch" style={{ filter: 'drop-shadow(0 0 60px rgba(168,85,247,0.25))' }}>
+    <h1
+      className="nameplate"
+      style={{
+        background: 'linear-gradient(180deg, #f3e8ff 0%, #c084fc 70%, #7c3aed 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+        filter: visible ? 'drop-shadow(0 0 60px rgba(168,85,247,0.4))' : 'none',
+      }}
+    >
       {words.map((word, wi) => (
         <span key={wi} className="kinetic-word in" style={{ marginRight: wi < words.length - 1 ? '0.3em' : 0 }}>
           {word.split('').map((char, ci) => (
             <span
               key={ci}
-              style={{ transitionDelay: `${800 + (wi * word.length + ci) * 60}ms` }}
+              className={visible ? 'opacity-100' : 'opacity-0'}
+              style={{
+                transition: `opacity 0.05s linear ${800 + (wi * word.length + ci) * 40}ms`,
+              }}
             >
               {char}
             </span>
@@ -28,201 +46,348 @@ function KineticName({ text }: { text: string }) {
   )
 }
 
-function EditorialSubtitle({ phrases }: { phrases: string[] }) {
-  const [idx, setIdx] = useState(0)
-  useEffect(() => {
-    const t = setInterval(() => setIdx(i => (i + 1) % phrases.length), 3500)
-    return () => clearInterval(t)
-  }, [phrases.length])
+function StatusWindow() {
   return (
-    <div className="h-8 overflow-hidden relative">
-      {phrases.map((p, i) => (
-        <motion.p
-          key={i}
-          className="editorial text-xl md:text-2xl text-monarch-hi absolute inset-0 flex items-center justify-center"
-          initial={false}
-          animate={{
-            y: i === idx ? 0 : (i < idx ? -30 : 30),
-            opacity: i === idx ? 1 : 0,
+    <motion.div
+      initial={{ opacity: 0, x: 30 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.6, delay: 3.6, ease: [0.19, 1, 0.22, 1] }}
+      className="hidden xl:block absolute right-12 top-1/2 -translate-y-1/2 w-72 z-20"
+      style={{
+        clipPath: 'polygon(0% 0%, 96% 0%, 100% 4%, 100% 100%, 4% 100%, 0% 96%)',
+        border: '1px solid rgba(59,130,246,0.35)',
+        background: 'rgba(8,17,25,0.5)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        boxShadow: '0 0 0.3125rem rgba(59,130,246,0.3), 0 0 0.75rem rgba(59,130,246,0.1)',
+      }}
+    >
+      <div className="px-5 py-4 relative">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(59,130,246,0.03) 1px, rgba(59,130,246,0.03) 2px)',
+            backgroundSize: '100% 2px',
+            opacity: 0.04,
+            mixBlendMode: 'overlay',
           }}
-          transition={{ duration: 0.5, ease: [0.22,1,0.36,1] }}
-        >
-          &ldquo;{p}&rdquo;
-        </motion.p>
-      ))}
-    </div>
+        />
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-system-blue/20 relative">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rotate-45 bg-system-blue" />
+            <span className="font-mono text-[9px] text-system-blue tracking-[0.3em]">STATUS</span>
+          </div>
+          <span className="font-mono text-[8px] text-system-blue/50">LV.MAX</span>
+        </div>
+
+        <div className="space-y-2 font-mono text-[10px] relative">
+          {[
+            { k: 'CLASS',    v: 'AI ARCHITECT', vc: '#c084fc' },
+            { k: 'RANK',     v: 'S',            vc: '#fbbf24' },
+            { k: 'DOMAIN',   v: 'JAKARTA',      vc: '#60a5fa' },
+            { k: 'STATUS',   v: 'AVAILABLE',    vc: '#10b981' },
+            { k: 'AGENTS',   v: '12+',          vc: '#a855f7' },
+          ].map((s, i) => (
+            <motion.div
+              key={s.k}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 3.8 + i * 0.08 }}
+              className="flex items-center justify-between"
+            >
+              <span className="text-system-blue/60 tracking-widest">{s.k}</span>
+              <span style={{ color: s.vc }} className="font-semibold tabular-nums">{s.v}</span>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-system-blue/20 space-y-2 relative">
+          {[
+            { k: 'EXP', val: 0.92, color: '#a855f7' },
+            { k: 'INT', val: 0.96, color: '#60a5fa' },
+          ].map(b => (
+            <div key={b.k} className="space-y-1">
+              <div className="flex justify-between font-mono text-[8px]">
+                <span className="text-system-blue/60 tracking-widest">{b.k}</span>
+                <span style={{ color: b.color }}>{Math.floor(b.val * 100)}/100</span>
+              </div>
+              <div className="h-0.5 bg-system-blue/10 relative overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${b.val * 100}%` }}
+                  transition={{ duration: 1.4, delay: 4.5, ease: [0.19, 1, 0.22, 1] }}
+                  className="absolute inset-y-0 left-0"
+                  style={{ background: b.color, boxShadow: `0 0 6px ${b.color}` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
   )
 }
 
-export function Hero() {
-  const mx = useMotionValue(0)
-  const my = useMotionValue(0)
-  const sx = useSpring(mx, { stiffness: 50, damping: 20 })
-  const sy = useSpring(my, { stiffness: 50, damping: 20 })
+function QuestNotification() {
+  const [show, setShow] = useState(true)
+  return show ? (
+    <motion.div
+      initial={{ opacity: 0, x: 20, y: -10 }}
+      animate={{ opacity: 1, x: 0, y: 0 }}
+      transition={{ duration: 0.4, delay: 5.5 }}
+      className="hidden lg:flex absolute top-24 right-12 z-20 max-w-xs"
+      style={{
+        clipPath: 'polygon(0% 0%, 96% 0%, 100% 4%, 100% 100%, 4% 100%, 0% 96%)',
+        border: '1px solid rgba(168,85,247,0.4)',
+        background: 'rgba(20,10,35,0.6)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+      }}
+    >
+      <div className="relative px-4 py-3 flex items-start gap-3">
+        <div className="font-mono text-[8px] text-monarch tracking-[0.3em] absolute -top-2 left-3 px-2" style={{ background: '#030309' }}>
+          NEW QUEST
+        </div>
+        <div className="text-xs text-text-secondary leading-relaxed pt-1">
+          A new opportunity awaits.<br />
+          <span className="text-monarch-hi">Reach out to accept.</span>
+        </div>
+        <button
+          onClick={() => setShow(false)}
+          className="absolute top-1 right-2 text-monarch/40 hover:text-monarch text-xs"
+          aria-label="Dismiss"
+        >×</button>
+      </div>
+    </motion.div>
+  ) : null
+}
 
-  const layer1x = useTransform(sx, [-0.5, 0.5], ['-20px', '20px'])
-  const layer1y = useTransform(sy, [-0.5, 0.5], ['-12px', '12px'])
-  const layer2x = useTransform(sx, [-0.5, 0.5], ['-8px', '8px'])
-  const layer2y = useTransform(sy, [-0.5, 0.5], ['-5px', '5px'])
+export function Hero() {
+  const [bootLineIdx, setBootLineIdx] = useState(0)
+  const [bootCharIdx, setBootCharIdx] = useState(0)
+  const [bootDone, setBootDone] = useState(false)
+
+  const bootLines = useMemo(() => [
+    '[3D SCENE]     INITIALIZING RENDERER...',
+    '[PARTICLES]    SPAWNING 3000 ARCLIGHT ORBS...',
+    '[CAMERA]       CALIBRATING SPLINE PATH...',
+    '[HOLO UI]      MOUNTING STATUS WINDOW...',
+    '[SYSTEM]       DIMENSION LOCK. READY.',
+  ], [])
 
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      mx.set(e.clientX / window.innerWidth - 0.5)
-      my.set(e.clientY / window.innerHeight - 0.5)
-    }
-    window.addEventListener('mousemove', onMove, { passive: true })
-    return () => window.removeEventListener('mousemove', onMove)
-  }, [mx, my])
+    let i = 0
+    let ci = 0
+    const interval = setInterval(() => {
+      if (ci < bootLines[i].length) {
+        ci++
+        setBootLineIdx(i)
+        setBootCharIdx(ci)
+      } else {
+        i++
+        if (i >= bootLines.length) {
+          clearInterval(interval)
+          setTimeout(() => setBootDone(true), 300)
+          return
+        }
+        ci = 0
+        setBootLineIdx(i)
+        setBootCharIdx(0)
+      }
+    }, 20)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
-    <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-abyss">
-      <ShadowDimension />
-
-      <motion.div
-        style={{ x: layer1x, y: layer1y }}
-        className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1]"
-      >
-        <svg
-          width="900" height="900" viewBox="0 0 900 900"
-          className="magic-circle"
-          style={{ opacity: 0.12, filter: 'drop-shadow(0 0 80px rgba(168,85,247,0.4))' }}
+    <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {!bootDone && (
+        <motion.div
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="absolute inset-0 z-30 flex items-center justify-center"
+          style={{ background: '#030309' }}
         >
-          <circle cx="450" cy="450" r="420" fill="none" stroke="rgba(168,85,247,0.5)" strokeWidth="0.5" strokeDasharray="2 12" />
-          <circle cx="450" cy="450" r="380" fill="none" stroke="rgba(168,85,247,0.4)" strokeWidth="0.5" strokeDasharray="1 20" />
-          <circle cx="450" cy="450" r="340" fill="none" stroke="rgba(168,85,247,0.3)" strokeWidth="0.8" />
-          <circle cx="450" cy="450" r="280" fill="none" stroke="rgba(168,85,247,0.25)" strokeWidth="0.5" strokeDasharray="6 6" />
-          {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
-            <line key={deg} x1="450" y1="450" x2="450" y2="120"
-              stroke="rgba(168,85,247,0.18)" strokeWidth="0.5"
-              transform={`rotate(${deg} 450 450)`} />
-          ))}
-        </svg>
-      </motion.div>
+          <div className="font-mono text-xs" style={{ color: 'rgba(59,130,246,0.6)' }}>
+            <div className="mb-4 tracking-[0.2em] text-system-blue text-[10px]">
+              SYSTEM v4.7 // HUNTER ASSOCIATION
+            </div>
+            <div className="space-y-2">
+              {bootLines.map((line, idx) => {
+              const isCurrent = idx === bootLineIdx
+              const isPast = idx < bootLineIdx
+              const displayText = isPast ? line : isCurrent ? line.slice(0, bootCharIdx) : line.replace(/./g, '·')
+              return (
+                <div key={idx} className="flex gap-2">
+                  <span style={{ color: 'rgba(59,130,246,0.4)' }}>
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
+                  <span style={{ opacity: isPast || isCurrent ? 1 : 0.2 }}>
+                    {displayText}
+                  </span>
+                  {isCurrent && bootCharIdx < line.length && (
+                    <span className="animate-pulse" style={{ color: '#3b82f6' }}>▊</span>
+                  )}
+                </div>
+              )
+            })}
+            </div>
+            <div className="mt-6 h-px" style={{
+              background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent)',
+              transform: `scaleX(${bootDone ? 1 : bootLines.length > 0 ? (bootLineIdx + (bootCharIdx / bootLines[Math.min(bootLineIdx, bootLines.length - 1)].length)) / bootLines.length : 0})`,
+              transformOrigin: 'left',
+              transition: 'transform 0.1s linear',
+            }} />
+          </div>
+        </motion.div>
+      )}
 
-      <motion.div
-        style={{ x: layer2x, y: layer2y }}
-        className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2]"
-      >
-        <svg
-          width="500" height="500" viewBox="0 0 500 500"
-          className="magic-circle-rev"
-          style={{ opacity: 0.18 }}
-        >
-          <circle cx="250" cy="250" r="220" fill="none" stroke="rgba(168,85,247,0.6)" strokeWidth="0.5" strokeDasharray="3 6" />
-          <circle cx="250" cy="250" r="180" fill="none" stroke="rgba(168,85,247,0.4)" strokeWidth="0.5" />
-          {[0, 60, 120, 180, 240, 300].map(deg => (
-            <g key={deg} transform={`rotate(${deg} 250 250) translate(250 40)`}>
-              <rect x="-3" y="-3" width="6" height="6" fill="rgba(168,85,247,0.6)" transform="rotate(45)" />
-            </g>
-          ))}
-        </svg>
-      </motion.div>
-
-      <div className="relative z-10 text-center px-6 max-w-5xl">
+      <div className="absolute inset-6 pointer-events-none z-10">
+        {[
+          { cls: 'top-0 left-0',   br: 'border-t-2 border-l-2' },
+          { cls: 'top-0 right-0',  br: 'border-t-2 border-r-2' },
+          { cls: 'bottom-0 left-0',  br: 'border-b-2 border-l-2' },
+          { cls: 'bottom-0 right-0', br: 'border-b-2 border-r-2' },
+        ].map((c, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={bootDone ? { opacity: 1, scale: 1 } : {}}
+            transition={{ duration: 0.4, delay: 0.2 + i * 0.06 }}
+            className={`absolute w-8 h-8 ${c.cls} ${c.br} border-system-blue/60`}
+          />
+        ))}
 
         <motion.div
-          initial={{ opacity: 0, y: -20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.6, delay: 4.4 }}
-          className="inline-flex items-center gap-3 mb-10"
+          initial={{ opacity: 0, y: -10 }}
+          animate={bootDone ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="absolute top-2 left-12 right-12 flex items-center justify-between font-mono text-[9px] tracking-[0.3em]"
         >
-          <span className="font-mono text-[10px] text-monarch-hi tracking-[0.4em] uppercase opacity-80">
-            ◆ Shadow Architect
+          <span className="text-system-blue/60">DOMAIN.FARIS_MAULANA</span>
+          <span className="text-system-blue/60 flex items-center gap-2">
+            <span className="w-1 h-1 rounded-full bg-green animate-pulse" />
+            ONLINE
           </span>
         </motion.div>
 
-        <div className="mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={bootDone ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="absolute bottom-2 left-12 right-12 flex items-center justify-between font-mono text-[9px] text-system-blue/40 tracking-[0.3em]"
+        >
+          <span>HUNTER.ASSOCIATION // JAKARTA</span>
+          <span className="flex items-center gap-2">
+            <span className="w-4 h-px bg-system-blue/40" />
+            SCROLL TO DESCEND
+            <span className="w-4 h-px bg-system-blue/40" />
+          </span>
+        </motion.div>
+      </div>
+
+      <StatusWindow />
+      <QuestNotification />
+
+      <div className="relative z-20 text-center px-6 max-w-5xl">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={bootDone ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="inline-flex items-center gap-3 mb-8 font-mono text-[10px] tracking-[0.4em] text-system-blue uppercase"
+        >
+          <div className="w-8 h-px bg-system-blue/60" />
+          <span>S-RANK · AI ARCHITECT</span>
+          <div className="w-8 h-px bg-system-blue/60" />
+        </motion.div>
+
+        <div className="mb-8">
           <KineticName text="FARIS MAULANA" />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 5.5 }}
-          className="mb-12"
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={bootDone ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 1.5 }}
+          className="font-mono text-xs md:text-sm text-text-secondary tracking-[0.2em] uppercase mb-12"
         >
-          <EditorialSubtitle phrases={[
-            'Build in the shadows.',
-            'Command the agents.',
-            'Engineer the unseen.',
-            'Architect of intelligence.',
-          ]} />
-        </motion.div>
+          Building autonomous systems · Commanding the agents · Engineering the unseen
+        </motion.p>
 
         <motion.div
           initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ duration: 1, delay: 5.8, ease: [0.22,1,0.36,1] }}
-          className="dagger-line w-64 mx-auto mb-12"
+          animate={bootDone ? { scaleX: 1 } : {}}
+          transition={{ duration: 0.8, delay: 1.8, ease: [0.19, 1, 0.22, 1] }}
+          className="h-px bg-gradient-to-r from-transparent via-monarch to-transparent w-96 max-w-full mx-auto mb-12"
           style={{ transformOrigin: 'center' }}
         />
 
         <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 6 }}
-          className="text-text-secondary text-sm md:text-base max-w-xl mx-auto leading-relaxed mb-12 font-mono"
+          initial={{ opacity: 0 }}
+          animate={bootDone ? { opacity: 1 } : {}}
+          transition={{ duration: 0.6, delay: 2.2 }}
+          className="text-text-secondary text-sm md:text-base max-w-xl mx-auto leading-relaxed mb-10"
         >
           {SITE_CONFIG.tagline}
         </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 6.3 }}
-          className="flex flex-wrap items-center justify-center gap-4 mb-16"
+          animate={bootDone ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, delay: 2.5 }}
+          className="flex flex-wrap items-center justify-center gap-4 mb-14"
         >
           <a
-            href="#projects"
+            href="#about"
             data-cursor="hover"
-            className="group relative inline-flex items-center gap-3 px-8 py-3.5 font-mono text-xs tracking-[0.2em] uppercase clip-dagger transition-all duration-300"
+            className="group relative inline-flex items-center gap-3 px-8 py-3.5 font-mono text-xs tracking-[0.2em] uppercase transition-all duration-200"
             style={{
-              background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(124,58,237,0.08))',
-              border: '1px solid rgba(168,85,247,0.4)',
-              color: '#c084fc',
+              background: 'linear-gradient(135deg, rgba(59,130,246,0.18), rgba(37,99,235,0.08))',
+              border: '1px solid rgba(59,130,246,0.5)',
+              color: '#60a5fa',
+              clipPath: 'polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)',
             }}
           >
-            <span className="relative z-10">View Domain</span>
+            <span>Enter Domain</span>
             <ArrowDown size={13} className="group-hover:translate-y-0.5 transition-transform" />
-            <span className="absolute inset-0 bg-monarch/10 opacity-0 group-hover:opacity-100 transition-opacity" />
           </a>
 
           <a
             href="/cv"
             download
             data-cursor="hover"
-            className="inline-flex items-center gap-3 px-8 py-3.5 font-mono text-xs tracking-[0.2em] uppercase clip-dagger transition-all duration-300 hover:bg-crown/10"
+            className="inline-flex items-center gap-3 px-8 py-3.5 font-mono text-xs tracking-[0.2em] uppercase transition-all duration-200"
             style={{
-              border: '1px solid var(--color-border-crown)',
-              color: 'var(--color-crown)',
+              border: '1px solid rgba(251,191,36,0.45)',
+              color: '#fbbf24',
+              clipPath: 'polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)',
+              background: 'rgba(251,191,36,0.04)',
             }}
           >
             <Download size={13} />
-            Manifesto
+            Hunter Card
           </a>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 6.6 }}
-          className="flex items-center justify-center gap-10"
+          animate={bootDone ? { opacity: 1 } : {}}
+          transition={{ duration: 0.6, delay: 2.8 }}
+          className="flex items-center justify-center gap-12"
         >
           {[
-            { icon: GithubIcon,   href: SITE_CONFIG.github,           label: 'GitHub' },
-            { icon: LinkedinIcon, href: SITE_CONFIG.linkedin,          label: 'LinkedIn' },
-            { icon: Mail,         href: `mailto:${SITE_CONFIG.email}`, label: 'Summon' },
+            { icon: GithubIcon,   href: SITE_CONFIG.github,           label: 'GITHUB' },
+            { icon: LinkedinIcon, href: SITE_CONFIG.linkedin,          label: 'LINKEDIN' },
+            { icon: Mail,         href: `mailto:${SITE_CONFIG.email}`, label: 'CONTACT' },
           ].map(({ icon: Icon, href, label }) => (
             <a
               key={label}
               href={href}
-              target="_blank"
-              rel="noopener noreferrer"
+              target="_blank" rel="noopener noreferrer"
               data-cursor="hover"
-              className="group flex flex-col items-center gap-1.5 text-text-muted hover:text-monarch transition-colors duration-300"
+              className="group flex flex-col items-center gap-2 text-text-muted hover:text-monarch transition-colors duration-300"
             >
-              <Icon size={16} className="group-hover:scale-110 transition-transform" />
-              <span className="text-[8px] font-mono tracking-[0.3em] uppercase opacity-50 group-hover:opacity-100">
+              <Icon size={15} className="group-hover:scale-110 transition-transform" />
+              <span className="text-[8px] font-mono tracking-[0.4em] opacity-50 group-hover:opacity-100">
                 {label}
               </span>
             </a>
@@ -232,20 +397,16 @@ export function Hero() {
 
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 7 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
+        animate={bootDone ? { opacity: 1 } : {}}
+        transition={{ delay: 3.2 }}
+        className="absolute bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
       >
-        <span className="font-mono text-[9px] text-monarch-hi/40 tracking-[0.4em] uppercase">descend</span>
         <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-px h-12 bg-gradient-to-b from-monarch/60 to-transparent"
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          className="w-px h-10 bg-gradient-to-b from-system-blue/60 to-transparent"
         />
       </motion.div>
-
-      <div className="absolute inset-y-0 left-8 w-px bg-gradient-to-b from-transparent via-monarch/15 to-transparent" />
-      <div className="absolute inset-y-0 right-8 w-px bg-gradient-to-b from-transparent via-monarch/15 to-transparent" />
     </section>
   )
 }

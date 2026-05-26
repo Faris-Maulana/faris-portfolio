@@ -1,183 +1,130 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { audioEngine } from '@/hooks/useAudioEngine'
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+
+const BOOT_LINES = [
+  '[3D SCENE]     INITIALIZING RENDERER...',
+  '[PARTICLES]    SPAWNING 3000 ARCLIGHT ORBS...',
+  '[CAMERA]       CALIBRATING SPLINE PATH...',
+  '[HOLO UI]      MOUNTING STATUS WINDOW...',
+  '[SYSTEM]       DIMENSION LOCK. READY.',
+]
+
+const TOTAL_DURATION = 3200
 
 export function BootSequence() {
-  const [phase, setPhase] = useState<'init' | 'name' | 'tagline' | 'exit' | 'done'>('init')
+  const [done, setDone] = useState(false)
   const [progress, setProgress] = useState(0)
-  const hasShown = useRef(false)
+  const [visible, setVisible] = useState(true)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (sessionStorage.getItem('shadow_boot_done') === '1') {
-      setPhase('done')
+    const cached = sessionStorage.getItem('system_boot_done')
+    if (cached) {
+      setDone(true)
+      setVisible(false)
       return
     }
-    if (hasShown.current) return
-    hasShown.current = true
 
     document.body.style.overflow = 'hidden'
 
-    const t1 = setTimeout(() => setPhase('name'),     200)
-    const t2 = setTimeout(() => setPhase('tagline'), 1800)
-    const t3 = setTimeout(() => {
-      setPhase('exit')
-      audioEngine.playBootCrescendo(3.6)
-    }, 3400)
-    const t4 = setTimeout(() => {
-      setPhase('done')
-      sessionStorage.setItem('shadow_boot_done', '1')
-      document.body.style.overflow = ''
-    }, 4400)
-
-    const start = Date.now()
-    const tick = () => {
-      const elapsed = Date.now() - start
-      const p = Math.min(elapsed / 3400, 1)
+    const start = performance.now()
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / TOTAL_DURATION, 1)
       setProgress(p)
       if (p < 1) requestAnimationFrame(tick)
+      else {
+        setDone(true)
+        sessionStorage.setItem('system_boot_done', '1')
+        document.body.style.overflow = ''
+        setTimeout(() => setVisible(false), 400)
+      }
     }
     requestAnimationFrame(tick)
 
-    return () => { [t1,t2,t3,t4].forEach(clearTimeout); document.body.style.overflow = '' }
+    return () => {
+      document.body.style.overflow = ''
+    }
   }, [])
 
-  if (phase === 'done') return null
+  if (!visible) return null
+
+  const currentLine = Math.min(
+    Math.floor((progress * BOOT_LINES.length)),
+    BOOT_LINES.length - 1
+  )
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.8, ease: [0.65,0,0.35,1] }}
-        className="fixed inset-0 z-[1000] bg-abyss flex items-center justify-center overflow-hidden"
-      >
-        <svg
-          className="absolute inset-0 m-auto magic-circle pointer-events-none"
-          width="600" height="600" viewBox="0 0 600 600"
-          style={{ filter: 'drop-shadow(0 0 40px rgba(168,85,247,0.3))' }}
+      {!done && (
+        <motion.div
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+          className="fixed inset-0 z-[1000] flex items-center justify-center"
+          style={{ background: '#030309' }}
         >
-          <circle cx="300" cy="300" r="280" fill="none" stroke="url(#g1)" strokeWidth="0.5" strokeDasharray="2 8" />
-          <circle cx="300" cy="300" r="240" fill="none" stroke="url(#g1)" strokeWidth="0.5" strokeDasharray="1 16" />
-          <circle cx="300" cy="300" r="200" fill="none" stroke="url(#g1)" strokeWidth="0.8" />
-          {[0,60,120,180,240,300].map(deg => (
-            <line key={deg} x1="300" y1="300" x2="300" y2="80"
-              stroke="rgba(168,85,247,0.15)" strokeWidth="0.5"
-              transform={`rotate(${deg} 300 300)`} />
-          ))}
-          <defs>
-            <radialGradient id="g1">
-              <stop offset="0%" stopColor="#a855f7" />
-              <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-        </svg>
+          <div className="font-mono text-xs" style={{ color: 'rgba(59,130,246,0.6)' }}>
+            <div className="mb-6 tracking-[0.2em] text-system-blue text-[10px]">
+              SYSTEM v4.7 // HUNTER ASSOCIATION
+            </div>
 
-        <svg
-          className="absolute inset-0 m-auto magic-circle-rev pointer-events-none"
-          width="360" height="360" viewBox="0 0 360 360"
-        >
-          <circle cx="180" cy="180" r="160" fill="none" stroke="rgba(168,85,247,0.2)" strokeWidth="0.5" strokeDasharray="4 4" />
-          <circle cx="180" cy="180" r="120" fill="none" stroke="rgba(168,85,247,0.3)" strokeWidth="0.5" />
-        </svg>
+            <div className="space-y-2.5 mb-6">
+              {BOOT_LINES.map((line, idx) => (
+                <div key={idx} className="flex gap-3">
+                  <span style={{ color: 'rgba(59,130,246,0.3)' }}>
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
+                  <span
+                    style={{
+                      opacity: idx < currentLine ? 1 : idx === currentLine ? 1 : 0.15,
+                      color: idx <= currentLine ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)',
+                      transition: 'color 0.2s, opacity 0.2s',
+                    }}
+                  >
+                    {line}
+                  </span>
+                  {idx === currentLine && (
+                    <span className="animate-pulse" style={{ color: '#3b82f6' }}>▊</span>
+                  )}
+                </div>
+              ))}
+            </div>
 
-        <div className="relative z-10 text-center">
-          <AnimatePresence mode="wait">
-            {phase === 'name' && (
-              <motion.div
-                key="name"
-                initial={{ opacity: 0, y: 40, filter: 'blur(12px)' }}
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, y: -20, filter: 'blur(8px)' }}
-                transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}
-              >
-                <p className="text-[10px] font-mono text-monarch tracking-[0.4em] uppercase mb-4 opacity-60">
-                  AWAKENING . . .
-                </p>
-                <h1
-                  className="font-display font-extrabold text-5xl md:text-7xl tracking-tight uppercase gradient-monarch"
-                  style={{ letterSpacing: '-0.04em' }}
-                >
-                  Faris Maulana
-                </h1>
-              </motion.div>
-            )}
+            <div className="flex items-center gap-3">
+              <div
+                className="h-px flex-1"
+                style={{
+                  background:
+                    'linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent)',
+                }}
+              />
+              <span className="text-[10px] tracking-[0.2em]" style={{ color: 'rgba(59,130,246,0.4)' }}>
+                {Math.floor(progress * 100)}%
+              </span>
+              <div
+                className="h-px flex-1"
+                style={{
+                  background:
+                    'linear-gradient(270deg, transparent, rgba(59,130,246,0.4), transparent)',
+                }}
+              />
+            </div>
 
-            {phase === 'tagline' && (
-              <motion.div
-                key="tagline"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.6 }}
-                className="space-y-3"
-              >
-                <p className="editorial text-2xl md:text-4xl text-monarch-hi italic">
-                  &ldquo;Build in the shadows.&rdquo;
-                </p>
-                <p className="font-mono text-xs text-text-secondary tracking-[0.3em] uppercase opacity-60">
-                  Shadow Architect
-                </p>
-              </motion.div>
-            )}
-
-            {phase === 'exit' && (
-              <motion.div
-                key="exit"
-                initial={{ opacity: 1, scale: 1 }}
-                animate={{ opacity: 0, scale: 1.3 }}
-                transition={{ duration: 0.8 }}
-                className="font-mono text-xs text-monarch tracking-[0.5em]"
-              >
-                ARISE
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 max-w-[60vw]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-[9px] text-monarch/60 tracking-widest">SUMMONING</span>
-            <span className="font-mono text-[9px] text-monarch/60 tabular-nums">
-              {Math.floor(progress * 100).toString().padStart(3, '0')}%
-            </span>
+            <div className="mt-3 h-0.5 relative overflow-hidden rounded-full"
+              style={{ background: 'rgba(59,130,246,0.1)' }}>
+              <div
+                className="absolute inset-y-0 left-0 rounded-full"
+                style={{
+                  width: `${progress * 100}%`,
+                  background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+                  boxShadow: '0 0 8px rgba(59,130,246,0.4)',
+                  transition: 'width 0.1s linear',
+                }}
+              />
+            </div>
           </div>
-          <div className="h-px bg-monarch/15 relative overflow-hidden">
-            <motion.div
-              className="absolute inset-y-0 left-0 bg-monarch"
-              style={{ width: `${progress * 100}%` }}
-              transition={{ duration: 0, ease: 'linear' }}
-            />
-            <div
-              className="absolute top-0 h-px w-4 bg-white"
-              style={{ left: `${progress * 100}%`, filter: 'blur(2px)' }}
-            />
-          </div>
-        </div>
-
-        <div className="absolute inset-y-0 left-12 w-px bg-gradient-to-b from-transparent via-monarch/20 to-transparent" />
-        <div className="absolute inset-y-0 right-12 w-px bg-gradient-to-b from-transparent via-monarch/20 to-transparent" />
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.6, 0] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 font-mono text-[8px] text-monarch-hi/50 tracking-[0.3em] uppercase"
-          >
-            Click / tap to awaken
-          </motion.p>
-
-        {[
-          'top-8 left-8 border-t border-l',
-          'top-8 right-8 border-t border-r',
-          'bottom-8 left-8 border-b border-l',
-          'bottom-8 right-8 border-b border-r',
-        ].map((cls, i) => (
-          <div key={i} className={`absolute w-6 h-6 ${cls} border-monarch/40`} />
-        ))}
-      </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
   )
 }

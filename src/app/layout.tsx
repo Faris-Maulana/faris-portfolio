@@ -11,14 +11,15 @@ import { ChatWidget } from '@/components/chat/ChatWidget'
 import { BootSequence } from '@/components/BootSequence'
 import { GSAPProvider } from '@/components/GSAPProvider'
 import { AudioProvider } from '@/components/AudioProvider'
+import { Scene3D } from '@/components/3d/Scene3D'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Faris Maulana — Shadow Architect',
-  description: 'AI Engineer & Researcher. Building autonomous systems in the shadows.',
-  keywords: ['AI Engineer', 'LangGraph', 'Shadow Architect', 'RAG', 'Indonesia'],
+  title: 'Faris Maulana — System',
+  description: 'S-Rank AI Architect · Building autonomous systems · Commanding the agents',
+  keywords: ['AI Engineer', 'LangGraph', 'System Architect', 'RAG', 'Indonesia'],
   openGraph: {
-    title: 'Faris Maulana — Shadow Architect',
+    title: 'Faris Maulana — System',
     description: 'Manager AI Engineering @ PT Trans Indonesia Superkoridor.',
     type: 'website',
   },
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AudioProvider>
           <BootSequence />
         </AudioProvider>
+        <Scene3D />
         <CustomCursor />
         <ScrollProgress />
         <AnalyticsTracker />
@@ -39,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <Navbar />
         <SmoothScrollProvider>
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 relative z-5">{children}</main>
         </SmoothScrollProvider>
         <Footer />
         <ChatWidget />

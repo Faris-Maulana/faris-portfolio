@@ -175,7 +175,7 @@ export function Blog() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           className="mb-12"
         >
-          <p className="section-heading-tag">// missives.from.the.shadow</p>
+          <p className="section-heading-tag">// SYSTEM_BROADCASTS</p>
           <h2 className="section-heading">
             <span className="gradient-monarch">Writing</span>
           </h2>

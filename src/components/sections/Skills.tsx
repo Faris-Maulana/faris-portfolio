@@ -138,7 +138,7 @@ export function Skills() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           className="mb-12"
         >
-          <p className="section-heading-tag">{'// shadow.dominion'}</p>
+          <p className="section-heading-tag">{'// SKILL_TREE'}</p>
           <h2 className="section-heading mb-2">
             <span className="gradient-monarch">Skills</span>
           </h2>

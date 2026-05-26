@@ -1,26 +1,28 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { NeonBadge } from '@/components/ui/NeonBadge'
+import { HoloPanel } from '@/components/ui/HoloPanel'
+import { TextReveal } from '@/components/ui/TextReveal'
 import { EXPERIENCES } from '@/lib/constants'
 
 const accentNeon: Record<string, string> = {
-  cyan:   '#00f5ff',
-  green:  '#39ff14',
-  amber:  '#ffb800',
-  violet: '#bf5fff',
-  red:    '#ff3e3e',
-  muted:  '#4a6272',
+  cyan: '#3b82f6',
+  green: '#10b981',
+  amber: '#f59e0b',
+  violet: '#a855f7',
+  red: '#ef4444',
+  muted: '#4a6272',
 }
 
 const statusLabel: Record<string, string> = {
-  cyan:   'ACTIVE',
-  green:  'ACTIVE',
-  amber:  'COMPLETED',
+  cyan: 'ACTIVE',
+  green: 'ACTIVE',
+  amber: 'COMPLETED',
   violet: 'COMPLETED',
-  red:    'ACTIVE',
-  muted:  'ARCHIVED',
+  red: 'ACTIVE',
+  muted: 'ARCHIVED',
 }
 
 function hashFromString(s: string): string {
@@ -30,25 +32,41 @@ function hashFromString(s: string): string {
 }
 
 function hexToRgb(hex: string): string {
-  const r = parseInt(hex.slice(1,3), 16)
-  const g = parseInt(hex.slice(3,5), 16)
-  const b = parseInt(hex.slice(5,7), 16)
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
   return `${r},${g},${b}`
 }
 
 function ExperienceEntry({ exp, index }: { exp: typeof EXPERIENCES[number]; index: number }) {
-  const ref  = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-80px' })
+  const ref = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
   const color = accentNeon[exp.accent] || '#4a6272'
-  const hash  = hashFromString(exp.company + exp.role)
+  const hash = hashFromString(exp.company + exp.role)
   const isActive = exp.accent === 'cyan' || exp.accent === 'green'
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true)
+          obs.unobserve(el)
+        }
+      },
+      { threshold: 0.2, rootMargin: '0px 0px -60px 0px' }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
 
   return (
     <motion.div
       ref={ref}
       initial={{ opacity: 0, x: -24 }}
-      animate={inView ? { opacity: 1, x: 0 } : {}}
-      transition={{ duration: 0.6, delay: index * 0.1, ease: [0.22,1,0.36,1] }}
+      animate={visible ? { opacity: 1, x: 0 } : {}}
+      transition={{ duration: 0.6, delay: index * 0.1, ease: [0.19, 1, 0.22, 1] }}
       className="relative pl-16 group"
     >
       <div className="absolute left-0 top-5 flex flex-col items-center">
@@ -62,21 +80,28 @@ function ExperienceEntry({ exp, index }: { exp: typeof EXPERIENCES[number]; inde
         />
       </div>
 
-      <div
-        className="glass rounded-2xl overflow-hidden transition-all duration-300 group-hover:border-opacity-50 mb-8"
-        style={{ borderLeftColor: color, borderLeftWidth: '1px' }}
+      <HoloPanel
+        glowColor="blue"
+        className="mb-8"
+        style={{
+          borderLeftColor: color,
+          borderLeftWidth: '2px',
+        } as React.CSSProperties}
       >
         <div
-          className="flex items-center justify-between px-5 py-3 border-b border-border-glass"
-          style={{ background: `linear-gradient(135deg, rgba(${hexToRgb(color)},0.06), transparent)` }}
+          className="flex items-center justify-between px-5 py-3"
+          style={{
+            borderBottom: '1px solid rgba(59,130,246,0.1)',
+            background: `linear-gradient(135deg, rgba(${hexToRgb(color)},0.06), transparent)`,
+          }}
         >
           <div className="flex items-center gap-3">
             <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-neon-red/60" />
-              <div className="w-2.5 h-2.5 rounded-full bg-amber/60" />
-              <div className="w-2.5 h-2.5 rounded-full bg-green/60" />
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#ef444480' }} />
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#f59e0b80' }} />
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#10b98180' }} />
             </div>
-            <span className="font-mono text-[10px] text-text-muted tracking-wider">
+            <span className="font-mono text-[10px]" style={{ color: 'rgba(59,130,246,0.5)' }}>
               deploy/{exp.company.toLowerCase().replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '')}
             </span>
           </div>
@@ -91,7 +116,7 @@ function ExperienceEntry({ exp, index }: { exp: typeof EXPERIENCES[number]; inde
             >
               {statusLabel[exp.accent]}
             </span>
-            <span className="font-mono text-[9px] text-text-muted">#{hash}</span>
+            <span className="font-mono text-[9px]" style={{ color: 'rgba(59,130,246,0.4)' }}>#{hash}</span>
           </div>
         </div>
 
@@ -99,15 +124,19 @@ function ExperienceEntry({ exp, index }: { exp: typeof EXPERIENCES[number]; inde
           <div className="mb-4">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <h3
-                  className="text-lg font-display font-semibold mb-0.5"
-                  style={{ color }}
-                >
+                <h3 className="text-lg font-display font-semibold mb-0.5" style={{ color }}>
                   {exp.role}
                 </h3>
                 <p className="text-sm text-text-secondary">{exp.company}</p>
               </div>
-              <span className="font-mono text-xs text-text-muted glass px-3 py-1.5 rounded-full self-start whitespace-nowrap">
+              <span
+                className="font-mono text-xs text-text-muted px-3 py-1.5 whitespace-nowrap"
+                style={{
+                  border: '1px solid rgba(59,130,246,0.15)',
+                  background: 'rgba(8,17,25,0.4)',
+                  clipPath: 'polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%)',
+                }}
+              >
                 {exp.period}
               </span>
             </div>
@@ -130,19 +159,35 @@ function ExperienceEntry({ exp, index }: { exp: typeof EXPERIENCES[number]; inde
             ))}
           </div>
         </div>
-      </div>
+      </HoloPanel>
     </motion.div>
   )
 }
 
 export function Experience() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const lineRef    = useRef<HTMLDivElement>(null)
-  const inView = useInView(sectionRef, { once: true })
+  const lineRef = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(false)
+
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true)
+          obs.unobserve(el)
+        }
+      },
+      { threshold: 0.1 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
 
   useEffect(() => {
     if (!lineRef.current || !inView) return
-    lineRef.current.style.transition = `height 2s cubic-bezier(0.22,1,0.36,1) 0.3s`
+    lineRef.current.style.transition = 'height 2s cubic-bezier(0.19,1,0.22,1) 0.3s'
     lineRef.current.style.height = '100%'
   }, [inView])
 
@@ -155,7 +200,9 @@ export function Experience() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <p className="section-heading-tag">{'// chronicle.of.conquest'}</p>
+          <TextReveal mode="glitch" as="p" className="section-heading-tag">
+            {'// QUEST_LOG'}
+          </TextReveal>
           <h2 className="section-heading">
             <span className="gradient-monarch">Experience</span>
           </h2>
@@ -163,11 +210,15 @@ export function Experience() {
 
         <div className="relative">
           <div className="absolute left-[7px] top-0 w-px overflow-hidden" style={{ height: '100%' }}>
-            <div className="w-full bg-border-glass" style={{ height: '100%' }} />
+            <div className="w-full" style={{ background: 'rgba(59,130,246,0.08)', height: '100%' }} />
             <div
               ref={lineRef}
-              className="absolute top-0 left-0 w-full fiber-line"
-              style={{ height: '0%' }}
+              className="absolute top-0 left-0 w-full"
+              style={{
+                height: '0%',
+                background: 'linear-gradient(180deg, #3b82f6, #a855f7, transparent)',
+                boxShadow: '0 0 8px rgba(59,130,246,0.3)',
+              }}
             />
           </div>
 
