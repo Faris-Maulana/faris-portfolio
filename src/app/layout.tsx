@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/react'
 import { Toaster } from 'sonner'
 import { Navbar } from '@/components/layout/Navbar'
@@ -16,14 +16,18 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Faris Maulana — System',
-  description: 'S-Rank AI Architect · Building autonomous systems · Commanding the agents',
+  description: 'Manager AI Engineering @ PT Trans Indonesia Superkoridor · Multi-agent systems · 25K+ km network',
   keywords: ['AI Engineer', 'LangGraph', 'System Architect', 'RAG', 'Indonesia'],
   openGraph: {
     title: 'Faris Maulana — System',
     description: 'Manager AI Engineering @ PT Trans Indonesia Superkoridor.',
     type: 'website',
   },
+}
+
+export const viewport: Viewport = {
   themeColor: '#030309',
+  colorScheme: 'dark',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

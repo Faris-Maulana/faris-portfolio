@@ -3,8 +3,10 @@
 import { Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { Hero } from '@/components/sections/Hero'
+import { CredibilityStrip } from '@/components/sections/CredibilityStrip'
 import { About } from '@/components/sections/About'
 import { HoloDivider } from '@/components/ui/HoloDivider'
+import { useStaggeredReveal } from '@/hooks/useStaggeredReveal'
 
 const SectionSkeleton = () => (
   <div className="section">
@@ -47,9 +49,11 @@ const SECTIONS = [
 ] as const
 
 export default function Home() {
+  useStaggeredReveal()
   return (
     <>
       <Hero />
+      <CredibilityStrip />
       {SECTIONS.map(({ label, Component }, i) => (
         <div key={label}>
           <HoloDivider label={label} index={i + 1} total={SECTIONS.length} />

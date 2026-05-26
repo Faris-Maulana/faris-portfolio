@@ -1,7 +1,7 @@
 export const SITE_CONFIG = {
   name: 'Faris Maulana',
   title: 'AI Engineer & Researcher',
-  tagline: 'Building production AI systems · Fiber-optic infrastructure intelligence · Web3 security',
+  tagline: 'Building production AI on national fiber · Multi-agent systems · Smart contract security research',
   email: 'maulanafaris016@gmail.com',
   whatsapp: '+6281284049172',
   whatsappLink: 'https://wa.me/6281284049172',

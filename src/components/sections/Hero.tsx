@@ -77,16 +77,16 @@ function StatusWindow() {
             <div className="w-1.5 h-1.5 rotate-45 bg-system-blue" />
             <span className="font-mono text-[9px] text-system-blue tracking-[0.3em]">STATUS</span>
           </div>
-          <span className="font-mono text-[8px] text-system-blue/50">LV.MAX</span>
+          <span className="font-mono text-[8px] text-system-blue/50">ARCHITECT</span>
         </div>
 
         <div className="space-y-2 font-mono text-[10px] relative">
           {[
-            { k: 'CLASS',    v: 'AI ARCHITECT', vc: '#c084fc' },
-            { k: 'RANK',     v: 'S',            vc: '#fbbf24' },
-            { k: 'DOMAIN',   v: 'JAKARTA',      vc: '#60a5fa' },
-            { k: 'STATUS',   v: 'AVAILABLE',    vc: '#10b981' },
-            { k: 'AGENTS',   v: '12+',          vc: '#a855f7' },
+            { k: 'ROLE',     v: 'MANAGER · AI ENG', vc: '#c084fc' },
+            { k: 'COMPANY',  v: 'TIS',              vc: '#60a5fa' },
+            { k: 'NETWORK',  v: '25K+ KM',          vc: '#60a5fa' },
+            { k: 'YEARS',    v: '5+',               vc: '#a855f7' },
+            { k: 'STATUS',   v: 'AVAILABLE',        vc: '#10b981' },
           ].map((s, i) => (
             <motion.div
               key={s.k}
@@ -103,13 +103,13 @@ function StatusWindow() {
 
         <div className="mt-4 pt-3 border-t border-system-blue/20 space-y-2 relative">
           {[
-            { k: 'EXP', val: 0.92, color: '#a855f7' },
-            { k: 'INT', val: 0.96, color: '#60a5fa' },
+            { k: 'PRODUCTION DASHBOARDS', val: 1, max: 1, label: '20+', color: '#a855f7' },
+            { k: 'INDUSTRIES SHIPPED',    val: 4/5, max: 5, label: '4/5', color: '#60a5fa' },
           ].map(b => (
             <div key={b.k} className="space-y-1">
               <div className="flex justify-between font-mono text-[8px]">
                 <span className="text-system-blue/60 tracking-widest">{b.k}</span>
-                <span style={{ color: b.color }}>{Math.floor(b.val * 100)}/100</span>
+                <span style={{ color: b.color }}>{b.label}</span>
               </div>
               <div className="h-0.5 bg-system-blue/10 relative overflow-hidden">
                 <motion.div
@@ -168,11 +168,11 @@ export function Hero() {
   const [bootDone, setBootDone] = useState(false)
 
   const bootLines = useMemo(() => [
-    '[3D SCENE]     INITIALIZING RENDERER...',
-    '[PARTICLES]    SPAWNING 3000 ARCLIGHT ORBS...',
-    '[CAMERA]       CALIBRATING SPLINE PATH...',
-    '[HOLO UI]      MOUNTING STATUS WINDOW...',
-    '[SYSTEM]       DIMENSION LOCK. READY.',
+    'IDENTITY VERIFIED               · FARIS_MAULANA',
+    'ROLE ASSIGNED                   · AI ENGINEER · MANAGER',
+    'DOMAIN ACCESS GRANTED           · JAKARTA NODE',
+    'DEPLOYMENT ACTIVE               · 25,000+ KM NETWORK',
+    'SECURITY CLEARANCE              · PP 71/2019 COMPLIANT',
   ], [])
 
   useEffect(() => {
@@ -209,7 +209,7 @@ export function Hero() {
         >
           <div className="font-mono text-xs" style={{ color: 'rgba(59,130,246,0.6)' }}>
             <div className="mb-4 tracking-[0.2em] text-system-blue text-[10px]">
-              SYSTEM v4.7 // HUNTER ASSOCIATION
+              S-CLASS ARCHITECT // JAKARTA INDONESIA
             </div>
             <div className="space-y-2">
               {bootLines.map((line, idx) => {
@@ -310,7 +310,7 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 1.5 }}
           className="font-mono text-xs md:text-sm text-text-secondary tracking-[0.2em] uppercase mb-12"
         >
-          Building autonomous systems · Commanding the agents · Engineering the unseen
+          Building production AI on national fiber · Multi-agent systems · Smart contract security research
         </motion.p>
 
         <motion.div
@@ -327,7 +327,7 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 2.2 }}
           className="text-text-secondary text-sm md:text-base max-w-xl mx-auto leading-relaxed mb-10"
         >
-          {SITE_CONFIG.tagline}
+          Building production AI on national fiber · Multi-agent systems · Smart contract security research
         </motion.p>
 
         <motion.div

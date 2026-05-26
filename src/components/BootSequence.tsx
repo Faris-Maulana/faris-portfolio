@@ -4,19 +4,26 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 
 const BOOT_LINES = [
-  '[3D SCENE]     INITIALIZING RENDERER...',
-  '[PARTICLES]    SPAWNING 3000 ARCLIGHT ORBS...',
-  '[CAMERA]       CALIBRATING SPLINE PATH...',
-  '[HOLO UI]      MOUNTING STATUS WINDOW...',
-  '[SYSTEM]       DIMENSION LOCK. READY.',
+  'IDENTITY VERIFIED               · FARIS_MAULANA',
+  'ROLE ASSIGNED                   · AI ENGINEER · MANAGER',
+  'DOMAIN ACCESS GRANTED           · JAKARTA NODE',
+  'DEPLOYMENT ACTIVE               · 25,000+ KM NETWORK',
+  'SECURITY CLEARANCE              · PP 71/2019 COMPLIANT',
 ]
 
-const TOTAL_DURATION = 3200
+const TOTAL_DURATION = 2200
 
 export function BootSequence() {
   const [done, setDone] = useState(false)
   const [progress, setProgress] = useState(0)
   const [visible, setVisible] = useState(true)
+
+  const skip = () => {
+    sessionStorage.setItem('system_boot_done', '1')
+    setDone(true)
+    document.body.style.overflow = ''
+    setTimeout(() => setVisible(false), 200)
+  }
 
   useEffect(() => {
     const cached = sessionStorage.getItem('system_boot_done')
@@ -65,7 +72,7 @@ export function BootSequence() {
         >
           <div className="font-mono text-xs" style={{ color: 'rgba(59,130,246,0.6)' }}>
             <div className="mb-6 tracking-[0.2em] text-system-blue text-[10px]">
-              SYSTEM v4.7 // HUNTER ASSOCIATION
+              S-CLASS ARCHITECT // JAKARTA INDONESIA
             </div>
 
             <div className="space-y-2.5 mb-6">
@@ -91,37 +98,32 @@ export function BootSequence() {
             </div>
 
             <div className="flex items-center gap-3">
-              <div
-                className="h-px flex-1"
-                style={{
-                  background:
-                    'linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent)',
-                }}
-              />
+              <div className="h-px flex-1"
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent)' }} />
               <span className="text-[10px] tracking-[0.2em]" style={{ color: 'rgba(59,130,246,0.4)' }}>
                 {Math.floor(progress * 100)}%
               </span>
-              <div
-                className="h-px flex-1"
-                style={{
-                  background:
-                    'linear-gradient(270deg, transparent, rgba(59,130,246,0.4), transparent)',
-                }}
-              />
+              <div className="h-px flex-1"
+                style={{ background: 'linear-gradient(270deg, transparent, rgba(59,130,246,0.4), transparent)' }} />
             </div>
 
             <div className="mt-3 h-0.5 relative overflow-hidden rounded-full"
               style={{ background: 'rgba(59,130,246,0.1)' }}>
-              <div
-                className="absolute inset-y-0 left-0 rounded-full"
+              <div className="absolute inset-y-0 left-0 rounded-full"
                 style={{
                   width: `${progress * 100}%`,
                   background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
                   boxShadow: '0 0 8px rgba(59,130,246,0.4)',
                   transition: 'width 0.1s linear',
-                }}
-              />
+                }} />
             </div>
+
+            <button
+              onClick={skip}
+              className="absolute bottom-6 right-6 font-mono text-[9px] text-system-blue/40 hover:text-system-blue tracking-widest border border-system-blue/20 px-3 py-1 transition-colors"
+            >
+              SKIP ▸
+            </button>
           </div>
         </motion.div>
       )}
