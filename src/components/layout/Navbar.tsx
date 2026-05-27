@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Download } from 'lucide-react'
+import { Download, Crosshair } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { useRoam } from '@/contexts/RoamContext'
 
 const CHAMBER_COLORS: Record<string, string> = {
   hero: '#a855f7',
@@ -19,6 +20,7 @@ const CHAMBER_COLORS: Record<string, string> = {
 }
 
 export function Navbar() {
+  const { isRoaming, setRoaming } = useRoam()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [active, setActive] = useState('')
@@ -98,6 +100,18 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
+            <button
+              onClick={() => setRoaming(!isRoaming)}
+              data-cursor="hover"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-mono border transition-all ${
+                isRoaming
+                  ? 'border-red/50 text-red bg-red/10'
+                  : 'border-system-blue/40 text-system-blue hover:bg-system-blue/10'
+              }`}
+            >
+              <Crosshair size={11} />
+              {isRoaming ? 'EXIT' : 'FREE ROAM'}
+            </button>
             <a href="https://jbcicirrzswhzfabjwiz.supabase.co/storage/v1/object/public/cv/cv/1779442019833-CV_Faris_Maulana_Details.pdf" download data-cursor="hover"
               className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-mono border border-amber/30 text-amber hover:bg-amber/10 transition-all">
               <Download size={11} /> CV

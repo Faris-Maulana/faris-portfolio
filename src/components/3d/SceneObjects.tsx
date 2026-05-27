@@ -3,6 +3,7 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { SectionPillar } from './SectionPillar'
 
 function createParticleGeometry(count: number) {
   const pos = new Float32Array(count * 3)
@@ -254,6 +255,18 @@ function VoidFloor() {
   return <primitive object={gridHelper} />
 }
 
+const SECTION_PILLARS: { sectionId: string; label: string; pos: [number, number, number]; color: string }[] = [
+  { sectionId: 'hero',        label: 'THRONE ROOM',    pos: [0,  0,   8],  color: '#a855f7' },
+  { sectionId: 'about',       label: 'ARCHIVE',        pos: [5,  -1,  6],  color: '#38bdf8' },
+  { sectionId: 'experience',  label: 'QUESTS',         pos: [8,  -2,  3],  color: '#fbbf24' },
+  { sectionId: 'projects',    label: 'INVENTORY',      pos: [7,  -3,  -2], color: '#c084fc' },
+  { sectionId: 'skills',      label: 'SKILL TREE',     pos: [3,  -4,  -5], color: '#7c3aed' },
+  { sectionId: 'research',    label: 'COMBAT LOG',     pos: [-1, -5,  -6], color: '#22d3ee' },
+  { sectionId: 'certificates',label: 'TITLES',         pos: [-5, -6,  -4], color: '#fbbf24' },
+  { sectionId: 'blog',        label: 'BROADCAST',      pos: [-8, -7,  -1], color: '#f59e0b' },
+  { sectionId: 'contact',     label: 'SUMMON',         pos: [-6, -8,  4],  color: '#a855f7' },
+]
+
 export function SceneObjects() {
   return (
     <>
@@ -262,6 +275,16 @@ export function SceneObjects() {
       <GateGeometry />
       <ShadowSoldiers />
       <VoidFloor />
+      {SECTION_PILLARS.map((p, i) => (
+        <SectionPillar
+          key={p.sectionId}
+          position={p.pos}
+          sectionId={p.sectionId}
+          label={p.label}
+          index={i}
+          color={p.color}
+        />
+      ))}
     </>
   )
 }

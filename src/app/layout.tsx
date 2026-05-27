@@ -12,6 +12,9 @@ import { BootSequence } from '@/components/BootSequence'
 import { GSAPProvider } from '@/components/GSAPProvider'
 import { AudioProvider } from '@/components/AudioProvider'
 import { Scene3D } from '@/components/3d/Scene3D'
+import { RoamingUI } from '@/components/3d/RoamingUI'
+import { RoamProvider } from '@/contexts/RoamContext'
+import { ContentLayer } from '@/components/providers/ContentLayer'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -34,10 +37,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-full flex flex-col">
+        <RoamProvider>
         <AudioProvider>
           <BootSequence />
         </AudioProvider>
         <Scene3D />
+        <RoamingUI />
         <CustomCursor />
         <ScrollProgress />
         <AnalyticsTracker />
@@ -45,10 +50,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <Navbar />
         <SmoothScrollProvider>
+          <ContentLayer>
           <main className="flex-1 relative z-5">{children}</main>
+          </ContentLayer>
         </SmoothScrollProvider>
         <Footer />
         <ChatWidget />
+        </RoamProvider>
         <Toaster
           position="bottom-left"
           toastOptions={{
