@@ -134,7 +134,7 @@ export function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[99] flex flex-col justify-center items-center"
+            className="fixed inset-0 z-[99] flex flex-col justify-center items-center px-6"
             style={{ background: 'rgba(2,4,8,0.97)', backdropFilter: 'blur(20px)' }}
           >
             <div className="space-y-2 text-center">
@@ -147,13 +147,29 @@ export function Navbar() {
                 >
                   <button
                     onClick={() => handleNav(link.href)}
-                    className="block text-3xl font-display font-bold text-text-secondary hover:text-monarch transition-colors py-2 w-full"
+                    className="block text-2xl sm:text-3xl font-display font-bold text-text-secondary hover:text-monarch transition-colors py-1.5 sm:py-2 w-full"
                     data-cursor="hover"
                   >
                     {link.label}
                   </button>
                 </motion.div>
               ))}
+            </div>
+            <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
+              <button
+                onClick={() => { setRoaming(!isRoaming); setMobileOpen(false) }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono border border-system-blue/40 text-system-blue hover:bg-system-blue/10 transition-all"
+              >
+                <Crosshair size={12} />
+                {isRoaming ? 'EXIT FREE ROAM' : 'FREE ROAM'}
+              </button>
+              <a
+                href="https://jbcicirrzswhzfabjwiz.supabase.co/storage/v1/object/public/cv/cv/1779442019833-CV_Faris_Maulana_Details.pdf"
+                download
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono border border-amber/30 text-amber hover:bg-amber/10 transition-all"
+              >
+                <Download size={12} /> CV
+              </a>
             </div>
           </motion.div>
         )}

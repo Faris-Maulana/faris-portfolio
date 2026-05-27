@@ -47,7 +47,7 @@ export function HoloDivider({
         }}
       />
       <span
-        className="text-xs font-mono tracking-[0.3em] uppercase whitespace-nowrap"
+        className="text-[10px] sm:text-xs font-mono tracking-[0.15em] sm:tracking-[0.3em] uppercase whitespace-nowrap truncate max-w-[40vw] sm:max-w-none"
         style={{
           color: 'rgba(59,130,246,0.6)',
           opacity: visible ? 1 : 0,
@@ -56,7 +56,7 @@ export function HoloDivider({
         }}
       >
         {String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
-        <span className="mx-3 text-[rgba(59,130,246,0.3)]">{'//'}</span>
+        <span className="mx-2 sm:mx-3 text-[rgba(59,130,246,0.3)]">{'//'}</span>
         {label}
       </span>
       <div

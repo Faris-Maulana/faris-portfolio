@@ -377,7 +377,7 @@ export function Hero() {
           initial={{ opacity: 0 }}
           animate={bootDone ? { opacity: 1 } : {}}
           transition={{ duration: 0.6, delay: 2.8 }}
-          className="flex items-center justify-center gap-12"
+          className="flex items-center justify-center gap-8 sm:gap-12"
         >
           {[
             { icon: GithubIcon,   href: SITE_CONFIG.github,           label: 'GITHUB' },
