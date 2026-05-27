@@ -27,21 +27,33 @@ function KineticName({ text }: { text: string }) {
         filter: visible ? 'drop-shadow(0 0 60px rgba(168,85,247,0.4))' : 'none',
       }}
     >
-      {words.map((word, wi) => (
-        <span key={wi} className="kinetic-word in" style={{ marginRight: wi < words.length - 1 ? '0.3em' : 0 }}>
-          {word.split('').map((char, ci) => (
-            <span
-              key={ci}
-              className={visible ? 'opacity-100' : 'opacity-0'}
-              style={{
-                transition: `opacity 0.05s linear ${800 + (wi * word.length + ci) * 40}ms`,
-              }}
-            >
-              {char}
-            </span>
-          ))}
-        </span>
-      ))}
+      {words.flatMap((word, wi) => {
+        const span = (
+          <span
+            key={`w-${wi}`}
+            className="kinetic-word in"
+            aria-label={word}
+            style={{ display: 'inline-block' }}
+          >
+            {word.split('').map((char, ci) => (
+              <span
+                key={ci}
+                aria-hidden="true"
+                className={visible ? 'opacity-100' : 'opacity-0'}
+                style={{
+                  display: 'inline-block',
+                  transition: `opacity 0.05s linear ${800 + (wi * word.length + ci) * 40}ms`,
+                }}
+              >
+                {char}
+              </span>
+            ))}
+          </span>
+        )
+        return wi < words.length - 1
+          ? [span, <span key={`sp-${wi}`} aria-hidden="true">{' '}</span>]
+          : [span]
+      })}
     </h1>
   )
 }
@@ -262,11 +274,14 @@ export function Hero() {
           animate={bootDone ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.4 }}
           className="absolute top-2 left-12 right-12 flex items-center justify-between font-mono text-[9px] tracking-[0.3em]"
+          role="status"
+          aria-label="Domain Faris Maulana, status online"
         >
           <span className="text-system-blue/60">DOMAIN.FARIS_MAULANA</span>
+          <span aria-hidden="true" className="sr-only"> · </span>
           <span className="text-system-blue/60 flex items-center gap-2">
-            <span className="w-1 h-1 rounded-full bg-green animate-pulse" />
-            ONLINE
+            <span className="w-1 h-1 rounded-full bg-green animate-pulse" aria-hidden="true" />
+            <span>ONLINE</span>
           </span>
         </motion.div>
 
@@ -275,13 +290,12 @@ export function Hero() {
           animate={bootDone ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.4 }}
           className="absolute bottom-2 left-12 right-12 flex items-center justify-between font-mono text-[9px] text-system-blue/40 tracking-[0.3em]"
+          role="status"
+          aria-label="Hunter Association Jakarta — scroll to descend"
         >
           <span>HUNTER.ASSOCIATION // JAKARTA</span>
-          <span className="flex items-center gap-2">
-            <span className="w-4 h-px bg-system-blue/40" />
-            SCROLL TO DESCEND
-            <span className="w-4 h-px bg-system-blue/40" />
-          </span>
+          <span aria-hidden="true" className="sr-only"> · </span>
+          <span>SCROLL TO DESCEND</span>
         </motion.div>
       </div>
 
@@ -320,15 +334,6 @@ export function Hero() {
           className="h-px bg-gradient-to-r from-transparent via-monarch to-transparent w-96 max-w-full mx-auto mb-12"
           style={{ transformOrigin: 'center' }}
         />
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={bootDone ? { opacity: 1 } : {}}
-          transition={{ duration: 0.6, delay: 2.2 }}
-          className="text-text-secondary text-sm md:text-base max-w-xl mx-auto leading-relaxed mb-10"
-        >
-          Building production AI on national fiber · Multi-agent systems · Smart contract security research
-        </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}

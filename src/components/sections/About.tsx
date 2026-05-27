@@ -7,17 +7,24 @@ import { TextReveal } from '@/components/ui/TextReveal'
 
 function Counter({ end, suffix = '', label }: { end: number; suffix?: string; label: string }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [display, setDisplay] = useState('0')
+  const [display, setDisplay] = useState(end.toString())
   const [started, setStarted] = useState(false)
 
   useEffect(() => {
     if (!ref.current || started) return
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setStarted(true)
+      return
+    }
+
     const el = ref.current
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !started) {
           setStarted(true)
           io.disconnect()
+          setDisplay('0')
           const duration = 1600
           const startTime = performance.now()
           const tick = (now: number) => {
@@ -119,7 +126,13 @@ function RadarChart() {
   const polygon = points.map(p => p.join(',')).join(' ')
 
   return (
-    <svg ref={svgRef} viewBox="-10 -10 240 240" className="w-full max-w-[220px]">
+    <svg
+      ref={svgRef}
+      viewBox="-10 -10 240 240"
+      className="w-full max-w-[220px]"
+      role="img"
+      aria-label="Competency radar: AI/LLM 95%, Data Engineering 90%, Security 75%, Machine Learning 85%, Backend 80%, BI 88%"
+    >
       {[0.25, 0.5, 0.75, 1].map(r => (
         <polygon key={r}
           points={Array.from({ length: N }, (_, i) => {
@@ -145,6 +158,7 @@ function RadarChart() {
         return (
           <text key={i} x={lx} y={ly}
             textAnchor="middle"
+            dominantBaseline="middle"
             fill="#60a5fa"
             fontSize="9"
             fontFamily="JetBrains Mono, monospace"

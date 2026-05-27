@@ -19,7 +19,7 @@ function NetworkMap() {
   ]
 
   return (
-    <svg viewBox="0 0 400 140" className="w-full max-w-md opacity-30">
+    <svg viewBox="0 0 400 140" className="w-full max-w-md opacity-30" role="img" aria-label="Network nodes: Jakarta HQ, Bogor, Remote, TIS Network, iMerit">
       {links.map(([a, b], i) => {
         const na = nodes.find(n => n.id === a)!
         const nb = nodes.find(n => n.id === b)!
