@@ -15,11 +15,11 @@ const SECTION_IDS = ['hero', 'about', 'experience', 'projects', 'skills', 'resea
 const PROXIMITY_THRESHOLD = 4
 
 export function FreeRoamControls() {
-  const { camera } = useThree()
+  const { camera, gl } = useThree()
   const keys = useRef({ w: false, a: false, s: false, d: false, shift: false })
   const clock = useRef(0)
   const closestSection = useRef<string | null>(null)
-  const { setActiveSectionId } = useRoam()
+  const { setActiveSectionId, setRoaming } = useRoam()
 
   // Proximity detection: find closest pillar within threshold
   const checkProximity = () => {
@@ -49,6 +49,10 @@ export function FreeRoamControls() {
         case 'KeyS': keys.current.s = true; break
         case 'KeyD': keys.current.d = true; break
         case 'ShiftLeft': case 'ShiftRight': keys.current.shift = true; break
+        case 'Escape':
+          document.exitPointerLock()
+          setRoaming(false)
+          break
       }
     }
     const onKeyUp = (e: KeyboardEvent) => {
@@ -60,13 +64,25 @@ export function FreeRoamControls() {
         case 'ShiftLeft': case 'ShiftRight': keys.current.shift = false; break
       }
     }
+    const onPointerLockChange = () => {
+      if (!document.pointerLockElement) {
+        setRoaming(false)
+      }
+    }
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
+    document.addEventListener('pointerlockchange', onPointerLockChange)
+    // Auto-lock pointer on mount
+    gl.domElement.addEventListener('click', () => {
+      gl.domElement.requestPointerLock()
+    })
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
+      document.removeEventListener('pointerlockchange', onPointerLockChange)
+      if (document.pointerLockElement) document.exitPointerLock()
     }
-  }, [])
+  }, [gl.domElement, setRoaming])
 
   useFrame((_, delta) => {
     clock.current += delta

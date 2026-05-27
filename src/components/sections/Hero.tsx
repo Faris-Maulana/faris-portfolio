@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Download, ArrowDown } from 'lucide-react'
 import { GithubIcon, LinkedinIcon } from '@/components/ui/Icons'
@@ -175,84 +175,8 @@ function QuestNotification() {
 }
 
 export function Hero() {
-  const [bootLineIdx, setBootLineIdx] = useState(0)
-  const [bootCharIdx, setBootCharIdx] = useState(0)
-  const [bootDone, setBootDone] = useState(false)
-
-  const bootLines = useMemo(() => [
-    'IDENTITY VERIFIED               · FARIS_MAULANA',
-    'ROLE ASSIGNED                   · AI ENGINEER · MANAGER',
-    'DOMAIN ACCESS GRANTED           · JAKARTA NODE',
-    'DEPLOYMENT ACTIVE               · 25,000+ KM NETWORK',
-    'SECURITY CLEARANCE              · PP 71/2019 COMPLIANT',
-  ], [])
-
-  useEffect(() => {
-    let i = 0
-    let ci = 0
-    const interval = setInterval(() => {
-      if (ci < bootLines[i].length) {
-        ci++
-        setBootLineIdx(i)
-        setBootCharIdx(ci)
-      } else {
-        i++
-        if (i >= bootLines.length) {
-          clearInterval(interval)
-          setTimeout(() => setBootDone(true), 300)
-          return
-        }
-        ci = 0
-        setBootLineIdx(i)
-        setBootCharIdx(0)
-      }
-    }, 20)
-    return () => clearInterval(interval)
-  }, [bootLines])
-
   return (
     <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {!bootDone && (
-        <motion.div
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="absolute inset-0 z-30 flex items-center justify-center"
-          style={{ background: '#030309' }}
-        >
-          <div className="font-mono text-xs" style={{ color: 'rgba(59,130,246,0.6)' }}>
-            <div className="mb-4 tracking-[0.2em] text-system-blue text-[10px]">
-              S-CLASS ARCHITECT // JAKARTA INDONESIA
-            </div>
-            <div className="space-y-2">
-              {bootLines.map((line, idx) => {
-              const isCurrent = idx === bootLineIdx
-              const isPast = idx < bootLineIdx
-              const displayText = isPast ? line : isCurrent ? line.slice(0, bootCharIdx) : line.replace(/./g, '·')
-              return (
-                <div key={idx} className="flex gap-2">
-                  <span style={{ color: 'rgba(59,130,246,0.4)' }}>
-                    {String(idx + 1).padStart(2, '0')}
-                  </span>
-                  <span style={{ opacity: isPast || isCurrent ? 1 : 0.2 }}>
-                    {displayText}
-                  </span>
-                  {isCurrent && bootCharIdx < line.length && (
-                    <span className="animate-pulse" style={{ color: '#3b82f6' }}>▊</span>
-                  )}
-                </div>
-              )
-            })}
-            </div>
-            <div className="mt-6 h-px" style={{
-              background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent)',
-              transform: `scaleX(${bootDone ? 1 : bootLines.length > 0 ? (bootLineIdx + (bootCharIdx / bootLines[Math.min(bootLineIdx, bootLines.length - 1)].length)) / bootLines.length : 0})`,
-              transformOrigin: 'left',
-              transition: 'transform 0.1s linear',
-            }} />
-          </div>
-        </motion.div>
-      )}
-
       <div className="absolute inset-6 pointer-events-none z-10">
         {[
           { cls: 'top-0 left-0',   br: 'border-t-2 border-l-2' },
@@ -263,7 +187,7 @@ export function Hero() {
           <motion.div
             key={i}
             initial={{ opacity: 0, scale: 0.5 }}
-            animate={bootDone ? { opacity: 1, scale: 1 } : {}}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, delay: 0.2 + i * 0.06 }}
             className={`absolute w-8 h-8 ${c.cls} ${c.br} border-system-blue/60`}
           />
@@ -271,7 +195,7 @@ export function Hero() {
 
         <motion.div
           initial={{ opacity: 0, y: -10 }}
-          animate={bootDone ? { opacity: 1, y: 0 } : {}}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
           className="absolute top-2 left-12 right-12 flex items-center justify-between font-mono text-[9px] tracking-[0.3em]"
           role="status"
@@ -287,7 +211,7 @@ export function Hero() {
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
-          animate={bootDone ? { opacity: 1, y: 0 } : {}}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
           className="absolute bottom-2 left-12 right-12 flex items-center justify-between font-mono text-[9px] text-system-blue/40 tracking-[0.3em]"
           role="status"
@@ -305,7 +229,7 @@ export function Hero() {
       <div className="relative z-20 text-center px-6 max-w-5xl">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
-          animate={bootDone ? { opacity: 1, y: 0 } : {}}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
           className="inline-flex items-center gap-3 mb-8 font-mono text-[10px] tracking-[0.4em] text-system-blue uppercase"
         >
@@ -320,7 +244,7 @@ export function Hero() {
 
         <motion.p
           initial={{ opacity: 0, y: 10 }}
-          animate={bootDone ? { opacity: 1, y: 0 } : {}}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.5 }}
           className="font-mono text-xs md:text-sm text-text-secondary tracking-[0.2em] uppercase mb-12"
         >
@@ -329,7 +253,7 @@ export function Hero() {
 
         <motion.div
           initial={{ scaleX: 0 }}
-          animate={bootDone ? { scaleX: 1 } : {}}
+          animate={{ scaleX: 1 }}
           transition={{ duration: 0.8, delay: 1.8, ease: [0.19, 1, 0.22, 1] }}
           className="h-px bg-gradient-to-r from-transparent via-monarch to-transparent w-96 max-w-full mx-auto mb-12"
           style={{ transformOrigin: 'center' }}
@@ -337,7 +261,7 @@ export function Hero() {
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}
-          animate={bootDone ? { opacity: 1, y: 0 } : {}}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 2.5 }}
           className="flex flex-wrap items-center justify-center gap-4 mb-14"
         >
@@ -375,7 +299,7 @@ export function Hero() {
 
         <motion.div
           initial={{ opacity: 0 }}
-          animate={bootDone ? { opacity: 1 } : {}}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 2.8 }}
           className="flex items-center justify-center gap-8 sm:gap-12"
         >
@@ -402,7 +326,7 @@ export function Hero() {
 
       <motion.div
         initial={{ opacity: 0 }}
-        animate={bootDone ? { opacity: 1 } : {}}
+        animate={{ opacity: 1 }}
         transition={{ delay: 3.2 }}
         className="absolute bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
       >

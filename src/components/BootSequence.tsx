@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getLenis } from '@/components/providers/SmoothScrollProvider'
 
 const BOOT_LINES = [
   'IDENTITY VERIFIED               · FARIS_MAULANA',
@@ -17,30 +18,13 @@ export function BootSequence() {
   const [phase, setPhase] = useState<'boot' | 'done' | 'hidden'>('boot')
   const [progress, setProgress] = useState(0)
   const skipRef = useRef(false)
-  const originalOverflow = useRef('')
 
-  const lockScroll = () => {
-    const html = document.documentElement
-    const body = document.body
-    originalOverflow.current = html.style.overflow || ''
-    html.style.overflow = 'hidden'
-    body.style.overflow = 'hidden'
-    body.style.touchAction = 'none'
-    body.style.overscrollBehavior = 'none'
-  }
-
-  const unlockScroll = () => {
-    const html = document.documentElement
-    const body = document.body
-    html.style.overflow = originalOverflow.current
-    body.style.overflow = ''
-    body.style.touchAction = ''
-    body.style.overscrollBehavior = ''
-  }
-
-  const preventScroll = (e: Event) => {
-    if (skipRef.current) return
-    e.preventDefault()
+  const bootDone = () => {
+    skipRef.current = true
+    sessionStorage.setItem('system_boot_done', '1')
+    ;(window as any).__bootLocked = false
+    getLenis()?.start()
+    setPhase('hidden')
   }
 
   useEffect(() => {
@@ -50,17 +34,29 @@ export function BootSequence() {
       return
     }
 
-    lockScroll()
+    // Lock: CSS + native events + Lenis
+    const html = document.documentElement
+    const body = document.body
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    body.style.touchAction = 'none'
+    body.style.overscrollBehavior = 'none'
+    ;(window as any).__bootLocked = true
+
+    const preventScroll = (e: Event) => { e.preventDefault() }
     window.addEventListener('wheel', preventScroll, { passive: false })
     window.addEventListener('touchmove', preventScroll, { passive: false })
 
     const keyHandler = (e: KeyboardEvent) => {
-      const scrollKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'PageUp', 'PageDown', 'Home', 'End']
-      if (scrollKeys.includes(e.key)) {
+      if (['ArrowUp', 'ArrowDown', ' ', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) {
         e.preventDefault()
       }
     }
     window.addEventListener('keydown', keyHandler)
+
+    // Stop Lenis if already initialized
+    const lenis = getLenis()
+    if (lenis) lenis.stop()
 
     const start = performance.now()
     const tick = (now: number) => {
@@ -68,34 +64,29 @@ export function BootSequence() {
       const p = Math.min((now - start) / TOTAL_DURATION, 1)
       setProgress(p)
       if (p >= 1) {
-        sessionStorage.setItem('system_boot_done', '1')
-        unlockScroll()
-        window.removeEventListener('wheel', preventScroll)
-        window.removeEventListener('touchmove', preventScroll)
-        window.removeEventListener('keydown', keyHandler)
-        setPhase('done')
-        setTimeout(() => setPhase('hidden'), 400)
+        bootDone()
+        cleanup()
       } else {
         requestAnimationFrame(tick)
       }
     }
     requestAnimationFrame(tick)
 
-    return () => {
-      unlockScroll()
+    const cleanup = () => {
+      html.style.overflow = ''
+      body.style.overflow = ''
+      body.style.touchAction = ''
+      body.style.overscrollBehavior = ''
       window.removeEventListener('wheel', preventScroll)
       window.removeEventListener('touchmove', preventScroll)
       window.removeEventListener('keydown', keyHandler)
     }
+
+    return cleanup
   }, [])
 
   const skip = () => {
-    skipRef.current = true
-    sessionStorage.setItem('system_boot_done', '1')
-    unlockScroll()
-    window.removeEventListener('wheel', preventScroll)
-    window.removeEventListener('touchmove', preventScroll)
-    setPhase('hidden')
+    bootDone()
   }
 
   if (phase === 'hidden') return null

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect, useRef } from 'react'
 import { useRoam } from '@/contexts/RoamContext'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -17,6 +18,18 @@ const SECTION_CONTENT: Record<string, { title: string; desc: string }> = {
 
 export function RoamingUI() {
   const { isRoaming, activeSectionId, setRoaming } = useRoam()
+  const [showGuide, setShowGuide] = useState(false)
+  const prevRoaming = useRef(false)
+
+  useEffect(() => {
+    if (isRoaming && !prevRoaming.current) {
+      setShowGuide(true)
+      const timer = setTimeout(() => setShowGuide(false), 5000)
+      prevRoaming.current = true
+      return () => clearTimeout(timer)
+    }
+    if (!isRoaming) prevRoaming.current = false
+  }, [isRoaming])
 
   if (!isRoaming) return null
 
@@ -36,10 +49,49 @@ export function RoamingUI() {
         {/* Help text */}
         <div className="absolute bottom-12 left-1/2 -translate-x-1/2">
           <div className="font-mono text-[10px] text-system-blue/50 tracking-wider text-center">
-            <span className="text-system-blue/70">W A S D</span> · walk · <span className="text-system-blue/70">MOUSE</span> · look · <span className="text-system-blue/70">SHIFT</span> · sprint
+            <span className="text-system-blue/70">W A S D</span> · walk · <span className="text-system-blue/70">MOUSE</span> · look · <span className="text-system-blue/70">SHIFT</span> · sprint · <span className="text-red/70">ESC</span> · exit
           </div>
         </div>
       </div>
+
+      {/* Control guide modal on roam entry */}
+      <AnimatePresence>
+        {showGuide && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none"
+          >
+            <div
+              className="pointer-events-auto px-8 py-6 font-mono text-center"
+              style={{
+                background: 'rgba(8,17,25,0.85)',
+                border: '1px solid rgba(59,130,246,0.3)',
+                clipPath: 'polygon(0% 0%, 97% 0%, 100% 3%, 100% 100%, 3% 100%, 0% 97%)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+              }}
+            >
+              <div className="text-[10px] tracking-[0.4em] text-system-blue/70 mb-4">
+                FREE ROAM — CONTROLS
+              </div>
+              <div className="space-y-2 text-[11px] text-text-secondary">
+                <div><span className="text-system-blue/70">W A S D</span> — Walk</div>
+                <div><span className="text-system-blue/70">MOUSE</span> — Look around</div>
+                <div><span className="text-system-blue/70">SHIFT</span> — Sprint</div>
+                <div className="pt-2 border-t border-system-blue/20 mt-2">
+                  <span className="text-red/70">ESC</span> — Exit free roam
+                </div>
+              </div>
+              <div className="mt-4 text-[8px] text-system-blue/40 tracking-wider">
+                Click the scene to enable mouse look
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Section info popup */}
       <AnimatePresence>
