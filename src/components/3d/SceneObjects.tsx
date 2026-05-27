@@ -201,7 +201,7 @@ function ShadowSoldiers() {
 
   const soldierPositions = useMemo(() => createSoldierPositions(), [])
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     if (groupRef.current) {
       groupRef.current.children.forEach((child, i) => {
         child.position.y += Math.sin(Date.now() * 0.001 + i) * 0.001

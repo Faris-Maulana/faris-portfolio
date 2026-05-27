@@ -16,10 +16,8 @@ interface SectionPillarProps {
 
 export function SectionPillar({ position, sectionId, label, index, color = '#3b82f6' }: SectionPillarProps) {
   const groupRef = useRef<THREE.Group>(null)
-  const glowRef = useRef<THREE.Mesh>(null)
-  const { activeSectionId, setActiveSectionId, setRoaming } = useRoam()
+  const { activeSectionId, setRoaming } = useRoam()
   const clockRef = useRef(0)
-  const hovered = useRef(false)
 
   const handleClick = () => {
     setRoaming(false)
@@ -31,18 +29,18 @@ export function SectionPillar({ position, sectionId, label, index, color = '#3b8
   const isActive = activeSectionId === sectionId
   const pillarColor = new THREE.Color(color)
 
+  // deterministic segment generation — each pillar gets unique geometry via index
   const segments = useMemo(() => {
-    const arr: { y: number; w: number; speed: number; phase: number }[] = []
+    const arr: { y: number; w: number }[] = []
     for (let i = 0; i < 6; i++) {
+      const seed = (index * 7 + i * 13) % 10
       arr.push({
         y: -4 + i * 1.6,
-        w: 0.6 + Math.random() * 0.3,
-        speed: 0.8 + Math.random() * 0.4,
-        phase: Math.random() * Math.PI * 2,
+        w: 0.6 + (seed % 4) * 0.075,
       })
     }
     return arr
-  }, [])
+  }, [index])
 
   useFrame((_, delta) => {
     clockRef.current += delta
@@ -70,8 +68,6 @@ export function SectionPillar({ position, sectionId, label, index, color = '#3b8
         <mesh
           key={i}
           position={[0, seg.y, 0]}
-          onPointerEnter={() => { hovered.current = true; setActiveSectionId(sectionId) }}
-          onPointerLeave={() => { hovered.current = false; setActiveSectionId(null) }}
           onClick={handleClick}
         >
           <boxGeometry args={[seg.w, 0.08, seg.w]} />
@@ -90,7 +86,6 @@ export function SectionPillar({ position, sectionId, label, index, color = '#3b8
         position={[0, -5.5, 0]}
         fontSize={0.25}
         color={color}
-        font="/fonts/JetBrainsMono-Regular.ttf"
         anchorX="center"
         anchorY="middle"
         letterSpacing={0.2}

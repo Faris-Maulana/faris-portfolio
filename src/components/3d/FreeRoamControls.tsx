@@ -1,14 +1,45 @@
 'use client'
+/* eslint-disable react-hooks/purity */
 
 import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { PointerLockControls } from '@react-three/drei'
 import * as THREE from 'three'
+import { useRoam } from '@/contexts/RoamContext'
+
+const SECTION_PILLAR_POSITIONS: [number, number, number][] = [
+  [0, 0, 8], [5, -1, 6], [8, -2, 3], [7, -3, -2], [3, -4, -5],
+  [-1, -5, -6], [-5, -6, -4], [-8, -7, -1], [-6, -8, 4],
+]
+const SECTION_IDS = ['hero', 'about', 'experience', 'projects', 'skills', 'research', 'certificates', 'blog', 'contact']
+const PROXIMITY_THRESHOLD = 4
 
 export function FreeRoamControls() {
   const { camera } = useThree()
   const keys = useRef({ w: false, a: false, s: false, d: false, shift: false })
   const clock = useRef(0)
+  const closestSection = useRef<string | null>(null)
+  const { setActiveSectionId } = useRoam()
+
+  // Proximity detection: find closest pillar within threshold
+  const checkProximity = () => {
+    let nearest: string | null = null
+    let nearestDist = PROXIMITY_THRESHOLD
+    for (let i = 0; i < SECTION_PILLAR_POSITIONS.length; i++) {
+      const pos = SECTION_PILLAR_POSITIONS[i]
+      const dx = camera.position.x - pos[0]
+      const dz = camera.position.z - pos[2]
+      const dist = Math.sqrt(dx * dx + dz * dz)
+      if (dist < nearestDist) {
+        nearestDist = dist
+        nearest = SECTION_IDS[i]
+      }
+    }
+    if (nearest !== closestSection.current) {
+      closestSection.current = nearest
+      setActiveSectionId(nearest)
+    }
+  }
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -39,11 +70,13 @@ export function FreeRoamControls() {
 
   useFrame((_, delta) => {
     clock.current += delta
+    checkProximity()
     const speed = keys.current.shift ? 10 : 4
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion)
     forward.y = 0; right.y = 0
-    forward.normalize(); right.normalize()
+    if (forward.lengthSq() > 1e-6) forward.normalize()
+    if (right.lengthSq() > 1e-6) right.normalize()
 
     const move = new THREE.Vector3()
     if (keys.current.w) move.add(forward)
