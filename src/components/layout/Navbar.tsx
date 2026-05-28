@@ -134,7 +134,7 @@ export function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[99] flex flex-col justify-center items-center px-6"
+            className="fixed inset-0 z-[99] flex flex-col justify-center items-center px-6 safe-top safe-bottom safe-x"
             style={{ background: 'rgba(2,4,8,0.97)', backdropFilter: 'blur(20px)' }}
           >
             <div className="space-y-2 text-center">

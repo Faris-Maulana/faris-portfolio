@@ -1,6 +1,75 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* ─── BREAKPOINT VARIABLES ─────────────────────────────────────────── */
+:root {
+  --bp-xs: 360px;
+  --bp-sm: 640px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+  --bp-2xl: 1536px;
+  --bp-3xl: 1920px;
+}
+
+/* ─── FLUID TYPE SCALE ─────────────────────────────────────────────── */
+:root {
+  --text-3xs: clamp(0.55rem, 0.45rem + 0.4vw, 0.65rem);
+  --text-2xs: clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem);
+  --text-xs:  clamp(0.75rem, 0.65rem + 0.5vw, 0.875rem);
+  --text-sm:  clamp(0.875rem, 0.75rem + 0.6vw, 1rem);
+  --text-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+  --text-lg:  clamp(1.125rem, 1rem + 0.7vw, 1.5rem);
+  --text-xl:  clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
+  --text-display: clamp(2.5rem, 1.5rem + 5vw, 7rem);
+  --text-mega:    clamp(3rem, 2rem + 9vw, 13rem);
+}
+
+/* ─── ACCESSIBILITY: REDUCED MOTION ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .magic-circle,
+  .magic-circle-rev,
+  .neon-pulse,
+  .monarch-pulse,
+  .float-anim {
+    animation: none !important;
+  }
+}
+
+/* ─── TOUCH TARGETS (a11y: min 44×44px on touch devices) ───────────── */
+@media (pointer: coarse) {
+  button,
+  a[role="button"],
+  [data-cursor="hover"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  p a, .prose a {
+    min-height: auto;
+    min-width: auto;
+  }
+}
+
+/* ─── CONTAINER QUERIES UTILITY ────────────────────────────────────── */
+.cq-root {
+  container-type: inline-size;
+  container-name: panel;
+}
+
+/* ─── SAFE AREAS (iOS notch / Android nav bar) ─────────────────────── */
+.safe-bottom { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+.safe-top    { padding-top:    max(16px, env(safe-area-inset-top)); }
+.safe-x      { padding-left:   max(16px, env(safe-area-inset-left));
+               padding-right:  max(16px, env(safe-area-inset-right)); }
+
 @theme {
   --color-void:        #030309;
   --color-abyss:       #07061a;
@@ -194,10 +263,14 @@ body {
 .nameplate {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(3.5rem, 13vw, 12rem);
-  line-height: 0.85;
+  font-size: var(--text-mega);
   letter-spacing: -0.04em;
+  line-height: 0.95;
   text-transform: uppercase;
+}
+
+@media (max-width: 480px) {
+  .nameplate { line-height: 1; letter-spacing: -0.025em; }
 }
 
 .section-heading {
@@ -260,16 +333,32 @@ body {
   .cursor-core, .cursor-ring, .cursor-light { display: none; }
 }
 
+button, a[data-cursor="hover"] {
+  transition: transform 120ms ease, background-color 150ms ease, border-color 200ms ease;
+}
+button:active,
+a[data-cursor="hover"]:active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  button:active, a[data-cursor="hover"]:active { transform: none; }
+}
+
 ::-webkit-scrollbar       { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--color-void); }
 ::-webkit-scrollbar-thumb { background: var(--color-monarch-dim); border-radius: 2px; }
 
-.section { padding: 140px 0; position: relative; }
-@media (max-width: 768px) { .section { padding: 80px 0; } }
-@media (max-width: 480px) { .section { padding: 60px 0; } }
-.container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
-@media (max-width: 768px) { .container { padding: 0 20px; } }
-@media (max-width: 480px) { .container { padding: 0 16px; } }
+.section {
+  padding: clamp(48px, 6vw + 24px, 140px) 0;
+  position: relative;
+}
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw + 8px, 32px);
+}
+@media (min-width: 1536px) { .container { max-width: 1440px; } }
+@media (min-width: 1920px) { .container { max-width: 1600px; } }
 
 .sound-toggle {
   position: fixed; top: 24px; right: 24px;
@@ -293,12 +382,15 @@ body {
   border-radius: 10px;
   color: var(--color-text-primary);
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: max(16px, 0.8rem);
   transition: border-color 0.25s, box-shadow 0.25s;
   width: 100%;
   padding: 12px 16px;
   outline: none;
+  min-height: 48px;
 }
+.hud-input[type="textarea"],
+textarea.hud-input { min-height: 120px; }
 .hud-input:focus {
   border-color: rgba(168,85,247,0.4);
   box-shadow: 0 0 0 3px rgba(168,85,247,0.06), inset 0 1px 0 rgba(168,85,247,0.04);

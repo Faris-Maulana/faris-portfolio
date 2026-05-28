@@ -203,6 +203,17 @@ export function Projects() {
             ))}
           </div>
         </motion.div>
+
+        <div className="flex items-center gap-2 mb-4 md:mb-6 text-text-muted font-mono text-[10px] tracking-widest uppercase md:hidden">
+          <span>← Swipe to explore →</span>
+          <motion.span
+            animate={{ x: [0, 6, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            className="text-system-blue"
+          >
+            ▸
+          </motion.span>
+        </div>
       </div>
 
       <div

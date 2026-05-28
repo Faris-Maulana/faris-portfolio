@@ -129,7 +129,7 @@ function RadarChart() {
     <svg
       ref={svgRef}
       viewBox="-10 -10 240 240"
-      className="w-full max-w-[220px]"
+      className="w-full max-w-[180px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-[280px] mx-auto"
       role="img"
       aria-label="Competency radar: AI/LLM 95%, Data Engineering 90%, Security 75%, Machine Learning 85%, Backend 80%, BI 88%"
     >
@@ -222,14 +222,14 @@ export function About() {
           </h2>
         </motion.div>
 
-        <div className="grid lg:grid-cols-[1fr_1.2fr] gap-12 items-start">
+        <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 lg:gap-12 items-start">
           <motion.div
             initial={{ opacity: 0, x: -24 }}
             animate={inView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="space-y-6"
           >
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
               <Counter end={5} suffix="+" label="Years Experience" />
               <Counter end={20} suffix="+" label="Production Dashboards" />
               <Counter end={3} suffix="" label="Industries Served" />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useInView } from 'framer-motion'
 import { motion } from 'framer-motion'
 import * as d3 from 'd3'
@@ -15,14 +15,67 @@ const colorMap: Record<string, string> = {
   'Security': '#f43f5e', 'Programming': '#fbbf24', 'BI & Analytics': '#8b5cf6',
 }
 
+function SkillsMatrix() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
+      {SKILLS.map((group, gi) => (
+        <motion.div
+          key={group.category}
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.4, delay: gi * 0.06 }}
+          className="relative p-4 sm:p-5"
+          style={{
+            background: 'rgba(8,17,25,0.4)',
+            border: '1px solid rgba(168,85,247,0.18)',
+            clipPath: 'polygon(0% 0%, 96% 0%, 100% 4%, 100% 100%, 4% 100%, 0% 96%)',
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-monarch/15">
+            <div className="w-1.5 h-1.5 rotate-45 bg-monarch" />
+            <h3 className="font-mono text-[10px] sm:text-xs text-monarch tracking-[0.25em] uppercase">
+              {group.category}
+            </h3>
+          </div>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            {group.items.map(skill => (
+              <span
+                key={skill}
+                className="font-mono text-[10px] sm:text-[11px] px-2 py-1 border border-monarch/15 text-text-secondary hover:border-monarch/40 hover:text-monarch-hi transition-colors"
+                data-cursor="hover"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
 export function Skills() {
   const svgRef   = useRef<SVGSVGElement>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
   const inView = useInView(sectionRef, { once: true })
   const simRef = useRef<d3.Simulation<Node, undefined> | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+  const [view, setView] = useState<'matrix' | 'constellation'>('matrix')
 
   useEffect(() => {
-    if (!inView) return
+    const check = () => setIsMobile(window.matchMedia('(max-width: 768px)').matches)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    if (isMobile) setView('matrix')
+  }, [isMobile])
+
+  useEffect(() => {
+    if (!inView || view === 'matrix') return
     const svg = d3.select(svgRef.current)
     const W = svgRef.current?.clientWidth || 800
     const H = 520
@@ -128,7 +181,7 @@ export function Skills() {
     })
 
     return () => { sim.stop() }
-  }, [inView])
+  }, [inView, view])
 
   return (
     <section id="skills" className="section" ref={sectionRef}>
@@ -142,32 +195,65 @@ export function Skills() {
           <h2 className="section-heading mb-2">
             <span className="gradient-monarch">Skills</span>
           </h2>
-          <p className="text-text-muted text-sm font-mono">Drag nodes · hover to illuminate · connected by expertise</p>
+          {!isMobile && (
+            <p className="text-text-muted text-xs sm:text-sm font-mono">Drag nodes · hover to illuminate · connected by expertise</p>
+          )}
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.92 }}
-          animate={inView ? { opacity: 1, scale: 1 } : {}}
-          transition={{ duration: 0.8, delay: 0.2, ease: [0.22,1,0.36,1] }}
-          className="glass rounded-3xl overflow-hidden"
-          style={{ border: '1px solid rgba(168,85,247,0.08)' }}
-        >
-          <svg ref={svgRef} width="100%" style={{ display: 'block' }} />
-        </motion.div>
+        <div className="hidden md:flex items-center gap-2 mb-6">
+          <button
+            onClick={() => setView('matrix')}
+            className={`px-3 py-1.5 font-mono text-[11px] tracking-widest uppercase border transition-colors ${
+              view === 'matrix'
+                ? 'border-system-blue text-system-blue bg-system-blue/10'
+                : 'border-system-blue/20 text-text-muted hover:text-system-blue'
+            }`}
+            data-cursor="hover"
+          >
+            Matrix
+          </button>
+          <button
+            onClick={() => setView('constellation')}
+            className={`px-3 py-1.5 font-mono text-[11px] tracking-widest uppercase border transition-colors ${
+              view === 'constellation'
+                ? 'border-monarch text-monarch bg-monarch/10'
+                : 'border-monarch/20 text-text-muted hover:text-monarch'
+            }`}
+            data-cursor="hover"
+          >
+            Constellation
+          </button>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ delay: 0.6 }}
-          className="mt-6 flex flex-wrap gap-4 justify-center"
-        >
-          {Object.entries(colorMap).map(([cat, color]) => (
-            <div key={cat} className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }} />
-              <span className="text-[10px] font-mono text-text-muted">{cat}</span>
-            </div>
-          ))}
-        </motion.div>
+        {view === 'matrix' || isMobile ? (
+          <SkillsMatrix />
+        ) : (
+          <>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={inView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.22,1,0.36,1] }}
+              className="glass rounded-3xl overflow-hidden"
+              style={{ border: '1px solid rgba(168,85,247,0.08)' }}
+            >
+              <svg ref={svgRef} width="100%" style={{ display: 'block' }} />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={inView ? { opacity: 1 } : {}}
+              transition={{ delay: 0.6 }}
+              className="mt-6 flex flex-wrap gap-4 justify-center"
+            >
+              {Object.entries(colorMap).map(([cat, color]) => (
+                <div key={cat} className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }} />
+                  <span className="text-[10px] font-mono text-text-muted">{cat}</span>
+                </div>
+              ))}
+            </motion.div>
+          </>
+        )}
       </div>
     </section>
   )

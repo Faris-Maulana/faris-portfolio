@@ -81,8 +81,20 @@ export function ChatWidget() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.88, y: 16 }}
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-            className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-32px)] h-[520px] max-h-[calc(100vh-120px)] glass rounded-2xl border border-cyan/20 flex flex-col overflow-hidden"
+            className="
+              fixed z-50 glass flex flex-col overflow-hidden
+              bottom-0 left-0 right-0
+              w-full h-[85vh]
+              rounded-t-2xl
+              sm:bottom-24 sm:right-6 sm:left-auto
+              sm:w-[400px] sm:max-w-[calc(100vw-32px)]
+              sm:h-[560px] sm:max-h-[calc(100vh-120px)]
+              sm:rounded-2xl
+              border border-cyan/20
+              safe-bottom
+            "
           >
+            <div className="sm:hidden w-12 h-1 mx-auto my-3 rounded-full bg-cyan/30" />
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-glass"
               style={{ background: 'linear-gradient(135deg, rgba(0,245,255,0.05), transparent)' }}>
               <div className="flex items-center gap-2.5">

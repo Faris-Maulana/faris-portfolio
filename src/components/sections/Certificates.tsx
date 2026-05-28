@@ -228,7 +228,7 @@ export function Certificates() {
         </motion.div>
 
         {loading ? (
-          <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
             {Array(8).fill(0).map((_, i) => (
               <div key={i} className="glass rounded-xl animate-pulse" style={{ height: 240 }} />
             ))}
@@ -241,7 +241,7 @@ export function Certificates() {
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
             {filtered.map((cert, i) => (
               <CertCard key={cert.id} cert={cert} index={i} />
             ))}

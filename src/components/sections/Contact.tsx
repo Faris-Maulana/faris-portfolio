@@ -97,8 +97,8 @@ export function Contact() {
           <div className="dagger-line mt-4 w-full" />
         </div>
 
-        <div className="grid lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid lg:grid-cols-5 gap-6 lg:gap-10">
+          <div className="lg:col-span-2 space-y-5 sm:space-y-6">
             <div>
               <h3 className="text-lg font-display font-semibold text-text-primary mb-4">Contact Information</h3>
 
@@ -140,14 +140,14 @@ export function Contact() {
           </div>
 
           <div className="lg:col-span-3">
-            <div className="glass rounded-2xl p-6 border border-border-glass">
+            <div className="glass rounded-2xl p-4 sm:p-6 border border-border-glass">
               {submitted ? (
                 <TerminalSuccess />
               ) : (
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5">
                   <input {...register('honeypot')} className="absolute opacity-0 h-0 w-0" tabIndex={-1} autoComplete="off" />
 
-                  <div className="grid md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                     <div>
                       <label className="block text-[10px] font-mono text-text-muted mb-1.5">Name *</label>
                       <input

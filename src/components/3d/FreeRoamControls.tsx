@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable react-hooks/purity */
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { PointerLockControls } from '@react-three/drei'
 import * as THREE from 'three'
@@ -20,6 +20,13 @@ export function FreeRoamControls() {
   const clock = useRef(0)
   const closestSection = useRef<string | null>(null)
   const { setActiveSectionId, setRoaming } = useRoam()
+  const [isTouchDevice, setIsTouchDevice] = useState(false)
+
+  useEffect(() => {
+    setIsTouchDevice(window.matchMedia('(pointer: coarse)').matches)
+  }, [])
+
+  if (isTouchDevice) return null
 
   // Proximity detection: find closest pillar within threshold
   const checkProximity = () => {
