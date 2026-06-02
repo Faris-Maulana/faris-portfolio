@@ -4,6 +4,7 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { SectionPillar } from './SectionPillar'
+import { PortalDoor } from './PortalDoor'
 
 function createParticleGeometry(count: number) {
   const pos = new Float32Array(count * 3)
@@ -285,6 +286,7 @@ export function SceneObjects() {
           color={p.color}
         />
       ))}
+      <PortalDoor />
     </>
   )
 }

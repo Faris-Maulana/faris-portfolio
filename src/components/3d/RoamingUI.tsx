@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRoam } from '@/contexts/RoamContext'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -17,18 +17,9 @@ const SECTION_CONTENT: Record<string, { title: string; desc: string }> = {
 }
 
 export function RoamingUI() {
-  const { isRoaming, activeSectionId, setRoaming } = useRoam()
+  const { isRoaming, activeSectionId, setRoaming, enterPortal, portalTargetId } = useRoam()
   const [showGuide, setShowGuide] = useState(false)
   const prevRoaming = useRef(false)
-
-  const enterPortal = useCallback(() => {
-    const id = activeSectionId
-    if (!id) return
-    setRoaming(false)
-    setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
-  }, [activeSectionId, setRoaming])
 
   useEffect(() => {
     if (isRoaming && !prevRoaming.current) {
@@ -40,10 +31,22 @@ export function RoamingUI() {
     if (!isRoaming) prevRoaming.current = false
   }, [isRoaming])
 
+  // Portal transition: after animation completes, exit roam + scroll
+  useEffect(() => {
+    if (!portalTargetId) return
+    const timeout = setTimeout(() => {
+      setRoaming(false)
+      setTimeout(() => {
+        document.getElementById(portalTargetId)?.scrollIntoView({ behavior: 'smooth' })
+      }, 150)
+    }, 1400)
+    return () => clearTimeout(timeout)
+  }, [portalTargetId, setRoaming])
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Enter' && activeSectionId) {
-        enterPortal()
+        enterPortal(activeSectionId)
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -125,7 +128,7 @@ export function RoamingUI() {
             className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50"
           >
             <button
-              onClick={enterPortal}
+              onClick={() => activeSectionId && enterPortal(activeSectionId)}
               className="px-6 py-4 font-mono text-center cursor-pointer transition-all duration-200 hover:border-system-blue/60"
               style={{
                 background: 'rgba(8,17,25,0.7)',
@@ -140,8 +143,9 @@ export function RoamingUI() {
               </div>
               <div className="text-xs text-text-primary">{content.title}</div>
               <div className="text-[10px] text-text-muted mt-1">{content.desc}</div>
-              <div className="mt-2 text-[8px] text-system-blue/40 tracking-wider">
-                [ ENTER · to enter portal ]
+              <div className="mt-2 text-[8px] text-system-blue/40 tracking-wider flex items-center justify-center gap-3">
+                <span><span className="text-system-blue/70">ENTER</span> · enter portal</span>
+                <span className="text-red/40">ESC</span><span className="text-red/40"> · exit</span>
               </div>
             </button>
           </motion.div>

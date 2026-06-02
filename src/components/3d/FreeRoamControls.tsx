@@ -19,8 +19,9 @@ export function FreeRoamControls() {
   const keys = useRef({ w: false, a: false, s: false, d: false, shift: false })
   const clock = useRef(0)
   const closestSection = useRef<string | null>(null)
-  const { setActiveSectionId, setRoaming } = useRoam()
+  const { setActiveSectionId, setRoaming, enteringPortal, portalTargetId } = useRoam()
   const [isTouchDevice, setIsTouchDevice] = useState(false)
+  const zoomRef = useRef({ active: false, target: new THREE.Vector3(), progress: 0, startPos: new THREE.Vector3(), startLook: new THREE.Vector3() })
 
   useEffect(() => {
     setIsTouchDevice(window.matchMedia('(pointer: coarse)').matches)
@@ -47,6 +48,23 @@ export function FreeRoamControls() {
       setActiveSectionId(nearest)
     }
   }
+
+  // Start camera zoom when portal activates
+  useEffect(() => {
+    if (portalTargetId && enteringPortal) {
+      const idx = SECTION_IDS.indexOf(portalTargetId)
+      if (idx >= 0) {
+        const pos = SECTION_PILLAR_POSITIONS[idx]
+        zoomRef.current = {
+          active: true,
+          target: new THREE.Vector3(pos[0], pos[1] + 2, pos[2] - 1.5),
+          progress: 0,
+          startPos: camera.position.clone(),
+          startLook: new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).add(camera.position),
+        }
+      }
+    }
+  }, [portalTargetId, enteringPortal, camera])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -79,7 +97,6 @@ export function FreeRoamControls() {
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     document.addEventListener('pointerlockchange', onPointerLockChange)
-    // Auto-lock pointer on mount
     gl.domElement.addEventListener('click', () => {
       gl.domElement.requestPointerLock()
     })
@@ -93,7 +110,25 @@ export function FreeRoamControls() {
 
   useFrame((_, delta) => {
     clock.current += delta
+
+    // Camera zoom toward portal
+    if (zoomRef.current.active) {
+      const z = zoomRef.current
+      z.progress = Math.min(z.progress + delta * 1.2, 1)
+      const ease = 1 - Math.pow(1 - z.progress, 3)
+
+      camera.position.lerpVectors(z.startPos, z.target, ease)
+
+      if (z.progress >= 1) {
+        zoomRef.current.active = false
+      }
+      return
+    }
+
     checkProximity()
+
+    if (enteringPortal) return
+
     const speed = keys.current.shift ? 10 : 4
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion)

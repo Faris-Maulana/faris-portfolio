@@ -16,14 +16,11 @@ interface SectionPillarProps {
 
 export function SectionPillar({ position, sectionId, label, index, color = '#3b82f6' }: SectionPillarProps) {
   const groupRef = useRef<THREE.Group>(null)
-  const { activeSectionId, setRoaming } = useRoam()
+  const { activeSectionId, enterPortal } = useRoam()
   const clockRef = useRef(0)
 
   const handleClick = () => {
-    setRoaming(false)
-    setTimeout(() => {
-      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
+    enterPortal(sectionId)
   }
 
   const isActive = activeSectionId === sectionId
