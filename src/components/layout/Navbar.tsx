@@ -80,7 +80,7 @@ export function Navbar() {
             <span className="h-1 w-1 rounded-full bg-signal transition-transform duration-300 group-hover:scale-150" />
           </button>
 
-          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center lg:flex">
+          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center xl:flex">
             <div className="pointer-events-auto flex items-center gap-1">
               {NAV_LINKS.map(link => {
                 const id = link.href.slice(1)
@@ -133,7 +133,7 @@ export function Navbar() {
               data-cursor="hover"
               aria-label={open ? 'Close menu' : 'Open menu'}
               aria-expanded={open}
-              className="flex h-10 w-10 items-center justify-center lg:hidden"
+              className="flex h-10 w-10 items-center justify-center xl:hidden"
             >
               <span className="flex w-5 flex-col gap-[5px]">
                 <span
@@ -161,7 +161,7 @@ export function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.28 }}
-            className="safe-top safe-bottom safe-x fixed inset-0 z-[99] flex flex-col justify-center bg-canvas/97 px-[var(--gutter)] backdrop-blur-2xl lg:hidden"
+            className="safe-top safe-bottom safe-x fixed inset-0 z-[99] flex flex-col justify-center bg-canvas/97 px-[var(--gutter)] backdrop-blur-2xl xl:hidden"
           >
             <nav className="flex flex-col">
               {NAV_LINKS.map((link, i) => (

@@ -69,7 +69,7 @@ export function Contact() {
     <section id="contact" className="section">
       <div className="container">
         <SectionHeader
-          index="07"
+          index="08"
           label="Contact"
           meta={SITE_CONFIG.responseTime}
           title={['Tell me what', <span key="2" className="text-ink-3">you’re building.</span>]}

@@ -6,8 +6,10 @@ import { Projects } from '@/components/sections/Projects'
 import { Skills } from '@/components/sections/Skills'
 import { QuantPortfolio } from '@/components/sections/QuantPortfolio'
 import { Certificates } from '@/components/sections/Certificates'
+import { Writing } from '@/components/sections/Writing'
 import { Contact } from '@/components/sections/Contact'
 import { getRepos } from '@/lib/github'
+import { getPosts } from '@/lib/posts'
 
 /**
  * Server component.
@@ -20,7 +22,7 @@ import { getRepos } from '@/lib/github'
 export const revalidate = 3600
 
 export default async function Home() {
-  const repos = await getRepos()
+  const [repos, posts] = await Promise.all([getRepos(), getPosts()])
 
   return (
     <>
@@ -32,6 +34,7 @@ export default async function Home() {
       <Skills />
       <QuantPortfolio />
       <Certificates />
+      <Writing posts={posts} />
       <Contact />
     </>
   )

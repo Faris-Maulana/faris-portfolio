@@ -93,9 +93,27 @@ npm run lint
 npx tsc --noEmit
 ```
 
+## Deploying
+
+The Vercel project is linked through the CLI, not the GitHub app, so **pushing
+to `main` does not deploy anything**. Until the repository is connected in the
+Vercel dashboard, production only updates when someone runs:
+
+```bash
+npx vercel --prod --yes
+```
+
 ## Notes
 
 - Sections render on the server. They were previously client-only dynamic
   imports, which meant crawlers received a hero and seven loading skeletons.
+- The homepage must stay statically prerendered. Anything that reads `cookies()`
+  during its render, including the cookie-backed Supabase client, silently opts
+  the whole route into per-request rendering. `lib/posts.ts` uses a plain anon
+  client for that reason.
 - The hero canvas suspends its render loop once the hero leaves the viewport.
 - Reduced motion disables the canvas, the smooth scroll, and every reveal.
+- The diploma and transcript in `public/certificates` are redacted rasters. The
+  national ID, student number, and date of birth are painted over the pixels
+  before encoding, so there is no text layer and no removable overlay. Never
+  replace them with the originals.

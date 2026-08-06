@@ -34,6 +34,23 @@ export const TRACK_META: Record<
 
 export const CREDENTIALS: Credential[] = [
   {
+    title: 'B.Sc. Computer Science, Cum Laude',
+    issuer: 'Universitas Pancasila, Jakarta',
+    year: '2024',
+    track: 'engineering',
+    file: '/certificates/universitas-pancasila-ijazah.pdf',
+    featured: true,
+    note: 'GPA 3.78 of 4.00. Accreditation Unggul. Identifiers redacted',
+  },
+  {
+    title: 'Academic Transcript',
+    issuer: 'Universitas Pancasila, Jakarta',
+    year: '2024',
+    track: 'engineering',
+    file: '/certificates/universitas-pancasila-transcript.pdf',
+    note: 'Full course record. Identifiers redacted',
+  },
+  {
     title: 'Master Consultant, AI Engineer',
     issuer: 'iMerit Technology',
     year: '2025',
