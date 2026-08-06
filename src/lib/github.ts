@@ -8,6 +8,8 @@ export interface Repo {
   language: string | null
   topics: string[]
   stargazers_count: number
+  private: boolean
+  fork: boolean
   created_at: string
   pushed_at: string
 }
@@ -78,7 +80,8 @@ const GITHUB_USER = 'Faris-Maulana'
 function normalise(raw: unknown[]): Repo[] {
   return raw
     .map(item => item as Record<string, unknown>)
-    .filter(r => !r.fork && !r.archived && r.name !== GITHUB_USER)
+    // The profile README repo shares the account name and is not a project.
+    .filter(r => !r.archived && r.name !== GITHUB_USER)
     .map(r => ({
       name: String(r.name),
       description: (r.description as string | null) ?? null,
@@ -87,6 +90,8 @@ function normalise(raw: unknown[]): Repo[] {
       language: (r.language as string | null) ?? null,
       topics: (r.topics as string[]) ?? [],
       stargazers_count: Number(r.stargazers_count ?? 0),
+      private: Boolean(r.private),
+      fork: Boolean(r.fork),
       created_at: String(r.created_at).slice(0, 10),
       pushed_at: String(r.pushed_at).slice(0, 10),
     }))
@@ -96,25 +101,45 @@ function normalise(raw: unknown[]): Repo[] {
 /**
  * Live repo list with a committed snapshot as the floor.
  *
- * The unauthenticated GitHub API allows 60 requests per hour per IP, which ISR
- * at one hour comfortably fits. But build machines share IPs and rate limits
- * are hit in practice, so a failed fetch falls back to the snapshot rather
- * than rendering an empty section. The page is never worse than the last
- * commit.
+ * Two endpoints, chosen by whether a token is configured:
+ *
+ *   GITHUB_TOKEN set    /user/repos      public + private, 5,000 req/hour
+ *   no token            /users/:u/repos  public only, 60 req/hour
+ *
+ * Private repositories are invisible to the unauthenticated API, so without a
+ * token the archive can only ever show what GitHub shows a stranger. Set
+ * GITHUB_TOKEN in the deployment environment (a fine-grained token with
+ * read-only "Metadata" access is enough) and the private work appears on its
+ * own with no code change.
+ *
+ * A failed fetch falls back to the committed snapshot rather than rendering an
+ * empty section, so the page is never worse than the last commit.
  */
 export async function getRepos(): Promise<Repo[]> {
+  const token = process.env.GITHUB_TOKEN
+
+  const url = token
+    ? 'https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner'
+    : `https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updated&type=all`
+
   try {
-    const res = await fetch(
-      `https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updated`,
-      {
-        headers: { Accept: 'application/vnd.github+json' },
-        next: { revalidate: 3600 },
-      }
-    )
+    const res = await fetch(url, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      next: { revalidate: 3600 },
+    })
     if (!res.ok) throw new Error(`GitHub responded ${res.status}`)
+
     const data = (await res.json()) as unknown[]
     if (!Array.isArray(data) || data.length === 0) throw new Error('Empty payload')
-    return normalise(data)
+
+    const repos = normalise(data)
+    // A token that resolves to the wrong account would silently replace the
+    // archive with someone else's work.
+    return repos.length >= snapshot.length ? repos : (snapshot as Repo[])
   } catch {
     return snapshot as Repo[]
   }

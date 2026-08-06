@@ -170,6 +170,19 @@ export function Projects({ repos }: { repos: Repo[] }) {
               const dot = repo.language
                 ? (LANGUAGE_COLOR[repo.language] ?? 'var(--color-ink-4)')
                 : 'var(--color-ink-4)'
+
+              // A private repo's URL 404s for every visitor, so the row stays
+              // listed but is not presented as something to click.
+              const Row = repo.private ? 'div' : 'a'
+              const linkProps = repo.private
+                ? {}
+                : {
+                    href: repo.html_url,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    'data-cursor': 'hover',
+                  }
+
               return (
                 <Reveal
                   as="li"
@@ -177,12 +190,12 @@ export function Projects({ repos }: { repos: Repo[] }) {
                   delay={Math.min(i, 10) * 35}
                   className="border-t border-line last:border-b"
                 >
-                  <a
-                    href={repo.html_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-cursor="hover"
-                    className="group flex flex-col gap-2 py-5 transition-colors duration-300 hover:bg-white/[0.015] sm:flex-row sm:items-center sm:gap-6"
+                  <Row
+                    {...linkProps}
+                    className={cn(
+                      'group flex flex-col gap-2 py-5 transition-colors duration-300 sm:flex-row sm:items-center sm:gap-6',
+                      !repo.private && 'hover:bg-white/[0.015]'
+                    )}
                   >
                     <span className="flex min-w-0 flex-1 items-baseline gap-3">
                       <span
@@ -191,8 +204,25 @@ export function Projects({ repos }: { repos: Repo[] }) {
                         aria-hidden
                       />
                       <span className="min-w-0">
-                        <span className="block font-display text-base font-bold tracking-tight text-ink transition-colors group-hover:text-signal">
-                          {prettify(repo.name)}
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={cn(
+                              'font-display text-base font-bold tracking-tight text-ink transition-colors',
+                              !repo.private && 'group-hover:text-signal'
+                            )}
+                          >
+                            {prettify(repo.name)}
+                          </span>
+                          {repo.private ? (
+                            <span className="flex items-center gap-1 rounded border border-line px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-4">
+                              <Lock size={9} /> Private
+                            </span>
+                          ) : null}
+                          {repo.fork ? (
+                            <span className="rounded border border-line px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-4">
+                              Fork
+                            </span>
+                          ) : null}
                         </span>
                         {repo.description ? (
                           <span className="mt-1 block max-w-[70ch] text-sm text-ink-3">
@@ -218,12 +248,16 @@ export function Projects({ repos }: { repos: Repo[] }) {
                       <span className="t-label tnum w-16 text-right">
                         {repo.pushed_at.slice(0, 4)}
                       </span>
-                      <ArrowUpRight
-                        size={14}
-                        className="text-ink-4 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-signal"
-                      />
+                      {repo.private ? (
+                        <span className="w-3.5" aria-hidden />
+                      ) : (
+                        <ArrowUpRight
+                          size={14}
+                          className="text-ink-4 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-signal"
+                        />
+                      )}
                     </span>
-                  </a>
+                  </Row>
                 </Reveal>
               )
             })}
