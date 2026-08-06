@@ -1,0 +1,233 @@
+[
+  {
+    "name": "surat-sakit",
+    "description": "Generator Surat Keterangan Sakit Resmi — Puskesmas, Rumah Sakit, Klinik 24 Jam",
+    "html_url": "https://github.com/Faris-Maulana/surat-sakit",
+    "homepage": null,
+    "language": "TypeScript",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2026-05-26",
+    "pushed_at": "2026-06-09"
+  },
+  {
+    "name": "faris-portfolio",
+    "description": "Personal portfolio — AI Engineer & Researcher",
+    "html_url": "https://github.com/Faris-Maulana/faris-portfolio",
+    "homepage": null,
+    "language": "TypeScript",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2026-05-22",
+    "pushed_at": "2026-06-02"
+  },
+  {
+    "name": "rag-system",
+    "description": "Production-grade RAG system on Wikipedia AI/ML knowledge base. Built with LangChain, ChromaDB, Groq (Llama-3.1-8b), fine-tuned embeddings, bias audit, and RAGAS evaluation.",
+    "html_url": "https://github.com/Faris-Maulana/rag-system",
+    "homepage": null,
+    "language": "Python",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2026-03-14",
+    "pushed_at": "2026-03-14"
+  },
+  {
+    "name": "passenger-counter",
+    "description": "an app built with HTML, CSS, JavaScript",
+    "html_url": "https://github.com/Faris-Maulana/passenger-counter",
+    "homepage": null,
+    "language": "CSS",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2022-10-10",
+    "pushed_at": "2022-10-10"
+  },
+  {
+    "name": "YOLO---Object-Detection",
+    "description": "Cloning and Setting Up Darknet for YOLOv4 We will be using the famous AlexeyAB's darknet repository in this tutorial to perform YOLOv4 detections.",
+    "html_url": "https://github.com/Faris-Maulana/YOLO---Object-Detection",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-11-11",
+    "pushed_at": "2021-11-11"
+  },
+  {
+    "name": "Dandelion-Classification-with-VGG",
+    "description": "melatih menerapkan pretrained neural network model untuk melakukan image classification bunga dandelion dan rumput. Kita akan menggunakan Framework Deep Learning TensorFlow dan training/validation dataset.",
+    "html_url": "https://github.com/Faris-Maulana/Dandelion-Classification-with-VGG",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-11-04",
+    "pushed_at": "2021-11-04"
+  },
+  {
+    "name": "Lat-Dandelion-Classification-with-CNN",
+    "description": "melatih sebuah fully-connected neural network untuk melakukan image classification bunga dandelion dan rumput. KIta akan menggunakan Framework Deep Learning TensorFlow untuk membuat neural network dan training/validation dataset.",
+    "html_url": "https://github.com/Faris-Maulana/Lat-Dandelion-Classification-with-CNN",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-11-04",
+    "pushed_at": "2021-11-04"
+  },
+  {
+    "name": "Lat-Dandelion-Classification-with-ANN",
+    "description": "melatih sebuah fully-connected neural network untuk melakukan image classification bunga dandelion dan rumput. KIta akan menggunakan Framework Deep Learning TensorFlow untuk membuat neural network dan training/validation dataset.",
+    "html_url": "https://github.com/Faris-Maulana/Lat-Dandelion-Classification-with-ANN",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-11-04",
+    "pushed_at": "2021-11-04"
+  },
+  {
+    "name": "Lat-Image-dg-opencv-tensor-flow",
+    "description": "Image Augmentation (opencv & tensorflow",
+    "html_url": "https://github.com/Faris-Maulana/Lat-Image-dg-opencv-tensor-flow",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-11-04",
+    "pushed_at": "2021-11-04"
+  },
+  {
+    "name": "Klasifikasi_Fully_Connected_Image",
+    "description": "Melakukan classification gambar,  image classification bunga dandelion dan rumput. KIta akan menggunakan Framework Deep Learning TensorFlow untuk membuat neural network dan training/validation dataset. ",
+    "html_url": "https://github.com/Faris-Maulana/Klasifikasi_Fully_Connected_Image",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-11-04",
+    "pushed_at": "2021-11-04"
+  },
+  {
+    "name": "Latihan-Training-data-dan-Test-Data-Sets",
+    "description": "Mencoba Train dan Test Sederhana",
+    "html_url": "https://github.com/Faris-Maulana/Latihan-Training-data-dan-Test-Data-Sets",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-11-04",
+    "pushed_at": "2021-11-04"
+  },
+  {
+    "name": "AI_dengan_Python-pengenalan-",
+    "description": "Pengenalan AI pada Python",
+    "html_url": "https://github.com/Faris-Maulana/AI_dengan_Python-pengenalan-",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-11-04",
+    "pushed_at": "2021-11-04"
+  },
+  {
+    "name": "Latihan-Algoritma_dan_Implementasi_Python_Lanjutan",
+    "description": "Latihan Lanjutan Lain untuk Python Programming Language",
+    "html_url": "https://github.com/Faris-Maulana/Latihan-Algoritma_dan_Implementasi_Python_Lanjutan",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-11-04",
+    "pushed_at": "2021-11-04"
+  },
+  {
+    "name": "Latihan-Dasar-Pemrograman-Python",
+    "description": "Dasar Syntax Python",
+    "html_url": "https://github.com/Faris-Maulana/Latihan-Dasar-Pemrograman-Python",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-11-04",
+    "pushed_at": "2021-11-04"
+  },
+  {
+    "name": "Python-Machine-Learning-Practice-For-K-NN",
+    "description": "Exercise Training data and Test Data Sets",
+    "html_url": "https://github.com/Faris-Maulana/Python-Machine-Learning-Practice-For-K-NN",
+    "homepage": null,
+    "language": "Jupyter Notebook",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-09-28",
+    "pushed_at": "2021-09-28"
+  },
+  {
+    "name": "Java-GUI-Simple-Store-System",
+    "description": "Using GUI Java for Login Menu, Cashier Menu, and using hierarchical inheritance concept",
+    "html_url": "https://github.com/Faris-Maulana/Java-GUI-Simple-Store-System",
+    "homepage": null,
+    "language": "Java",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-09-08",
+    "pushed_at": "2021-09-08"
+  },
+  {
+    "name": "Web-Design",
+    "description": "Final Project about Food Menus, Pricing, etc.",
+    "html_url": "https://github.com/Faris-Maulana/Web-Design",
+    "homepage": null,
+    "language": "HTML",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-09-08",
+    "pushed_at": "2021-09-08"
+  },
+  {
+    "name": "Store-Sales-Program-Creation-Project",
+    "description": "Data Structure on C++, using pointer dereference, multiple function, struct, arrow operator",
+    "html_url": "https://github.com/Faris-Maulana/Store-Sales-Program-Creation-Project",
+    "homepage": null,
+    "language": "C++",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2021-09-08",
+    "pushed_at": "2021-09-08"
+  },
+  {
+    "name": "UAS-Desain-Web",
+    "description": "Untuk Memenuhi Tugas UAS Desain Web 2020",
+    "html_url": "https://github.com/Faris-Maulana/UAS-Desain-Web",
+    "homepage": null,
+    "language": "HTML",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2020-12-26",
+    "pushed_at": "2020-12-26"
+  },
+  {
+    "name": "Tugas-Besar",
+    "description": "Desain Web Final Project (HTML, CSS, JAVASCRIPT)",
+    "html_url": "https://github.com/Faris-Maulana/Tugas-Besar",
+    "homepage": null,
+    "language": "HTML",
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2020-12-03",
+    "pushed_at": "2020-12-03"
+  },
+  {
+    "name": "mr.taxi",
+    "description": "First Basic Task HTML and CSS",
+    "html_url": "https://github.com/Faris-Maulana/mr.taxi",
+    "homepage": null,
+    "language": null,
+    "topics": [],
+    "stargazers_count": 0,
+    "created_at": "2020-10-16",
+    "pushed_at": "2020-10-16"
+  }
+]

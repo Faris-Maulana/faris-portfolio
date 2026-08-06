@@ -6,9 +6,39 @@ import { getOrCreateSessionId } from '@/lib/utils'
 
 const MESSAGES_KEY = 'aria_chat_messages_v2'
 
+const INTRO: ChatMessage = {
+  role: 'assistant',
+  content:
+    "Hi, I'm ARIA, the assistant on Faris's site. Ask me about his work, projects, or experience.",
+  ts: '',
+}
+
+/**
+ * Restores prior messages during the first client render instead of inside an
+ * effect.
+ *
+ * The panel is closed on first paint, so none of this state reaches the server
+ * HTML and there is no hydration mismatch to trade away. Hydrating in an effect
+ * would cost a second render on every mount for no benefit.
+ */
+function restoreMessages(): ChatMessage[] {
+  if (typeof window === 'undefined') return []
+
+  const saved = window.localStorage.getItem(MESSAGES_KEY)
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved) as ChatMessage[]
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    } catch {
+      // Corrupt entry. Fall through and start the conversation fresh.
+    }
+  }
+  return [INTRO]
+}
+
 export function useChatSession() {
   const [isOpen,      setIsOpen]      = useState(false)
-  const [messages,    setMessages]    = useState<ChatMessage[]>([])
+  const [messages,    setMessages]    = useState<ChatMessage[]>(restoreMessages)
   const [isLoading,   setIsLoading]   = useState(false)
   const [hasNewReply, setHasNewReply] = useState(false)
   const [isOnline,    setIsOnline]    = useState(true)
@@ -16,27 +46,12 @@ export function useChatSession() {
   const sessionId = useRef<string>('')
   const initDone  = useRef(false)
 
+  // Messages are already restored by the useState initialiser above, so this
+  // only has to claim a session id.
   useEffect(() => {
     if (initDone.current) return
     initDone.current = true
-
     sessionId.current = getOrCreateSessionId()
-
-    const saved = localStorage.getItem(MESSAGES_KEY)
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as ChatMessage[]
-        setMessages(parsed)
-        return
-      } catch {}
-    }
-
-    const intro: ChatMessage = {
-      role:    'assistant',
-      content: "Hi! I'm ARIA — Faris's AI assistant. I can tell you about his work, projects, and experience. What brings you here today?",
-      ts:      new Date().toISOString(),
-    }
-    setMessages([intro])
   }, [])
 
   const sendMessage = useCallback(async (content: string) => {

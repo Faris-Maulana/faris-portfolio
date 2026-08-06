@@ -1,46 +1,44 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { LEDGER } from '@/lib/constants'
 
-const PROOFS = [
-  { label: 'CURRENT',   value: 'PT Trans Indonesia Superkoridor', detail: 'Manager · AI Engineering' },
-  { label: 'NETWORK',   value: '25,000+ km',                       detail: 'DWDM fiber backbone' },
-  { label: 'STACK',     value: 'LangGraph · ClickHouse',            detail: 'Multi-agent Text2SQL' },
-  { label: 'RESEARCH',  value: 'Sherlock · Code4rena',              detail: 'Smart contract auditor' },
-]
-
+/**
+ * Continuous ledger of places the work has landed.
+ *
+ * The list is rendered twice and the track translated by exactly -50%, which
+ * is what makes the loop seamless, the second copy is under the cursor at the
+ * moment the animation resets. `aria-hidden` on the duplicate keeps screen
+ * readers from hearing every name twice.
+ */
 export function CredibilityStrip() {
   return (
-    <section className="relative py-12 px-4 overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-px bg-gradient-to-r from-transparent via-system-blue/25 to-transparent" />
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-px bg-gradient-to-r from-transparent via-system-blue/25 to-transparent" />
-
-      <div className="container">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-8 max-w-5xl mx-auto">
-          {PROOFS.map((p, i) => (
-            <motion.div
-              key={p.label}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="relative"
+    <section
+      aria-label="Organisations worked with"
+      className="relative border-y border-line py-7"
+    >
+      <div className="marquee-hold marquee-mask overflow-hidden">
+        <div className="marquee">
+          {[0, 1].map(copy => (
+            <ul
+              key={copy}
+              className="flex shrink-0 items-center"
+              aria-hidden={copy === 1 || undefined}
             >
-              <p className="font-mono text-[9px] tracking-[0.3em] text-system-blue/70 uppercase mb-2">
-                {p.label}
-              </p>
-              <p className="font-display text-base md:text-lg text-text-primary font-semibold leading-tight mb-1"
-                style={{
-                  background: 'linear-gradient(135deg, #f3e8ff 0%, #c084fc 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}>
-                {p.value}
-              </p>
-              <p className="text-[11px] text-text-muted leading-relaxed">
-                {p.detail}
-              </p>
-            </motion.div>
+              {LEDGER.map(name => (
+                <li
+                  key={`${copy}-${name}`}
+                  className="flex items-center whitespace-nowrap px-7"
+                >
+                  <span className="font-display text-sm font-semibold uppercase tracking-[0.08em] text-ink-3 transition-colors duration-300 hover:text-ink sm:text-base">
+                    {name}
+                  </span>
+                  <span
+                    className="ml-7 h-1 w-1 rounded-full bg-line-3"
+                    aria-hidden
+                  />
+                </li>
+              ))}
+            </ul>
           ))}
         </div>
       </div>

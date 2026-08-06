@@ -1,199 +1,133 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence, useInView, useMotionValue, useTransform, animate } from 'framer-motion'
-import { ChevronDown, ChevronUp } from 'lucide-react'
-import { GlassCard } from '@/components/ui/GlassCard'
-import { NeonBadge } from '@/components/ui/NeonBadge'
-import { QUANT_CASE_STUDIES } from '@/lib/constants'
+import { SectionHeader } from '@/components/ui/SectionHeader'
+import { Reveal } from '@/components/ui/Reveal'
+import { QUANT_CASE_STUDIES, SITE_CONFIG } from '@/lib/constants'
+import { ArrowUpRight } from 'lucide-react'
 
-
-const accentMap: Record<string, string> = {
-  amber: '#fbbf24',
-  cyan: '#a855f7',
-  violet: '#c084fc',
-  green: '#38bdf8',
+const ACCENT: Record<string, string> = {
+  signal: 'var(--color-signal)',
+  agent: 'var(--color-agent)',
+  data: 'var(--color-data)',
+  cred: 'var(--color-cred)',
 }
 
-function MiniChart({ type, accent, chartInView }: { type: string; accent: string; chartInView: boolean }) {
-  const color = accentMap[accent] || accentMap.cyan
+const PATHS: Record<string, string> = {
+  line: 'M 2 46 L 20 34 L 38 40 L 56 22 L 74 28 L 98 12',
+  survival: 'M 2 8 L 22 9 L 40 14 L 58 26 L 78 42 L 98 50',
+  tradeoff: 'M 2 48 Q 30 44 50 26 Q 70 12 98 8',
+  bar: 'M 2 50 L 26 40 L 50 26 L 74 18 L 98 8',
+}
 
-  if (type === 'line') {
-    const points = [
-      { x: 0, y: 60 }, { x: 20, y: 45 }, { x: 40, y: 55 },
-      { x: 60, y: 30 }, { x: 80, y: 40 }, { x: 100, y: 25 },
-    ]
-    const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-    return (
-      <svg viewBox="0 0 100 65" className="w-full h-20">
-        <motion.path
-          d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"
-          initial={{ pathLength: 0 }}
-          animate={chartInView ? { pathLength: 1 } : {}}
-          transition={{ duration: 1.2, ease: 'easeOut' }}
-          style={{ opacity: 0.6 }}
-        />
-        {points.map((p, i) => (
-          <motion.circle
-            key={i} cx={p.x} cy={p.y} r="2.5" fill={color}
-            initial={{ opacity: 0 }}
-            animate={chartInView ? { opacity: 0.8 } : {}}
-            transition={{ delay: 0.8 + i * 0.08 }}
-          />
-        ))}
-      </svg>
-    )
-  }
-
-  if (type === 'survival') {
-    return (
-      <svg viewBox="0 0 100 65" className="w-full h-20">
-        <motion.path
-          d="M 0 10 L 20 10 L 40 15 L 60 30 L 80 55 L 100 62" fill="none" stroke={color} strokeWidth="2"
-          initial={{ pathLength: 0 }}
-          animate={chartInView ? { pathLength: 1 } : {}}
-          transition={{ duration: 1.2, ease: 'easeOut' }}
-          style={{ opacity: 0.6 }}
-        />
-        <motion.path
-          d="M 0 65 L 0 10 Q 20 8 40 15 Q 60 30 80 55 Q 90 60 100 62 L 100 65 Z" fill={`${color}10`}
-          initial={{ opacity: 0 }}
-          animate={chartInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.8, delay: 0.6 }}
-        />
-      </svg>
-    )
-  }
-
-  if (type === 'tradeoff') {
-    return (
-      <svg viewBox="0 0 100 65" className="w-full h-20">
-        <motion.path
-          d="M 0 55 Q 30 50 50 30 Q 70 15 100 10" fill="none" stroke={color} strokeWidth="2"
-          initial={{ pathLength: 0 }}
-          animate={chartInView ? { pathLength: 1 } : {}}
-          transition={{ duration: 1.2, ease: 'easeOut' }}
-          style={{ opacity: 0.6 }}
-        />
-        <motion.circle
-          cx="50" cy="30" r="4" fill={color}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={chartInView ? { scale: 1, opacity: 0.9 } : {}}
-          transition={{ delay: 0.8, type: 'spring' }}
-        />
-      </svg>
-    )
-  }
-
+/**
+ * Sparkline drawn with stroke-dashoffset so the line traces itself when the
+ * card enters the viewport, one CSS transition instead of a per-frame JS
+ * animation, and it inherits the same reveal timing as everything else.
+ */
+function Sparkline({ type, color }: { type: string; color: string }) {
+  const d = PATHS[type] ?? PATHS.line
   return (
-    <svg viewBox="0 0 100 65" className="w-full h-20">
-      {[0, 25, 50, 75, 100].map((x, i) => (
-        <motion.rect
-          key={i} x={x + 5} y={65 - (i + 1) * 10} width="15" height={(i + 1) * 10} rx="2" fill={color}
-          initial={{ scaleY: 0, transformOrigin: 'bottom' }}
-          animate={chartInView ? { scaleY: 1 } : {}}
-          transition={{ delay: i * 0.08 + 0.3 }}
-          style={{ opacity: (i + 1) * 0.15 }}
-        />
-      ))}
+    <svg
+      viewBox="0 0 100 56"
+      preserveAspectRatio="none"
+      className="h-16 w-full"
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id={`fade-${type}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.16" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${d} L 98 56 L 2 56 Z`} fill={`url(#fade-${type})`} />
+      <path
+        d={d}
+        pathLength={1}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+        className="spark-path"
+      />
     </svg>
   )
 }
 
-function AnimatedCounter({ value, accent, inView }: { value: string; accent: string; inView: boolean }) {
-  const num = parseFloat(value.replace(/[^0-9.]/g, ''))
-  const suffix = value.replace(/[0-9.]/g, '')
-  const count = useMotionValue(0)
-  const rounded = useTransform(count, (v) => Math.round(v) + suffix)
-
-  useEffect(() => {
-    if (inView) {
-      const controls = animate(count, num, { duration: 1.5, ease: 'easeOut' })
-      return controls.stop
-    }
-  }, [inView, count, num])
-
-  return <motion.span style={{ color: accentMap[accent] || accentMap.cyan }}>{rounded}</motion.span>
-}
-
 export function QuantPortfolio() {
-  const [expanded, setExpanded] = useState<number | null>(null)
-  const sectionRef = useRef<HTMLDivElement>(null)
-  const inView = useInView(sectionRef, { once: true })
-
   return (
     <section id="research" className="section">
-      <div className="container" ref={sectionRef}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-        >
-          <p className="section-heading-tag">{'// COMBAT_RECORDS'}</p>
-          <h2 className="section-heading mb-3">
-            <span className="gradient-monarch">Quantitative</span> Research Portfolio
-          </h2>
-          <p className="text-text-muted text-sm font-mono mb-8">
-            Applied analytics across maritime, telco, healthcare, and edtech
-          </p>
-        </motion.div>
+      <div className="container">
+        <SectionHeader
+          index="05"
+          label="Research"
+          meta="4 case studies"
+          title={['Models that changed', <span key="2" className="text-ink-3">a decision.</span>]}
+          lead="Applied quantitative work across maritime, telco, healthcare, and education. Every one of these produced a number someone acted on. The coefficient mattered less than what it made the business stop doing."
+        />
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {QUANT_CASE_STUDIES.map((study, i) => (
-            <motion.div
-              key={study.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: i * 0.1 }}
-            >
-              <GlassCard className="h-full">
-                <div className="flex items-start justify-between mb-3">
-                  <NeonBadge color={study.accent}>{study.method}</NeonBadge>
-                  <span className="text-xs font-mono text-text-muted">{study.company}</span>
+        <div className="mt-14 grid gap-3 lg:grid-cols-2">
+          {QUANT_CASE_STUDIES.map((study, i) => {
+            const color = ACCENT[study.accent] ?? 'var(--color-signal)'
+            return (
+              <Reveal
+                key={study.title}
+                delay={Math.min(i, 4) * 80}
+                className="panel panel-interactive flex flex-col p-6 sm:p-8"
+              >
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                  <span
+                    className="rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em]"
+                    style={{ color, borderColor: `color-mix(in oklab, ${color} 32%, transparent)` }}
+                  >
+                    {study.method}
+                  </span>
+                  <span className="t-label">{study.company}</span>
                 </div>
 
-                <h3 className="font-display font-semibold text-text-primary mb-3">{study.title}</h3>
+                <h3 className="font-display text-xl font-extrabold tracking-tight text-ink">
+                  {study.title}
+                </h3>
 
-                <MiniChart type={study.chartType} accent={study.accent} chartInView={inView} />
+                <div className="my-6">
+                  <Sparkline type={study.chartType} color={color} />
+                </div>
 
-                <div className="grid grid-cols-3 gap-2 my-4">
-                  {Object.entries(study.metrics).map(([key, val]) => (
-                    <div key={key} className="text-center">
-                      <div className="text-lg font-display font-bold" style={{ color: accentMap[study.accent] }}>
-                        <AnimatedCounter value={val} accent={study.accent} inView={inView} />
-                      </div>
-                      <div className="text-[9px] font-mono text-text-muted uppercase tracking-wider">{key}</div>
+                <dl className="grid grid-cols-3 gap-4 border-y border-line py-5">
+                  {Object.entries(study.metrics).map(([key, value]) => (
+                    <div key={key} className="min-w-0">
+                      <dd
+                        className="font-display text-xl font-extrabold leading-none tracking-tight tnum sm:text-2xl"
+                        style={{ color }}
+                      >
+                        {value}
+                      </dd>
+                      <dt className="t-label mt-2 leading-snug">{key}</dt>
                     </div>
                   ))}
-                </div>
+                </dl>
 
-                <p className="text-xs text-text-secondary leading-relaxed">{study.description}</p>
-
-                <button
-                  onClick={() => setExpanded(expanded === i ? null : i)}
-                  className="mt-3 flex items-center gap-1 text-xs font-mono text-text-muted hover:text-monarch transition-colors"
-                >
-                  {expanded === i ? 'Show less' : 'Methodology details'}
-                  {expanded === i ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                </button>
-
-                <AnimatePresence>
-                  {expanded === i && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="pt-3 text-xs text-text-muted leading-relaxed border-t border-border-glass mt-3">
-                        {study.description} The model was validated using cross-validation and achieved statistical significance at p&lt;0.01. Feature importance analysis confirmed the primary drivers aligned with domain expertise.
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </GlassCard>
-            </motion.div>
-          ))}
+                <p className="mt-5 text-[13px] leading-relaxed text-ink-2">
+                  {study.description}
+                </p>
+              </Reveal>
+            )
+          })}
         </div>
+
+        <Reveal delay={140} className="mt-10">
+          <a
+            href={SITE_CONFIG.quantPath}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-cursor="hover"
+            className="btn btn-ghost"
+          >
+            Full quantitative portfolio
+            <ArrowUpRight size={13} />
+          </a>
+        </Reveal>
       </div>
     </section>
   )

@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { extractEmail, detectIntent } from '@/lib/utils'
 
-const SYSTEM_PROMPT = `You are ARIA — the AI assistant on Faris Maulana's portfolio website.
+const SYSTEM_PROMPT = `You are ARIA, the assistant on Faris Maulana's portfolio website.
 
 ═══ WHO YOU REPRESENT ═══
-Faris Maulana — Manager of AI Engineering at PT Trans Indonesia Superkoridor (TIS).
+Faris Maulana is Manager of AI Engineering at PT Trans Indonesia Superkoridor (TIS).
 • Builds production AI systems: Text2SQL multi-agent, RAG pipelines, LangGraph orchestration
 • Data engineering: ClickHouse, PostgreSQL, dbt-core, Airflow, Airbyte, medallion DWH
 • LLM lifecycle: RLHF, fine-tuning, red-teaming, vLLM inference, guardrails
@@ -14,29 +14,29 @@ Faris Maulana — Manager of AI Engineering at PT Trans Indonesia Superkoridor (
 • Email: maulanafaris016@gmail.com
 
 ═══ KEY PROJECTS ═══
-1. Text2SQL Multi-Agent Platform (TIS, 2026) — LangGraph + ClickHouse, PP 71/2019 compliant, air-gapped
-2. Antigravity RAG System (2025) — custom RAGAS-replacement eval, cross-encoder reranking, Groq inference
-3. NOC Monitoring AI Agent (2026) — FastAPI + LangChain + ClickHouse + WhatsApp (Fonnte) alerting
-4. Maritime Fleet Analytics (BLT) — PCA + OLS on Danaos ERP, 11.2% TCE yield lift
-5. Smart Contract Security Research — reentrancy, access-control, overflow bugs on Sherlock/Code4rena
+1. Text2SQL Multi-Agent Platform (TIS, 2026): LangGraph + ClickHouse, PP 71/2019 compliant, air-gapped
+2. Antigravity RAG System (2025): custom RAGAS-replacement eval, cross-encoder reranking, Groq inference
+3. NOC Monitoring AI Agent (2026): FastAPI + LangChain + ClickHouse + WhatsApp (Fonnte) alerting
+4. Maritime Fleet Analytics (BLT): PCA + OLS on Danaos ERP, 11.2% TCE yield lift
+5. Smart Contract Security Research: reentrancy, access-control, overflow bugs on Sherlock/Code4rena
 
 ═══ LEAD CAPTURE RULES (CRITICAL) ═══
 Your PRIMARY job beyond answering questions is to capture visitor identity.
 On the FIRST or SECOND visitor message, naturally ask for their name and purpose.
-Do it conversationally — weave it into your response, not as a form.
+Do it conversationally. Weave it into your response rather than asking as a form.
 
 ═══ RESPONSE STYLE ═══
 • Concise: under 120 words unless a technical deep-dive is explicitly requested
-• Warm but precise — you represent a senior engineer, not a chatbot
+• Warm but precise. You represent a senior engineer, not a chatbot
 • For hiring/collab: be enthusiastic and proactive
 • For technical: match the visitor's depth level
 • End responses with a light CTA: "Anything else I can help you with?"
 
 ═══ WHAT YOU NEVER DO ═══
-• Never say you "can't" answer something — redirect gracefully
+• Never say you "can't" answer something. Redirect gracefully
 • Never fabricate project details or metrics
 • Never share home addresses, IDs, or sensitive personal data
-• Never claim Faris is unavailable — always say "he'll respond within 24h"`
+• Never claim Faris is unavailable. Always say "he'll respond within 24h"`
 
 const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001'
 
@@ -89,7 +89,7 @@ function formatEmailHTML(opts: {
 
   return `
     <div style="font-family:'Inter',sans-serif;background:#030309;color:#f3e8ff;padding:32px;max-width:600px;border-radius:12px;border:1px solid rgba(168,85,247,0.1)">
-      <h2 style="color:#a855f7;font-size:18px;margin:0 0 4px">${isNew ? '🆕 New Visitor — ARIA' : '💬 ARIA Chat Update'}</h2>
+      <h2 style="color:#a855f7;font-size:18px;margin:0 0 4px">${isNew ? '🆕 New visitor via ARIA' : '💬 ARIA Chat Update'}</h2>
       <p style="color:#6b5ba0;font-size:11px;font-family:monospace;margin:0 0 20px">Session: ${sessionId}</p>
       ${identityRows ? `
         <div style="background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.1);border-radius:8px;padding:16px;margin-bottom:20px">
@@ -232,8 +232,8 @@ export async function POST(req: NextRequest) {
           })
 
           const emailSubject = isNewSession
-            ? `[ARIA] New visitor${visitorName ? ` — ${visitorName}` : ''} (${detectedIntent})`
-            : `[ARIA] Chat update${visitorName ? ` from ${visitorName}` : ''} — msg #${messageCount}`
+            ? `[ARIA] New visitor${visitorName ? `, ${visitorName}` : ''} (${detectedIntent})`
+            : `[ARIA] Chat update${visitorName ? ` from ${visitorName}` : ''}, msg #${messageCount}`
 
           sendEmail(emailSubject, emailHtml)
 

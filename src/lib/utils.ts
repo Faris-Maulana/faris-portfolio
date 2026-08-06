@@ -24,7 +24,7 @@ export function slugify(str: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
-// UNIFIED session ID — used by BOTH analytics AND chat
+// Unified session id, shared by both analytics and chat
 // Key: 'faris_portfolio_sid'
 export function getOrCreateSessionId(): string {
   if (typeof window === 'undefined') return ''

@@ -1,388 +1,173 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Download, ArrowDown } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Download } from 'lucide-react'
+import { SignalField } from '@/components/canvas/SignalField'
+import { Reveal, RevealLines } from '@/components/ui/Reveal'
 import { GithubIcon, LinkedinIcon } from '@/components/ui/Icons'
-import { Mail } from 'lucide-react'
-import { SITE_CONFIG } from '@/lib/constants'
-
-function KineticName({ text }: { text: string }) {
-  const words = text.split(' ')
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 800)
-    return () => clearTimeout(t)
-  }, [])
-
-  return (
-    <h1
-      className="nameplate"
-      style={{
-        background: 'linear-gradient(180deg, #f3e8ff 0%, #c084fc 70%, #7c3aed 100%)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-        filter: visible ? 'drop-shadow(0 0 60px rgba(168,85,247,0.4))' : 'none',
-      }}
-    >
-      {words.flatMap((word, wi) => {
-        const span = (
-          <span
-            key={`w-${wi}`}
-            className="kinetic-word in"
-            aria-label={word}
-            style={{ display: 'inline-block' }}
-          >
-            {word.split('').map((char, ci) => (
-              <span
-                key={ci}
-                aria-hidden="true"
-                className={visible ? 'opacity-100' : 'opacity-0'}
-                style={{
-                  display: 'inline-block',
-                  transition: `opacity 0.05s linear ${800 + (wi * word.length + ci) * 40}ms`,
-                }}
-              >
-                {char}
-              </span>
-            ))}
-          </span>
-        )
-        return wi < words.length - 1
-          ? [span, <span key={`sp-${wi}`} aria-hidden="true">{' '}</span>]
-          : [span]
-      })}
-    </h1>
-  )
-}
-
-function StatusWindow() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 30 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, delay: 3.6, ease: [0.19, 1, 0.22, 1] }}
-      className="
-        relative md:absolute z-20
-        w-full md:w-64 lg:w-72 xl:w-80
-        md:right-6 lg:right-8 xl:right-12
-        md:top-1/2 md:-translate-y-1/2
-        mt-8 md:mt-0
-        mx-auto md:mx-0
-        max-w-md md:max-w-none
-      "
-      style={{
-        clipPath: 'polygon(0% 0%, 96% 0%, 100% 4%, 100% 100%, 4% 100%, 0% 96%)',
-        border: '1px solid rgba(59,130,246,0.35)',
-        background: 'rgba(8,17,25,0.5)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        boxShadow: '0 0 0.3125rem rgba(59,130,246,0.3), 0 0 0.75rem rgba(59,130,246,0.1)',
-      }}
-    >
-      <div className="px-5 py-4 relative">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(59,130,246,0.03) 1px, rgba(59,130,246,0.03) 2px)',
-            backgroundSize: '100% 2px',
-            opacity: 0.04,
-            mixBlendMode: 'overlay',
-          }}
-        />
-        <div className="flex items-center justify-between mb-3 pb-2 border-b border-system-blue/20 relative">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rotate-45 bg-system-blue" />
-            <span className="font-mono text-[9px] text-system-blue tracking-[0.3em]">STATUS</span>
-          </div>
-          <span className="font-mono text-[8px] text-system-blue/50">ARCHITECT</span>
-        </div>
-
-        <div className="space-y-2 font-mono text-[10px] relative">
-          {[
-            { k: 'ROLE',     v: 'MANAGER · AI ENG', vc: '#c084fc' },
-            { k: 'COMPANY',  v: 'TIS',              vc: '#60a5fa' },
-            { k: 'NETWORK',  v: '25K+ KM',          vc: '#60a5fa' },
-            { k: 'YEARS',    v: '5+',               vc: '#a855f7' },
-            { k: 'STATUS',   v: 'AVAILABLE',        vc: '#10b981' },
-          ].map((s, i) => (
-            <motion.div
-              key={s.k}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 3.8 + i * 0.08 }}
-              className="flex items-center justify-between"
-            >
-              <span className="text-system-blue/60 tracking-widest">{s.k}</span>
-              <span style={{ color: s.vc }} className="font-semibold tabular-nums">{s.v}</span>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="mt-4 pt-3 border-t border-system-blue/20 space-y-2 relative">
-          {[
-            { k: 'PRODUCTION DASHBOARDS', val: 1, max: 1, label: '20+', color: '#a855f7' },
-            { k: 'INDUSTRIES SHIPPED',    val: 4/5, max: 5, label: '4/5', color: '#60a5fa' },
-          ].map(b => (
-            <div key={b.k} className="space-y-1">
-              <div className="flex justify-between font-mono text-[8px]">
-                <span className="text-system-blue/60 tracking-widest">{b.k}</span>
-                <span style={{ color: b.color }}>{b.label}</span>
-              </div>
-              <div className="h-0.5 bg-system-blue/10 relative overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${b.val * 100}%` }}
-                  transition={{ duration: 1.4, delay: 4.5, ease: [0.19, 1, 0.22, 1] }}
-                  className="absolute inset-y-0 left-0"
-                  style={{ background: b.color, boxShadow: `0 0 6px ${b.color}` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-function QuestNotification() {
-  const [show, setShow] = useState(true)
-  return show ? (
-    <motion.div
-      initial={{ opacity: 0, x: 20, y: -10 }}
-      animate={{ opacity: 1, x: 0, y: 0 }}
-      transition={{ duration: 0.4, delay: 5.5 }}
-      className="
-        hidden md:flex
-        absolute lg:top-24 md:top-20 right-4 md:right-6 lg:right-8 xl:right-12
-        z-20 max-w-xs
-      "
-      style={{
-        clipPath: 'polygon(0% 0%, 96% 0%, 100% 4%, 100% 100%, 4% 100%, 0% 96%)',
-        border: '1px solid rgba(168,85,247,0.4)',
-        background: 'rgba(20,10,35,0.6)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-      }}
-    >
-      <div className="relative px-4 py-3 flex items-start gap-3">
-        <div className="font-mono text-[8px] text-monarch tracking-[0.3em] absolute -top-2 left-3 px-2" style={{ background: '#030309' }}>
-          NEW QUEST
-        </div>
-        <div className="text-xs text-text-secondary leading-relaxed pt-1">
-          A new opportunity awaits.<br />
-          <span className="text-monarch-hi">Reach out to accept.</span>
-        </div>
-        <button
-          onClick={() => setShow(false)}
-          className="absolute top-1 right-2 text-monarch/40 hover:text-monarch text-xs"
-          aria-label="Dismiss"
-        >×</button>
-      </div>
-    </motion.div>
-  ) : null
-}
+import { useClock } from '@/hooks/useClock'
+import { HERO_METRICS, SITE_CONFIG } from '@/lib/constants'
 
 export function Hero() {
+  const clock = useClock('Asia/Jakarta')
+
   return (
-    <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-3 sm:inset-4 md:inset-5 lg:inset-6 pointer-events-none z-10">
-        {[
-          { cls: 'top-0 left-0',   br: 'border-t-2 border-l-2' },
-          { cls: 'top-0 right-0',  br: 'border-t-2 border-r-2' },
-          { cls: 'bottom-0 left-0',  br: 'border-b-2 border-l-2' },
-          { cls: 'bottom-0 right-0', br: 'border-b-2 border-r-2' },
-        ].map((c, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.2 + i * 0.06 }}
-            className={`absolute w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 ${c.cls} ${c.br} border-system-blue/60`}
-          />
-        ))}
+    <section
+      id="hero"
+      className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden pt-28"
+    >
+      {/* The one WebGL moment. Anchored right and masked so it frames the
+          headline instead of competing with it, the previous full-bleed scene
+          put moving geometry directly behind every line of text. */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <SignalField
+          className="absolute inset-y-[-10%] right-[-18%] left-[8%] md:left-[26%]"
+          intensity={1}
+        />
+        {/* Legibility scrim: darkens the canvas under the text column only. */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(100deg, var(--color-canvas) 6%, rgba(7,8,10,0.82) 34%, rgba(7,8,10,0.28) 62%, rgba(7,8,10,0.55) 100%)',
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-56"
+          style={{
+            background:
+              'linear-gradient(to top, var(--color-canvas), transparent)',
+          }}
+        />
+      </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="
-            absolute top-1 sm:top-2
-            left-4 sm:left-8 md:left-10 lg:left-12
-            right-4 sm:right-8 md:right-10 lg:right-12
-            flex items-center justify-between
-            font-mono text-[8px] sm:text-[9px] tracking-[0.2em] sm:tracking-[0.3em]
-          "
-          role="status"
-          aria-label="Domain Faris Maulana, status online"
-        >
-          <span className="text-system-blue/60">DOMAIN.FARIS_MAULANA</span>
-          <span aria-hidden="true" className="sr-only"> · </span>
-          <span className="text-system-blue/60 flex items-center gap-2">
-            <span className="w-1 h-1 rounded-full bg-green animate-pulse" aria-hidden="true" />
-            <span>ONLINE</span>
+      <div className="container relative flex flex-1 flex-col justify-center">
+        {/* ── Status line ─────────────────────────────────────────────── */}
+        <Reveal className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <span className="flex items-center gap-2.5">
+            <span className="pulse-dot" aria-hidden />
+            <span className="t-label text-signal">Available for work</span>
           </span>
-        </motion.div>
+          <span className="hidden h-3 w-px bg-line-2 sm:block" aria-hidden />
+          <span className="t-label">{SITE_CONFIG.location}</span>
+          <span className="hidden h-3 w-px bg-line-2 sm:block" aria-hidden />
+          <span className="t-label tnum tabular-nums">
+            {clock ? `${clock} GMT+7` : 'GMT+7'}
+          </span>
+        </Reveal>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="
-            absolute bottom-1 sm:bottom-2
-            left-4 sm:left-8 md:left-10 lg:left-12
-            right-4 sm:right-8 md:right-10 lg:right-12
-            flex items-center justify-between
-            font-mono text-[8px] sm:text-[9px] text-system-blue/40 tracking-[0.2em] sm:tracking-[0.3em]
-          "
-          role="status"
-          aria-label="Hunter Association Jakarta — scroll to descend"
+        {/* ── Name ────────────────────────────────────────────────────────
+            Solid ink, no background-clip. Gradient text renders as a hole in
+            the page the moment anything creates a stacking context above it, which is exactly how this headline disappeared before. */}
+        <h1 className="t-display text-ink">
+          <span className="sr-only">Faris Maulana</span>
+          <span aria-hidden>
+            <RevealLines
+              lines={[
+                'FARIS',
+                <>
+                  MAULANA
+                  <span className="ml-3 inline-block h-[0.14em] w-[0.14em] translate-y-[-0.08em] rounded-full bg-signal align-middle" />
+                </>,
+              ]}
+              stagger={110}
+            />
+          </span>
+        </h1>
+
+        {/* ── Positioning statement ───────────────────────────────────── */}
+        <Reveal
+          as="p"
+          delay={340}
+          className="t-lead mt-7 max-w-[46ch] text-balance"
         >
-          <span>HUNTER.ASSOCIATION // JAKARTA</span>
-          <span aria-hidden="true" className="sr-only"> · </span>
-          <span>SCROLL TO DESCEND</span>
-        </motion.div>
-      </div>
+          {SITE_CONFIG.role} at a{' '}
+          <span className="text-ink">25,000&nbsp;km DWDM fiber backbone</span>{' '}
+          operator. I build the AI function, the data platform, and the agent
+          layer <span className="t-serif text-signal">from zero</span>.
+        </Reveal>
 
-      <StatusWindow />
-      <QuestNotification />
-
-      <div className="
-        relative z-20 text-center
-        px-4 sm:px-6 md:px-8 lg:px-12
-        py-16 sm:py-20 md:py-24
-        max-w-7xl mx-auto
-        flex flex-col items-center
-      ">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="inline-flex items-center gap-3 mb-8 font-mono text-[10px] tracking-[0.4em] text-system-blue uppercase"
+        <Reveal
+          as="p"
+          delay={420}
+          className="mt-4 max-w-[52ch] text-sm text-ink-3"
         >
-          <div className="w-8 h-px bg-system-blue/60" />
-          <span>S-RANK · AI ARCHITECT</span>
-          <div className="w-8 h-px bg-system-blue/60" />
-        </motion.div>
+          Multi-agent LLM systems. Medallion data platforms. Smart contract
+          security research.
+        </Reveal>
 
-        <div className="mb-8">
-          <KineticName text="FARIS MAULANA" />
-        </div>
-
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1.5 }}
-          className="font-mono text-xs md:text-sm text-text-secondary tracking-[0.2em] uppercase mb-12"
-        >
-          Building production AI on national fiber · Multi-agent systems · Smart contract security research
-        </motion.p>
-
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ duration: 0.8, delay: 1.8, ease: [0.19, 1, 0.22, 1] }}
-          className="h-px bg-gradient-to-r from-transparent via-monarch to-transparent w-96 max-w-full mx-auto mb-12"
-          style={{ transformOrigin: 'center' }}
-        />
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 2.5 }}
-          className="
-            flex flex-col sm:flex-row items-stretch sm:items-center justify-center
-            gap-3 sm:gap-4 md:gap-5
-            w-full sm:w-auto
-            mb-12 sm:mb-16
-          "
-        >
-          <a
-            href="#about"
-            data-cursor="hover"
-            className="
-              group relative inline-flex items-center justify-center gap-2 sm:gap-3
-              px-6 sm:px-7 md:px-8 py-3 sm:py-3.5
-              font-mono text-[11px] sm:text-xs tracking-[0.15em] sm:tracking-[0.2em] uppercase
-              transition-all duration-200
-              w-full sm:w-auto min-w-[180px]
-            "
-            style={{
-              background: 'linear-gradient(135deg, rgba(59,130,246,0.18), rgba(37,99,235,0.08))',
-              border: '1px solid rgba(59,130,246,0.5)',
-              color: '#60a5fa',
-              clipPath: 'polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)',
-            }}
-          >
-            <span>Enter Domain</span>
-            <ArrowDown size={13} className="group-hover:translate-y-0.5 transition-transform" />
+        {/* ── Actions ─────────────────────────────────────────────────── */}
+        <Reveal delay={500} className="mt-9 flex flex-wrap items-center gap-3">
+          <a href="#contact" className="btn btn-primary" data-cursor="hover">
+            Start a conversation
+            <ArrowUpRight size={14} />
           </a>
-
           <a
-            href="/cv"
+            href={SITE_CONFIG.cvPath}
             download
+            className="btn btn-ghost"
             data-cursor="hover"
-            className="
-              inline-flex items-center justify-center gap-2 sm:gap-3
-              px-6 sm:px-7 md:px-8 py-3 sm:py-3.5
-              font-mono text-[11px] sm:text-xs tracking-[0.15em] sm:tracking-[0.2em] uppercase
-              transition-all duration-200
-              w-full sm:w-auto min-w-[180px]
-            "
-            style={{
-              border: '1px solid rgba(251,191,36,0.45)',
-              color: '#fbbf24',
-              clipPath: 'polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)',
-              background: 'rgba(251,191,36,0.04)',
-            }}
           >
-            <Download size={13} />
-            Hunter Card
+            <Download size={14} />
+            Download CV
           </a>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 2.8 }}
-          className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 md:gap-12"
-        >
-          {[
-            { icon: GithubIcon,   href: SITE_CONFIG.github,           label: 'GITHUB' },
-            { icon: LinkedinIcon, href: SITE_CONFIG.linkedin,          label: 'LINKEDIN' },
-            { icon: Mail,         href: `mailto:${SITE_CONFIG.email}`, label: 'CONTACT' },
-          ].map(({ icon: Icon, href, label }) => (
-            <a
-              key={label}
-              href={href}
-              target="_blank" rel="noopener noreferrer"
-              data-cursor="hover"
-              className="group flex flex-col items-center gap-2 text-text-muted hover:text-monarch transition-colors duration-300"
-            >
-              <Icon size={15} className="group-hover:scale-110 transition-transform" />
-              <span className="text-[8px] font-mono tracking-[0.4em] opacity-50 group-hover:opacity-100">
-                {label}
-              </span>
-            </a>
-          ))}
-        </motion.div>
+          <span className="hidden h-6 w-px bg-line-2 sm:block" aria-hidden />
+
+          <span className="flex items-center gap-1">
+            {[
+              { Icon: GithubIcon, href: SITE_CONFIG.github, label: 'GitHub' },
+              { Icon: LinkedinIcon, href: SITE_CONFIG.linkedin, label: 'LinkedIn' },
+            ].map(({ Icon, href, label }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                data-cursor="hover"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-ink-3 transition-colors duration-300 hover:text-ink"
+              >
+                <Icon size={16} />
+              </a>
+            ))}
+          </span>
+        </Reveal>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 3.2 }}
-        className="absolute bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
-      >
-        <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-px h-10 bg-gradient-to-b from-system-blue/60 to-transparent"
-        />
-      </motion.div>
+      {/* ── Metric ledger ─────────────────────────────────────────────── */}
+      <div className="container relative pb-10">
+        <Reveal delay={620} className="border-t border-line pt-7">
+          {/* Value before label: the labels wrap to different heights, and a
+              label-first order would push each number to its own baseline. */}
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-7 md:grid-cols-4">
+            {HERO_METRICS.map(metric => (
+              <div key={metric.label} className="min-w-0">
+                <dd className="font-display text-2xl font-extrabold leading-none tracking-tight text-ink tnum sm:text-3xl">
+                  {metric.value}
+                  {metric.unit ? (
+                    <span className="ml-1 text-base font-medium text-ink-3">
+                      {metric.unit}
+                    </span>
+                  ) : null}
+                </dd>
+                <dt className="t-label mt-2.5 leading-relaxed">
+                  {metric.label}
+                </dt>
+              </div>
+            ))}
+          </dl>
+        </Reveal>
+
+        <a
+          href="#about"
+          data-cursor="hover"
+          aria-label="Scroll to about"
+          className="mt-8 inline-flex items-center gap-2 text-ink-4 transition-colors duration-300 hover:text-signal"
+        >
+          <span className="t-label">Scroll</span>
+          <ArrowDownRight size={13} className="animate-bounce" />
+        </a>
+      </div>
     </section>
   )
 }

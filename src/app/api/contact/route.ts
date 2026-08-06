@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
               <table style="width:100%; border-collapse: collapse;">
                 <tr><td style="color:#8fa8b8;padding:8px 0;width:80px">From</td><td><strong>${data.name}</strong></td></tr>
                 <tr><td style="color:#8fa8b8;padding:8px 0">Email</td><td><a href="mailto:${data.email}" style="color:#00f5ff">${data.email}</a></td></tr>
-                <tr><td style="color:#8fa8b8;padding:8px 0">Subject</td><td>${data.subject || '—'}</td></tr>
+                <tr><td style="color:#8fa8b8;padding:8px 0">Subject</td><td>${data.subject || '(none)'}</td></tr>
               </table>
               <hr style="border-color: rgba(0,245,255,0.1); margin: 20px 0;">
               <p style="white-space: pre-line; line-height: 1.6">${data.message}</p>

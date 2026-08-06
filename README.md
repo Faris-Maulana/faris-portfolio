@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# faris-portfolio
 
-## Getting Started
+Personal site for Faris Maulana. AI Engineering Manager at PT Trans Indonesia
+Superkoridor, working on multi-agent LLM systems and medallion data platforms
+over a 25,000 km DWDM fiber backbone.
 
-First, run the development server:
+Live: https://faris-portfolio-red.vercel.app
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Stack
+
+| Layer     | Choice                                                                              |
+| --------- | ----------------------------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router, Turbopack)                                                    |
+| Language  | TypeScript, React 19                                                                  |
+| Styling   | Tailwind CSS v4 with a token layer in `globals.css`                                   |
+| Type      | `next/font` (Inter, Inter Tight, JetBrains Mono, Instrument Serif)                     |
+| Motion    | CSS transitions driven by one IntersectionObserver. Framer Motion for overlays only    |
+| 3D        | react-three-fiber, a single scene in the hero                                          |
+| Data      | Supabase (blog, chat, analytics) and the GitHub REST API                               |
+| Hosting   | Vercel                                                                                |
+
+## Design system
+
+Everything visual comes from `src/app/globals.css`. Colours are semantic rather
+than decorative: each accent maps to a domain, so a violet chip always means
+agent or LLM work and a coral one always means security.
+
+```
+signal  #5CF2C0   platform, live systems, primary action
+agent   #8B7BFF   AI, LLM, multi-agent
+data    #58B9FF   data engineering, BI
+cred    #FFB454   credentials and documents
+threat  #FF6B7A   security research
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Type primitives (`t-display`, `t-h2`, `t-h3`, `t-label`, `t-lead`, `t-body`) and
+surface primitives (`panel`, `ticks`, `rule`) keep eight independently built
+sections reading as one publication.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+  app/
+    page.tsx              server component, fetches repos, composes sections
+    layout.tsx            fonts, metadata, Person JSON-LD, page chrome
+    opengraph-image.tsx   link preview card, generated from live constants
+    sitemap.ts robots.ts
+  components/
+    canvas/               hero backbone visual (topology generator + renderer)
+    sections/             one file per section
+    layout/               navbar, footer
+    providers/            reveal observer, smooth scroll
+    ui/                   shared primitives
+  lib/
+    constants.ts          site copy and CV data
+    credentials.ts        certifications, served from /public
+    github.ts             live repo fetch with a committed snapshot fallback
+public/
+  cv/                     CV and portfolio PDFs
+  certificates/           certification documents
+```
 
-## Learn More
+## Content
 
-To learn more about Next.js, take a look at the following resources:
+Site copy lives in `src/lib/constants.ts`. Credentials live in
+`src/lib/credentials.ts` and point at files in `public/certificates`. Neither
+depends on a database, so both render even when Supabase is unreachable.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The GitHub archive in the Projects section is fetched live and revalidated
+hourly. `src/data/github-repos.json` is a committed snapshot used when the API
+is rate limited, so the section is never empty.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+To refresh the snapshot:
 
-## Deploy on Vercel
+```bash
+curl -s "https://api.github.com/users/Faris-Maulana/repos?per_page=100&sort=updated" > /tmp/repos.json
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Local development
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm install
+npm run dev
+```
+
+Copy `.env.example` to `.env.local` and fill in the Supabase keys. The site
+renders without them. Only the blog, chat, and analytics routes need them.
+
+```bash
+npm run build
+npm run lint
+npx tsc --noEmit
+```
+
+## Notes
+
+- Sections render on the server. They were previously client-only dynamic
+  imports, which meant crawlers received a hero and seven loading skeletons.
+- The hero canvas suspends its render loop once the hero leaves the viewport.
+- Reduced motion disables the canvas, the smooth scroll, and every reveal.

@@ -5,11 +5,15 @@ import { getOrCreateSessionId } from '@/lib/utils'
 
 export function useAnalytics() {
   const sentRef   = useRef(false)
-  const startTime = useRef(Date.now())
+  // Stamped on mount rather than during render. Date.now() in a render path is
+  // impure, and on the server it would record a time that has nothing to do
+  // with when this visitor actually arrived.
+  const startTime = useRef(0)
 
   useEffect(() => {
     if (sentRef.current || typeof window === 'undefined') return
     sentRef.current = true
+    startTime.current = Date.now()
 
     const sessionId = getOrCreateSessionId()
     if (!sessionId) return
@@ -27,7 +31,7 @@ export function useAnalytics() {
           }),
         })
       } catch {
-        // Silent fail — analytics is non-critical
+        // Silent fail, analytics is non-critical
       }
     }
 

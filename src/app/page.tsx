@@ -1,67 +1,38 @@
-'use client'
-
-import { Suspense } from 'react'
-import dynamic from 'next/dynamic'
 import { Hero } from '@/components/sections/Hero'
 import { CredibilityStrip } from '@/components/sections/CredibilityStrip'
 import { About } from '@/components/sections/About'
-import { HoloDivider } from '@/components/ui/HoloDivider'
-import { useStaggeredReveal } from '@/hooks/useStaggeredReveal'
+import { Experience } from '@/components/sections/Experience'
+import { Projects } from '@/components/sections/Projects'
+import { Skills } from '@/components/sections/Skills'
+import { QuantPortfolio } from '@/components/sections/QuantPortfolio'
+import { Certificates } from '@/components/sections/Certificates'
+import { Contact } from '@/components/sections/Contact'
+import { getRepos } from '@/lib/github'
 
-const SectionSkeleton = () => (
-  <div className="section">
-    <div className="container">
-      <div className="h-8 w-48 rounded animate-pulse mb-4"
-        style={{ background: 'rgba(59,130,246,0.1)' }} />
-      <div className="h-4 w-32 rounded animate-pulse mb-12"
-        style={{ background: 'rgba(59,130,246,0.08)' }} />
-      <div className="grid gap-6">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-40 animate-pulse"
-            style={{
-              background: 'rgba(8,17,25,0.4)',
-              border: '1px solid rgba(59,130,246,0.1)',
-              clipPath: 'polygon(0% 0%, 96% 0%, 100% 4%, 100% 100%, 4% 100%, 0% 96%)',
-            }} />
-        ))}
-      </div>
-    </div>
-  </div>
-)
+/**
+ * Server component.
+ *
+ * Every section used to be a `dynamic(..., { ssr: false })` import, which meant
+ * crawlers, and anyone on a slow connection, received a page containing a
+ * hero and seven loading skeletons. The sections are still client components,
+ * but rendering them on the server puts the actual content in the HTML.
+ */
+export const revalidate = 3600
 
-const Experience = dynamic(() => import('@/components/sections/Experience').then(m => ({ default: m.Experience })), { ssr: false, loading: () => <SectionSkeleton /> })
-const Projects = dynamic(() => import('@/components/sections/Projects').then(m => ({ default: m.Projects })), { ssr: false, loading: () => <SectionSkeleton /> })
-const Skills = dynamic(() => import('@/components/sections/Skills').then(m => ({ default: m.Skills })), { ssr: false, loading: () => <SectionSkeleton /> })
-const QuantPortfolio = dynamic(() => import('@/components/sections/QuantPortfolio').then(m => ({ default: m.QuantPortfolio })), { ssr: false, loading: () => <SectionSkeleton /> })
-const Certificates = dynamic(() => import('@/components/sections/Certificates').then(m => ({ default: m.Certificates })), { ssr: false, loading: () => <SectionSkeleton /> })
-const Blog = dynamic(() => import('@/components/sections/Blog').then(m => ({ default: m.Blog })), { ssr: false, loading: () => <SectionSkeleton /> })
-const Contact = dynamic(() => import('@/components/sections/Contact').then(m => ({ default: m.Contact })), { ssr: false, loading: () => <SectionSkeleton /> })
+export default async function Home() {
+  const repos = await getRepos()
 
-const SECTIONS = [
-  { id: 'about',      label: 'STATUS',    Component: About },
-  { id: 'experience', label: 'QUESTS',    Component: Experience },
-  { id: 'projects',   label: 'INVENTORY', Component: Projects },
-  { id: 'skills',     label: 'SKILL TREE',Component: Skills },
-  { id: 'research',   label: 'COMBAT LOG',Component: QuantPortfolio },
-  { id: 'certificates',label: 'TITLES',   Component: Certificates },
-  { id: 'blog',       label: 'BROADCAST', Component: Blog },
-  { id: 'contact',    label: 'CONTACT',   Component: Contact },
-] as const
-
-export default function Home() {
-  useStaggeredReveal()
   return (
     <>
       <Hero />
       <CredibilityStrip />
-      {SECTIONS.map(({ label, Component }, i) => (
-        <div key={label}>
-          <HoloDivider label={label} index={i + 1} total={SECTIONS.length} />
-          <Suspense fallback={<SectionSkeleton />}>
-            <Component />
-          </Suspense>
-        </div>
-      ))}
+      <About />
+      <Experience />
+      <Projects repos={repos} />
+      <Skills />
+      <QuantPortfolio />
+      <Certificates />
+      <Contact />
     </>
   )
 }

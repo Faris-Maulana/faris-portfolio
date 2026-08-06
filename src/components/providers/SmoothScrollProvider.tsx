@@ -5,57 +5,38 @@ import Lenis from 'lenis'
 
 let lenis: Lenis | null = null
 
-export function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
+export function SmoothScrollProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   useEffect(() => {
-    const init = () => {
-      lenis = new Lenis({
-        duration: 1.2,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smoothWheel: true,
-        touchMultiplier: 1.5,
-        wheelMultiplier: 1,
-        infinite: false,
-      })
+    // Scroll hijacking is exactly what "reduced motion" asks us not to do.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-      lenis.on('scroll', (e: { scroll: number }) => {
-        ;(window as any).__scrollY = e.scroll
-      })
+    const instance = new Lenis({
+      duration: 1.05,
+      easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 1.6,
+    })
+    lenis = instance
 
-      function raf(time: number) {
-        lenis?.raf(time)
-        requestAnimationFrame(raf)
-      }
-      const rafId = requestAnimationFrame(raf)
-
-      ;(window as any).__isMobile =
-        typeof window !== 'undefined' &&
-        window.matchMedia('(pointer: coarse)').matches
-
-      return rafId
+    // The previous implementation stored only the first frame id, so cleanup
+    // cancelled a frame that had already fired and the loop ran for the life
+    // of the tab. Tracking the live id is what actually stops it.
+    let frame = 0
+    const tick = (time: number) => {
+      instance.raf(time)
+      frame = requestAnimationFrame(tick)
     }
+    frame = requestAnimationFrame(tick)
 
-    // If boot is active, wait for it to finish before creating Lenis
-    if ((window as any).__bootLocked) {
-      const wait = setInterval(() => {
-        if (!(window as any).__bootLocked) {
-          clearInterval(wait)
-          const rafId = init()
-          cleanupRef = () => {
-            cancelAnimationFrame(rafId)
-            lenis?.destroy()
-            lenis = null
-          }
-        }
-      }, 100)
-      let cleanupRef = () => clearInterval(wait)
-      return () => cleanupRef()
-    }
-
-    const rafId = init()
     return () => {
-      cancelAnimationFrame(rafId)
-      lenis?.destroy()
-      lenis = null
+      cancelAnimationFrame(frame)
+      instance.destroy()
+      if (lenis === instance) lenis = null
     }
   }, [])
 

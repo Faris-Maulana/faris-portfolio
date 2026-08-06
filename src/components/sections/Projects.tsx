@@ -1,251 +1,234 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { motion, useMotionValue, useSpring, useTransform, useInView } from 'framer-motion'
-import { ExternalLink } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { ArrowUpRight, Lock, Star } from 'lucide-react'
 import { GithubIcon } from '@/components/ui/Icons'
-import { NeonBadge } from '@/components/ui/NeonBadge'
-import type { Project } from '@/lib/supabase/types'
-import { createClient } from '@/lib/supabase/client'
+import { SectionHeader } from '@/components/ui/SectionHeader'
+import { Reveal } from '@/components/ui/Reveal'
+import { FALLBACK_PROJECTS } from '@/lib/constants'
+import {
+  GITHUB_PROFILE,
+  LANGUAGE_COLOR,
+  TIER_META,
+  tierOf,
+  type Repo,
+  type Tier,
+} from '@/lib/github'
+import { cn } from '@/lib/utils'
 
-const CATEGORIES = ['All', 'LLM/AI', 'Data Engineering', 'Security', 'Full Stack'] as const
 const CATEGORY_COLOR: Record<string, string> = {
-  'LLM/AI': 'cyan', 'Data Engineering': 'green',
-  'Security': 'red', 'Full Stack': 'violet', 'Analytics': 'amber',
+  'LLM/AI': 'var(--color-agent)',
+  'Data Engineering': 'var(--color-data)',
+  Security: 'var(--color-threat)',
+  'Full Stack': 'var(--color-signal)',
 }
 
-function hexToRgb(hex: string): string {
-  if (!hex.startsWith('#')) return '0,245,255'
-  const r = parseInt(hex.slice(1,3),16)
-  const g = parseInt(hex.slice(3,5),16)
-  const b = parseInt(hex.slice(5,7),16)
-  return `${r},${g},${b}`
+const TIER_ORDER: Tier[] = ['applied', 'practice', 'foundations']
+
+function prettify(name: string) {
+  return name
+    .replace(/[-_]+/g, ' ')
+    .replace(/\bLat\b/gi, '')
+    .replace(/\bLatihan\b/gi, 'Practice:')
+    .replace(/\bdg\b/gi, 'with')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
-function TiltCard({ project, index }: { project: Project; index: number }) {
-  const ref  = useRef<HTMLDivElement>(null)
-  const color = CATEGORY_COLOR[project.category] || 'muted'
-  const neonMap: Record<string, string> = {
-    cyan: '#00f5ff', green: '#39ff14', red: '#ff3e3e', violet: '#bf5fff', amber: '#ffb800', muted: '#4a6272'
-  }
-  const neon = neonMap[color] || '#4a6272'
+export function Projects({ repos }: { repos: Repo[] }) {
+  const [tier, setTier] = useState<Tier | 'all'>('applied')
 
-  const rotateX = useMotionValue(0)
-  const rotateY = useMotionValue(0)
-  const sRotX = useSpring(rotateX, { stiffness: 300, damping: 30 })
-  const sRotY = useSpring(rotateY, { stiffness: 300, damping: 30 })
+  const grouped = useMemo(() => {
+    const map = new Map<Tier, Repo[]>(TIER_ORDER.map(t => [t, []]))
+    for (const repo of repos) map.get(tierOf(repo))!.push(repo)
+    return map
+  }, [repos])
 
-  const glowX = useTransform(sRotY, [-15, 15], ['0%', '100%'])
-  const glowY = useTransform(sRotX, [-15, 15], ['0%', '100%'])
-  const glowBackground = useTransform(
-    [glowX, glowY],
-    ([x, y]: string[]) => `radial-gradient(circle at ${x} ${y}, rgba(${hexToRgb(neon)},0.08), transparent 60%)`
+  const shown = useMemo(
+    () => (tier === 'all' ? repos : (grouped.get(tier) ?? [])),
+    [tier, repos, grouped]
   )
 
-  const handleMove = (e: React.MouseEvent) => {
-    const rect = ref.current?.getBoundingClientRect()
-    if (!rect) return
-    const px = ((e.clientX - rect.left) / rect.width - 0.5) * 2
-    const py = ((e.clientY - rect.top) / rect.height - 0.5) * 2
-    rotateY.set(px * 12)
-    rotateX.set(-py * 8)
-  }
-  const handleLeave = () => { rotateX.set(0); rotateY.set(0) }
-
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.5, ease: [0.22,1,0.36,1] }}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-      style={{
-        rotateX: sRotX,
-        rotateY: sRotY,
-        transformStyle: 'preserve-3d',
-        perspective: '1000px',
-        minWidth: '340px',
-        maxWidth: '380px',
-        flexShrink: 0,
-      }}
-      className="cursor-pointer"
-    >
-      <div
-        className="glass rounded-2xl overflow-hidden h-full flex flex-col"
-        style={{
-          border: `1px solid rgba(${hexToRgb(neon)},0.12)`,
-        }}
-        data-cursor="hover"
-      >
-        <motion.div
-          className="absolute inset-0 rounded-2xl pointer-events-none z-10 opacity-0 hover:opacity-100 transition-opacity"
-          style={{
-            background: glowBackground,
-          }}
+    <section id="projects" className="section">
+      <div className="container">
+        <SectionHeader
+          index="03"
+          label="Work"
+          meta={`${repos.length} public repos`}
+          title={['What shipped,', <span key="2" className="text-ink-3">and what it moved.</span>]}
+          lead="Selected professional systems come first. Most of them live behind an air gap or an NDA, so they are described rather than linked. The full public GitHub archive follows underneath."
         />
 
-        <div className="p-6 flex flex-col flex-1 relative z-20">
-          <div className="flex items-start justify-between mb-4">
-            <NeonBadge color={color}>{project.category}</NeonBadge>
-            <span className="font-mono text-[10px] text-text-muted glass px-2 py-0.5 rounded">{project.year}</span>
-          </div>
-
-          <h3
-            className="font-display font-semibold text-base mb-1.5 leading-snug"
-            style={{ color: neon }}
-          >
-            {project.title}
-          </h3>
-          <p className="text-text-secondary text-xs leading-relaxed mb-3 line-clamp-2">{project.tagline}</p>
-          <p className="text-text-muted text-[11px] leading-relaxed mb-4 line-clamp-3">{project.description}</p>
-
-          <div className="flex flex-wrap gap-1.5 mt-auto mb-4">
-            {project.stack.slice(0, 6).map(tech => (
-              <NeonBadge key={tech} size="sm">{tech}</NeonBadge>
-            ))}
-            {project.stack.length > 6 && (
-              <span className="text-[10px] font-mono text-text-muted px-1">+{project.stack.length - 6}</span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 pt-3 border-t border-border-glass">
-            {project.repo_url && (
-              <a href={project.repo_url} target="_blank" rel="noopener noreferrer"
-                className="text-text-muted hover:text-monarch transition-colors" data-cursor="hover">
-                <GithubIcon size={15} />
-              </a>
-            )}
-            {project.demo_url && (
-              <a href={project.demo_url} target="_blank" rel="noopener noreferrer"
-                className="text-text-muted hover:text-monarch transition-colors" data-cursor="hover">
-                <ExternalLink size={15} />
-              </a>
-            )}
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-export function Projects() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [active, setActive] = useState('All')
-  const [loading, setLoading] = useState(true)
-  const trackRef = useRef<HTMLDivElement>(null)
-  const isDragging = useRef(false)
-  const startX = useRef(0)
-  const scrollLeft = useRef(0)
-  const sectionRef = useRef<HTMLDivElement>(null)
-  const inView = useInView(sectionRef, { once: true })
-
-  useEffect(() => {
-    createClient()
-      .from('projects').select('*').order('sort_order')
-      .then(({ data }) => { if (data) setProjects(data as Project[]); setLoading(false) })
-  }, [])
-
-  const filtered = active === 'All' ? projects : projects.filter(p => p.category === active)
-
-  useEffect(() => {
-    const el = trackRef.current
-    if (!el) return
-    const down = (e: MouseEvent) => {
-      isDragging.current = true; startX.current = e.pageX - el.offsetLeft
-      scrollLeft.current = el.scrollLeft; el.style.cursor = 'grabbing'
-    }
-    const up   = () => { isDragging.current = false; el.style.cursor = 'grab' }
-    const move = (e: MouseEvent) => {
-      if (!isDragging.current) return
-      e.preventDefault()
-      const x    = e.pageX - el.offsetLeft
-      const walk = (x - startX.current) * 1.2
-      el.scrollLeft = scrollLeft.current - walk
-    }
-    el.addEventListener('mousedown', down)
-    window.addEventListener('mouseup', up)
-    el.addEventListener('mousemove', move)
-    return () => {
-      el.removeEventListener('mousedown', down)
-      window.removeEventListener('mouseup', up)
-      el.removeEventListener('mousemove', move)
-    }
-  }, [])
-
-  return (
-    <section id="projects" className="section overflow-hidden" ref={sectionRef}>
-      <div className="container mb-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          className="mb-10"
-        >
-          <p className="section-heading-tag">{'// INVENTORY'}</p>
-          <h2 className="section-heading mb-6">
-            <span className="gradient-monarch">Projects</span>
-          </h2>
-
-          <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActive(cat)}
-                data-cursor="hover"
-                className={`px-4 py-1.5 rounded-full font-mono text-xs border transition-all duration-300 ${
-                  active === cat
-                    ? 'bg-monarch/12 border-monarch/40 text-monarch'
-                    : 'bg-transparent border-border-shadow text-text-muted hover:text-text-secondary'
-                }`}
+        {/* ── Selected work ───────────────────────────────────────────── */}
+        <div className="mt-14 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {FALLBACK_PROJECTS.map((project, i) => {
+            const color = CATEGORY_COLOR[project.category] ?? 'var(--color-ink-3)'
+            return (
+              <Reveal
+                key={project.id}
+                delay={Math.min(i, 6) * 60}
+                className="panel panel-interactive group flex flex-col p-6"
               >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </motion.div>
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <span
+                    className="font-mono text-[10px] uppercase tracking-[0.18em]"
+                    style={{ color }}
+                  >
+                    {project.category}
+                  </span>
+                  <span className="t-label tnum">{project.year}</span>
+                </div>
 
-        <div className="flex items-center gap-2 mb-4 md:mb-6 text-text-muted font-mono text-[10px] tracking-widest uppercase md:hidden">
-          <span>← Swipe to explore →</span>
-          <motion.span
-            animate={{ x: [0, 6, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            className="text-system-blue"
-          >
-            ▸
-          </motion.span>
+                <h3 className="font-display text-lg font-bold leading-tight tracking-tight text-ink">
+                  {project.title}
+                </h3>
+                <p className="mt-1.5 text-sm text-ink-2">{project.tagline}</p>
+                <p className="mt-4 text-[13px] leading-relaxed text-ink-3">
+                  {project.description}
+                </p>
+
+                <ul className="mt-5 flex flex-wrap gap-1.5">
+                  {project.stack.map(tech => (
+                    <li
+                      key={tech}
+                      className="rounded-md border border-line px-2 py-0.5 font-mono text-[10px] text-ink-3"
+                    >
+                      {tech}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-auto flex items-center gap-1.5 pt-6">
+                  <Lock size={11} className="text-ink-4" aria-hidden />
+                  <span className="t-label">Private / client-owned</span>
+                </div>
+              </Reveal>
+            )
+          })}
         </div>
-      </div>
 
-      <div
-        ref={trackRef}
-        className="flex gap-6 overflow-x-auto pb-8 select-none"
-        style={{
-          paddingLeft: 'max(28px, calc((100vw - 1200px) / 2 + 28px))',
-          paddingRight: 'max(28px, calc((100vw - 1200px) / 2 + 28px))',
-          scrollbarWidth: 'none',
-          cursor: 'grab',
-          perspective: '1200px',
-        }}
-      >
-        {loading
-          ? Array(4).fill(0).map((_, i) => (
-              <div key={i} className="glass rounded-2xl animate-pulse flex-shrink-0"
-                style={{ minWidth: 340, height: 360 }} />
-            ))
-          : filtered.map((p, i) => <TiltCard key={p.id} project={p} index={i} />)
-        }
-      </div>
+        {/* ── GitHub archive ──────────────────────────────────────────── */}
+        <div className="mt-24">
+          <Reveal className="flex flex-wrap items-end justify-between gap-6 border-t border-line pt-10">
+            <div>
+              <span className="t-label mb-3 block">Open source archive</span>
+              <h3 className="t-h3 text-ink">
+                Every public repository, {new Date().getFullYear() - 2020} years
+                deep.
+              </h3>
+              <p className="mt-3 max-w-[52ch] text-sm text-ink-3">
+                Pulled live from GitHub and grouped by what each repo actually
+                is: production tools, machine learning practice, and the
+                coursework it started from.
+              </p>
+            </div>
+            <a
+              href={GITHUB_PROFILE}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cursor="hover"
+              className="btn btn-ghost"
+            >
+              <GithubIcon size={14} />
+              View profile
+              <ArrowUpRight size={13} />
+            </a>
+          </Reveal>
 
-      <div className="container mt-4 flex items-center justify-between">
-        <p className="text-[10px] font-mono text-text-muted tracking-wider">← drag to explore →</p>
-        <a
-          href="https://github.com/Faris-Maulana"
-          target="_blank" rel="noopener noreferrer"
-          data-cursor="hover"
-          className="text-xs font-mono text-text-muted hover:text-monarch transition-colors flex items-center gap-1"
-        >
-          View all on GitHub <GithubIcon size={12} />
-        </a>
+          <Reveal delay={80} className="mt-8 flex flex-wrap gap-2">
+            {(['all', ...TIER_ORDER] as const).map(key => {
+              const isActive = tier === key
+              const count =
+                key === 'all' ? repos.length : (grouped.get(key)?.length ?? 0)
+              return (
+                <button
+                  key={key}
+                  onClick={() => setTier(key)}
+                  data-cursor="hover"
+                  aria-pressed={isActive}
+                  className={cn(
+                    'rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors duration-300',
+                    isActive
+                      ? 'border-transparent bg-ink text-canvas'
+                      : 'border-line-2 text-ink-3 hover:border-line-3 hover:text-ink'
+                  )}
+                >
+                  {key === 'all' ? 'All' : TIER_META[key].label}
+                  <span className="ml-2 tabular-nums opacity-50">{count}</span>
+                </button>
+              )
+            })}
+          </Reveal>
+
+          {tier !== 'all' ? (
+            <p className="t-label mt-5">{TIER_META[tier].blurb}</p>
+          ) : null}
+
+          <ul className="mt-6">
+            {shown.map((repo, i) => {
+              const dot = repo.language
+                ? (LANGUAGE_COLOR[repo.language] ?? 'var(--color-ink-4)')
+                : 'var(--color-ink-4)'
+              return (
+                <Reveal
+                  as="li"
+                  key={repo.name}
+                  delay={Math.min(i, 10) * 35}
+                  className="border-t border-line last:border-b"
+                >
+                  <a
+                    href={repo.html_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-cursor="hover"
+                    className="group flex flex-col gap-2 py-5 transition-colors duration-300 hover:bg-white/[0.015] sm:flex-row sm:items-center sm:gap-6"
+                  >
+                    <span className="flex min-w-0 flex-1 items-baseline gap-3">
+                      <span
+                        className="h-1.5 w-1.5 flex-none translate-y-[-2px] rounded-full"
+                        style={{ background: dot }}
+                        aria-hidden
+                      />
+                      <span className="min-w-0">
+                        <span className="block font-display text-base font-bold tracking-tight text-ink transition-colors group-hover:text-signal">
+                          {prettify(repo.name)}
+                        </span>
+                        {repo.description ? (
+                          <span className="mt-1 block max-w-[70ch] text-sm text-ink-3">
+                            {repo.description}
+                          </span>
+                        ) : null}
+                      </span>
+                    </span>
+
+                    <span className="flex flex-none items-center gap-5 pl-[18px] sm:pl-0">
+                      {repo.stargazers_count > 0 ? (
+                        <span className="t-label flex items-center gap-1">
+                          <Star size={11} /> {repo.stargazers_count}
+                        </span>
+                      ) : null}
+                      {repo.language ? (
+                        <span className="t-label w-28 truncate">
+                          {repo.language}
+                        </span>
+                      ) : (
+                        <span className="w-28" aria-hidden />
+                      )}
+                      <span className="t-label tnum w-16 text-right">
+                        {repo.pushed_at.slice(0, 4)}
+                      </span>
+                      <ArrowUpRight
+                        size={14}
+                        className="text-ink-4 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-signal"
+                      />
+                    </span>
+                  </a>
+                </Reveal>
+              )
+            })}
+          </ul>
+        </div>
       </div>
     </section>
   )

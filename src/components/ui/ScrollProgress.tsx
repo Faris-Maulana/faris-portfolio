@@ -1,26 +1,60 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
+/**
+ * Hairline reading-progress bar.
+ *
+ * Driven by transform on a rAF tick rather than React state + width. Animating
+ * `width` forces layout on every scroll frame; `scaleX` stays on the compositor
+ * and the component never re-renders.
+ */
 export function ScrollProgress() {
-  const [progress, setProgress] = useState(0)
+  const bar = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight
-      setProgress(docHeight > 0 ? (scrollTop / docHeight) * 100 : 0)
+    let raf = 0
+    let queued = false
+
+    const paint = () => {
+      queued = false
+      const doc = document.documentElement
+      const max = doc.scrollHeight - window.innerHeight
+      const p = max > 0 ? Math.min(window.scrollY / max, 1) : 0
+      if (bar.current) bar.current.style.transform = `scaleX(${p})`
     }
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    const onScroll = () => {
+      if (queued) return
+      queued = true
+      raf = requestAnimationFrame(paint)
+    }
+
+    paint()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      cancelAnimationFrame(raf)
+    }
   }, [])
 
   return (
-    <div className="fixed top-0 left-0 w-full h-[2px] z-[9998]">
+    <div
+      className="fixed top-0 inset-x-0 h-px z-[9996] pointer-events-none"
+      aria-hidden
+    >
       <div
-        className="h-full bg-gradient-to-r from-monarch via-monarch-hi to-ice transition-[width] duration-150 ease-out"
-        style={{ width: `${progress}%` }}
+        ref={bar}
+        className="h-full origin-left"
+        style={{
+          transform: 'scaleX(0)',
+          background:
+            'linear-gradient(90deg, var(--color-signal), var(--color-agent))',
+          boxShadow: '0 0 12px rgba(92,242,192,0.5)',
+        }}
       />
     </div>
   )
