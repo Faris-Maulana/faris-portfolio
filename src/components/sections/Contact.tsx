@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowUpRight, Check, Loader2, Send } from 'lucide-react'
+import { ArrowUpRight, Check, Loader2, Mail, Send } from 'lucide-react'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { Reveal } from '@/components/ui/Reveal'
 import { GithubIcon, LinkedinIcon } from '@/components/ui/Icons'
@@ -18,7 +18,7 @@ const schema = z.object({
     .string()
     .min(10, 'Tell me at least a sentence or two')
     .max(2000, 'Keep it under 2000 characters'),
-  honeypot: z.string().max(0).optional(),
+  honeypot: z.string().optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -30,9 +30,32 @@ const CHANNELS = [
   { label: 'GitHub', value: 'Faris-Maulana', href: SITE_CONFIG.github },
 ]
 
+/**
+ * Builds a prefilled mail draft from whatever the visitor already typed.
+ *
+ * This is the floor under the whole contact path. If the API is down, the
+ * database is unreachable and no notification channel is configured, a stranger
+ * can still reach Faris in one click without retyping their message.
+ */
+function mailtoFallback(data: Partial<FormData>) {
+  const subject = data.subject?.trim() || `Message from ${data.name?.trim() || 'your site'}`
+  const body = [
+    data.message?.trim() || '',
+    '',
+    '---',
+    data.name ? `Name: ${data.name.trim()}` : null,
+    data.email ? `Reply to: ${data.email.trim()}` : null,
+  ]
+    .filter(v => v !== null)
+    .join('\n')
+
+  return `mailto:${SITE_CONFIG.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
 export function Contact() {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const [fallbackHref, setFallbackHref] = useState('')
 
   const {
     register,
@@ -45,6 +68,7 @@ export function Contact() {
     // Bots fill every field they find; a human never sees this one.
     if (data.honeypot) return
     setError('')
+    setFallbackHref('')
 
     try {
       const res = await fetch('/api/contact', {
@@ -52,16 +76,28 @@ export function Contact() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
+
+      if (res.status === 429) {
+        const body = await res.json().catch(() => ({}))
+        setError(body.error ?? 'Too many messages. Try again shortly.')
+        setFallbackHref(mailtoFallback(data))
+        return
+      }
+
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error ?? 'Failed to send')
       }
+
       setSent(true)
       reset()
-    } catch {
+    } catch (err) {
       setError(
-        `Could not send. Email ${SITE_CONFIG.email} directly and it will reach me.`
+        err instanceof Error && err.message
+          ? err.message
+          : 'Could not send right now.'
       )
+      setFallbackHref(mailtoFallback(data))
     }
   }
 
@@ -247,12 +283,28 @@ export function Contact() {
                   </div>
 
                   {error && (
-                    <p
+                    <div
                       role="alert"
-                      className="rounded-lg border border-threat/25 bg-threat/8 px-4 py-3 text-[13px] text-threat"
+                      className="rounded-lg border border-threat/25 bg-threat/8 px-4 py-3.5"
                     >
-                      {error}
-                    </p>
+                      <p className="text-[13px] text-threat">{error}</p>
+                      {fallbackHref ? (
+                        <>
+                          <p className="mt-2 text-[13px] text-ink-2">
+                            Your message is not lost. This opens it in your mail
+                            app, already filled in.
+                          </p>
+                          <a
+                            href={fallbackHref}
+                            data-cursor="hover"
+                            className="btn btn-ghost mt-3.5"
+                          >
+                            <Mail size={13} />
+                            Send it by email instead
+                          </a>
+                        </>
+                      ) : null}
+                    </div>
                   )}
 
                   <button

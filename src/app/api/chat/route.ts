@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { extractEmail, detectIntent } from '@/lib/utils'
+import { escapeHtml } from '@/lib/notify'
+import { clientKey, rateLimit } from '@/lib/rate-limit'
 
 const SYSTEM_PROMPT = `You are ARIA, the assistant on Faris Maulana's portfolio website.
 
@@ -70,10 +72,10 @@ function formatEmailHTML(opts: {
   const lastFew = allMessages.slice(-6)
 
   const identityRows = [
-    visitorName    ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Name</td><td style="font-size:12px"><strong>${visitorName}</strong></td></tr>` : '',
-    visitorEmail   ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Email</td><td style="font-size:12px"><a href="mailto:${visitorEmail}" style="color:#a855f7">${visitorEmail}</a></td></tr>` : '',
-    visitorCompany ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Company</td><td style="font-size:12px">${visitorCompany}</td></tr>` : '',
-    purpose        ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Intent</td><td style="font-size:12px;text-transform:uppercase;color:#a855f7">${purpose}</td></tr>` : '',
+    visitorName    ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Name</td><td style="font-size:12px"><strong>${escapeHtml(visitorName)}</strong></td></tr>` : '',
+    visitorEmail   ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Email</td><td style="font-size:12px"><a href="mailto:${escapeHtml(visitorEmail)}" style="color:#a855f7">${escapeHtml(visitorEmail)}</a></td></tr>` : '',
+    visitorCompany ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Company</td><td style="font-size:12px">${escapeHtml(visitorCompany)}</td></tr>` : '',
+    purpose        ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Intent</td><td style="font-size:12px;text-transform:uppercase;color:#a855f7">${escapeHtml(purpose)}</td></tr>` : '',
   ].join('')
 
   const transcript = lastFew.map(m => `
@@ -82,7 +84,7 @@ function formatEmailHTML(opts: {
         ${m.role === 'user' ? '👤 VISITOR' : '🤖 ARIA'}
       </div>
       <div style="background:rgba(12,10,31,0.8);border-left:2px solid ${m.role === 'user' ? '#c084fc' : '#a855f7'};padding:8px 12px;border-radius:0 8px 8px 0;font-size:12px;line-height:1.5">
-        ${m.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+        ${escapeHtml(m.content)}
       </div>
     </div>
   `).join('')
@@ -90,7 +92,7 @@ function formatEmailHTML(opts: {
   return `
     <div style="font-family:'Inter',sans-serif;background:#030309;color:#f3e8ff;padding:32px;max-width:600px;border-radius:12px;border:1px solid rgba(168,85,247,0.1)">
       <h2 style="color:#a855f7;font-size:18px;margin:0 0 4px">${isNew ? '🆕 New visitor via ARIA' : '💬 ARIA Chat Update'}</h2>
-      <p style="color:#6b5ba0;font-size:11px;font-family:monospace;margin:0 0 20px">Session: ${sessionId}</p>
+      <p style="color:#6b5ba0;font-size:11px;font-family:monospace;margin:0 0 20px">Session: ${escapeHtml(sessionId)}</p>
       ${identityRows ? `
         <div style="background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.1);border-radius:8px;padding:16px;margin-bottom:20px">
           <table>${identityRows}</table>
@@ -101,18 +103,53 @@ function formatEmailHTML(opts: {
         ${transcript}
       </div>
       ${visitorEmail ? `
-        <a href="mailto:${visitorEmail}" style="display:inline-block;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#c084fc;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:12px;font-family:monospace">
-          Reply to ${visitorName || visitorEmail} →
+        <a href="mailto:${escapeHtml(visitorEmail)}" style="display:inline-block;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#c084fc;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:12px;font-family:monospace">
+          Reply to ${escapeHtml(visitorName || visitorEmail)} →
         </a>
       ` : ''}
     </div>
   `
 }
 
+/** 20 turns per 5 minutes is far above human pace and well below abuse. */
+const CHAT_LIMIT = 20
+const CHAT_WINDOW_MS = 5 * 60 * 1000
+
+/** Hard ceiling on what reaches the model, so nobody can bill us by payload. */
+const MAX_TURNS = 30
+const MAX_CHARS = 4000
+
 export async function POST(req: NextRequest) {
+  const limit = rateLimit(clientKey(req, 'chat'), CHAT_LIMIT, CHAT_WINDOW_MS)
+  if (!limit.ok) {
+    return NextResponse.json(
+      { reply: "You are sending messages faster than I can answer. Give it a moment, or email maulanafaris016@gmail.com and Faris will pick it up directly." },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
+    )
+  }
+
   try {
-    const { messages, sessionId } = await req.json()
-    if (!messages || !Array.isArray(messages) || !sessionId) {
+    const body = await req.json()
+    const sessionId = typeof body?.sessionId === 'string' ? body.sessionId.slice(0, 100) : ''
+    const rawMessages = body?.messages
+
+    if (!Array.isArray(rawMessages) || !sessionId) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    }
+
+    const messages = rawMessages
+      .filter(
+        (m: unknown): m is { role: string; content: string } =>
+          !!m &&
+          typeof m === 'object' &&
+          typeof (m as { content?: unknown }).content === 'string' &&
+          ((m as { role?: unknown }).role === 'user' ||
+            (m as { role?: unknown }).role === 'assistant')
+      )
+      .slice(-MAX_TURNS)
+      .map(m => ({ role: m.role, content: m.content.slice(0, MAX_CHARS) }))
+
+    if (messages.length === 0) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
 
