@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { extractEmail, detectIntent } from '@/lib/utils'
-import { escapeHtml } from '@/lib/notify'
+import { notifyOwner } from '@/lib/notify'
 import { clientKey, rateLimit } from '@/lib/rate-limit'
 
 const SYSTEM_PROMPT = `You are ARIA, the assistant on Faris Maulana's portfolio website.
@@ -33,6 +33,9 @@ Do it conversationally. Weave it into your response rather than asking as a form
 • For hiring/collab: be enthusiastic and proactive
 • For technical: match the visitor's depth level
 • End responses with a light CTA: "Anything else I can help you with?"
+• Never use em dashes or en dashes. Use a comma, a colon, or a full stop.
+  The rest of the site is written that way and your replies sit inside it.
+• No bullet lists unless asked. Write in sentences, like a person typing.
 
 ═══ WHAT YOU NEVER DO ═══
 • Never say you "can't" answer something. Redirect gracefully
@@ -40,75 +43,54 @@ Do it conversationally. Weave it into your response rather than asking as a form
 • Never share home addresses, IDs, or sensitive personal data
 • Never claim Faris is unavailable. Always say "he'll respond within 24h"`
 
-const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001'
+/**
+ * Ordered fallback chain.
+ *
+ * Model ids rot. The previous single id, google/gemini-2.0-flash-001, was
+ * retired upstream and every chat request had been 404ing ever since with no
+ * signal other than visitors being told to email instead. A chain means one
+ * retirement degrades to the next option rather than taking the feature down,
+ * and the console names whichever one served.
+ */
+const OPENROUTER_MODELS = [
+  process.env.OPENROUTER_MODEL,
+  // Instruction-tuned and cheap. Reasoning models are deliberately not first:
+  // several of them emit their working out as the reply, which is unusable in
+  // a widget a stranger is reading.
+  'mistralai/mistral-nemo',
+  'google/gemma-4-31b-it:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
+].filter((m): m is string => !!m)
+
+/**
+ * Last line of defence on reply formatting.
+ *
+ * Two things a prompt cannot guarantee. Reasoning models sometimes prepend
+ * their deliberation, and every model reaches for em dashes no matter how
+ * plainly it is told not to. Both are cheap to fix deterministically, so they
+ * are fixed here rather than hoped for upstream.
+ */
+function sanitiseReply(raw: string): string {
+  let text = raw.trim()
+
+  // Strip explicit thinking blocks and common leaked-deliberation openers.
+  text = text.replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim()
+  const leak = text.match(/^(?:we|i)\s+(?:need to|should|must)\b[\s\S]*?\n\n/i)
+  if (leak) text = text.slice(leak[0].length).trim()
+
+  return text
+    .replace(/\s*[—–]\s*/g, ', ')
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*,/g, ',')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !key) return null
   return createClient(url, key, { auth: { persistSession: false } })
-}
-
-async function sendEmail(subject: string, html: string): Promise<boolean> {
-  if (!process.env.RESEND_API_KEY) return false
-  try {
-    const { Resend } = await import('resend')
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    const { error } = await resend.emails.send({
-      from:    'ARIA <noreply@farismaulana.dev>',
-      to:      'maulanafaris016@gmail.com',
-      subject,
-      html,
-    })
-    return !error
-  } catch { return false }
-}
-
-function formatEmailHTML(opts: {
-  sessionId: string; isNew: boolean; visitorEmail?: string; visitorName?: string
-  visitorCompany?: string; purpose?: string; allMessages: Array<{ role: string; content: string }>
-}): string {
-  const { sessionId, isNew, visitorEmail, visitorName, visitorCompany, purpose, allMessages } = opts
-  const lastFew = allMessages.slice(-6)
-
-  const identityRows = [
-    visitorName    ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Name</td><td style="font-size:12px"><strong>${escapeHtml(visitorName)}</strong></td></tr>` : '',
-    visitorEmail   ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Email</td><td style="font-size:12px"><a href="mailto:${escapeHtml(visitorEmail)}" style="color:#a855f7">${escapeHtml(visitorEmail)}</a></td></tr>` : '',
-    visitorCompany ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Company</td><td style="font-size:12px">${escapeHtml(visitorCompany)}</td></tr>` : '',
-    purpose        ? `<tr><td style="color:#8fa8b8;padding:6px 12px 6px 0;font-size:11px">Intent</td><td style="font-size:12px;text-transform:uppercase;color:#a855f7">${escapeHtml(purpose)}</td></tr>` : '',
-  ].join('')
-
-  const transcript = lastFew.map(m => `
-    <div style="margin-bottom:12px">
-      <div style="font-size:10px;color:${m.role === 'user' ? '#c084fc' : '#a855f7'};margin-bottom:4px;font-family:monospace">
-        ${m.role === 'user' ? '👤 VISITOR' : '🤖 ARIA'}
-      </div>
-      <div style="background:rgba(12,10,31,0.8);border-left:2px solid ${m.role === 'user' ? '#c084fc' : '#a855f7'};padding:8px 12px;border-radius:0 8px 8px 0;font-size:12px;line-height:1.5">
-        ${escapeHtml(m.content)}
-      </div>
-    </div>
-  `).join('')
-
-  return `
-    <div style="font-family:'Inter',sans-serif;background:#030309;color:#f3e8ff;padding:32px;max-width:600px;border-radius:12px;border:1px solid rgba(168,85,247,0.1)">
-      <h2 style="color:#a855f7;font-size:18px;margin:0 0 4px">${isNew ? '🆕 New visitor via ARIA' : '💬 ARIA Chat Update'}</h2>
-      <p style="color:#6b5ba0;font-size:11px;font-family:monospace;margin:0 0 20px">Session: ${escapeHtml(sessionId)}</p>
-      ${identityRows ? `
-        <div style="background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.1);border-radius:8px;padding:16px;margin-bottom:20px">
-          <table>${identityRows}</table>
-        </div>
-      ` : `<p style="color:#6b5ba0;font-size:12px;margin-bottom:20px">Identity not yet captured</p>`}
-      <div style="margin-bottom:20px">
-        <h3 style="font-size:12px;color:#c4b5fd;margin:0 0 12px;font-family:monospace;letter-spacing:0.1em">TRANSCRIPT (last ${lastFew.length} messages)</h3>
-        ${transcript}
-      </div>
-      ${visitorEmail ? `
-        <a href="mailto:${escapeHtml(visitorEmail)}" style="display:inline-block;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#c084fc;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:12px;font-family:monospace">
-          Reply to ${escapeHtml(visitorName || visitorEmail)} →
-        </a>
-      ` : ''}
-    </div>
-  `
 }
 
 /** 20 turns per 5 minutes is far above human pace and well below abuse. */
@@ -160,42 +142,65 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer':  process.env.NEXT_PUBLIC_SITE_URL || 'https://farismaulana.dev',
-        'X-Title':       'Faris Maulana Portfolio - ARIA',
-      },
-      body: JSON.stringify({
-        model:       OPENROUTER_MODEL,
-        max_tokens:  450,
-        temperature: 0.7,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          ...messages.map((m: { role: string; content: string }) => ({
-            role: m.role as 'user' | 'assistant',
-            content: m.content,
-          })),
-        ],
-      }),
-    })
+    const upstream = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'https://faris-portfolio-red.vercel.app',
+      'X-Title': 'Faris Maulana Portfolio - ARIA',
+    }
 
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error('OpenRouter error:', response.status, errText)
+    let aiReply = ''
+    let servedBy = ''
+    const failures: string[] = []
+
+    for (const model of OPENROUTER_MODELS) {
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: upstream,
+          body: JSON.stringify({
+            model,
+            max_tokens: 450,
+            temperature: 0.7,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              ...messages.map(m => ({ role: m.role, content: m.content })),
+            ],
+          }),
+        })
+
+        if (!response.ok) {
+          failures.push(`${model}: HTTP ${response.status}`)
+          continue
+        }
+
+        const data = await response.json()
+        const text: string = data?.choices?.[0]?.message?.content || ''
+        if (!text) {
+          failures.push(`${model}: empty completion`)
+          continue
+        }
+
+        aiReply = sanitiseReply(text)
+        if (!aiReply) {
+          failures.push(`${model}: empty after sanitising`)
+          continue
+        }
+        servedBy = model
+        break
+      } catch (err) {
+        failures.push(`${model}: ${err instanceof Error ? err.message : 'threw'}`)
+      }
+    }
+
+    if (!aiReply) {
+      console.error('[chat] every model failed', failures)
       return NextResponse.json({
-        reply: "I'm having trouble connecting right now. Please email Faris directly at maulanafaris016@gmail.com."
+        reply: `I cannot reach my model right now. Email ${process.env.OWNER_EMAIL || 'maulanafaris016@gmail.com'} and Faris will answer you directly.`,
       })
     }
 
-    const data = await response.json()
-    const aiReply: string = data.choices?.[0]?.message?.content || ''
-    if (!aiReply) {
-      return NextResponse.json({ reply: "I couldn't generate a response. Please try again." })
-    }
-
+    if (failures.length) console.warn('[chat] served by', servedBy, 'after', failures)
     const fullText = messages.map((m: { content: string }) => m.content).join(' ')
     const lastUserMsg = messages.filter((m: { role: string }) => m.role === 'user').slice(-1)[0]?.content || ''
     const extractedEmail   = extractEmail(fullText)
@@ -214,6 +219,7 @@ export async function POST(req: NextRequest) {
     let visitorEmail: string | undefined
     let visitorName: string | undefined
     let isNewSession = true
+    let seenBefore = false
 
     if (supabase) {
       try {
@@ -256,29 +262,42 @@ export async function POST(req: NextRequest) {
           }, { onConflict: 'email,source', ignoreDuplicates: false })
         }
 
-        const shouldNotify = isNewSession
-          || (extractedEmail && !existingSession?.visitor_email)
-          || messageCount % 8 === 0
+        seenBefore = !!existingSession?.visitor_email
 
-        if (shouldNotify) {
-          const emailHtml = formatEmailHTML({
-            sessionId, isNew: isNewSession,
-            visitorEmail, visitorName, visitorCompany,
-            purpose: detectedIntent,
-            allMessages: updatedMessages,
-          })
-
-          const emailSubject = isNewSession
-            ? `[ARIA] New visitor${visitorName ? `, ${visitorName}` : ''} (${detectedIntent})`
-            : `[ARIA] Chat update${visitorName ? ` from ${visitorName}` : ''}, msg #${messageCount}`
-
-          sendEmail(emailSubject, emailHtml)
-
-          await supabase.from('chat_sessions').update({ notified: true }).eq('session_id', sessionId)
-        }
+        await supabase.from('chat_sessions').update({ notified: true }).eq('session_id', sessionId)
       } catch (dbErr) {
         console.error('Supabase error (non-fatal):', dbErr)
       }
+    }
+
+    /* Notification sits outside the storage block on purpose.
+       It used to live inside `if (supabase)`, so with the database unreachable
+       a visitor could hand over their email in chat and nothing would ever
+       reach Faris. Storage is an optimisation here; being told is the point. */
+    const shouldNotify =
+      isNewSession || (!!extractedEmail && !seenBefore) || messageCount % 8 === 0
+
+    if (shouldNotify) {
+      const transcript = [...messages, { role: 'assistant', content: aiReply }]
+        .slice(-6)
+        .map(m => `${m.role === 'user' ? 'Visitor' : 'ARIA'}: ${m.content}`)
+        .join('\n\n')
+
+      await notifyOwner({
+        name: visitorName || 'Anonymous visitor',
+        email: visitorEmail || 'no-reply@example.com',
+        subject: isNewSession
+          ? `New visitor in ARIA${visitorName ? `, ${visitorName}` : ''} (${detectedIntent})`
+          : `ARIA chat update${visitorName ? ` from ${visitorName}` : ''}, message ${messageCount}`,
+        message: transcript,
+        source: 'aria_chat',
+        meta: {
+          Session: sessionId,
+          Intent: detectedIntent,
+          Company: extractedCompany,
+          Messages: messageCount,
+        },
+      })
     }
 
     return NextResponse.json({
