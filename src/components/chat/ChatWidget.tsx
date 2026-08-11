@@ -64,7 +64,13 @@ export function ChatWidget() {
         aria-label={isOpen ? 'Close assistant' : 'Open assistant'}
         aria-expanded={isOpen}
         data-cursor="hover"
-        className="group fixed bottom-4 right-4 z-[60] flex h-12 w-12 items-center justify-center gap-2.5 rounded-full border border-line-2 bg-surface/90 backdrop-blur-xl transition-colors duration-300 hover:border-line-3 sm:bottom-6 sm:right-6 sm:h-auto sm:w-auto sm:px-4 sm:py-3"
+        className={cn(
+          'group fixed bottom-4 right-4 z-[60] h-12 w-12 items-center justify-center gap-2.5 rounded-full border border-line-2 bg-surface/90 backdrop-blur-xl transition-colors duration-300 hover:border-line-3 sm:bottom-6 sm:right-6 sm:h-auto sm:w-auto sm:px-4 sm:py-3',
+          // On a phone the panel is a full-width sheet and this button sits
+          // exactly where its send button is. The sheet carries its own close
+          // control in the header, so this one steps aside while it is open.
+          isOpen ? 'hidden sm:flex' : 'flex'
+        )}
       >
         <span className="relative flex h-5 w-5 items-center justify-center text-signal">
           {isOpen ? <X size={16} /> : <Bot size={16} />}

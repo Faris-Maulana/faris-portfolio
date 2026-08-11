@@ -417,7 +417,7 @@ body {
 .marquee {
   display: flex;
   width: max-content;
-  animation: marquee 46s linear infinite;
+  animation: marquee 32s linear infinite;
 }
 @keyframes marquee {
   to { transform: translateX(-50%); }
@@ -594,7 +594,33 @@ textarea.hud-input { min-height: 130px; }
   [data-reveal] { opacity: 1 !important; transform: none !important; }
   .reveal-line > span { transform: none !important; }
   .grain::after { animation: none; }
-  .marquee { animation: none; }
+
+  /* Stopping the marquee is correct, but parking the track at translateX(0)
+     inside an overflow-hidden rail shows only the first item and clips the
+     rest. Reduced motion gets a different layout, not a frozen one: the same
+     list, wrapped and fully readable. */
+  .marquee {
+    animation: none;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .marquee > [aria-hidden='true'] { display: none; }
+  /* The list carries `shrink-0` so it keeps its 2111px intrinsic width and its
+     items never wrap. It has to be forced back to the track width first. */
+  .marquee > ul {
+    flex: 1 1 100%;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0.35rem;
+  }
+  .marquee > ul > li { padding-inline: 0.7rem; }
+  .marquee > ul > li > span + span { margin-left: 0.7rem; }
+  .marquee-mask {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 
 .sr-only {
