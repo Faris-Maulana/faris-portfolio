@@ -16,7 +16,7 @@ export function Footer() {
 
   return (
     <footer className="relative border-t border-line">
-      <div className="container py-16 lg:py-20">
+      <div className="pad-for-fab container pt-16 lg:pt-20">
         <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
           {/* ── Call to action ────────────────────────────────────────── */}
           <div className="lg:col-span-6">
@@ -59,15 +59,15 @@ export function Footer() {
           {/* ── Index ─────────────────────────────────────────────────── */}
           <nav className="lg:col-span-3" aria-label="Footer">
             <p className="t-label mb-5">Index</p>
-            <ul className="space-y-2.5">
+            <ul>
               {NAV_LINKS.map(link => (
                 <li key={link.href}>
                   <a
                     href={link.href}
                     data-cursor="hover"
-                    className="link-draw text-sm text-ink-2 hover:text-ink"
+                    className="inline-flex min-h-11 items-center py-1 text-sm text-ink-2 transition-colors hover:text-ink"
                   >
-                    {link.label}
+                    <span className="link-draw">{link.label}</span>
                   </a>
                 </li>
               ))}
@@ -77,7 +77,7 @@ export function Footer() {
           {/* ── Documents ─────────────────────────────────────────────── */}
           <div className="lg:col-span-3">
             <p className="t-label mb-5">Documents</p>
-            <ul className="space-y-2.5">
+            <ul>
               {[
                 { label: 'Curriculum vitae', href: SITE_CONFIG.cvPath },
                 { label: 'Professional portfolio', href: SITE_CONFIG.portfolioPath },
@@ -89,9 +89,9 @@ export function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     data-cursor="hover"
-                    className="link-draw text-sm text-ink-2 hover:text-ink"
+                    className="inline-flex min-h-11 items-center py-1 text-sm text-ink-2 transition-colors hover:text-ink"
                   >
-                    {doc.label}
+                    <span className="link-draw">{doc.label}</span>
                   </a>
                 </li>
               ))}
@@ -100,7 +100,7 @@ export function Footer() {
         </div>
 
         {/* ── Colophon ────────────────────────────────────────────────── */}
-        <div className="mt-16 flex flex-col gap-4 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-14 flex flex-col gap-5 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">
           <p className="t-label">
             © {year} {SITE_CONFIG.name} · {SITE_CONFIG.location}
           </p>
@@ -112,7 +112,7 @@ export function Footer() {
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               data-cursor="hover"
-              className="t-label flex items-center gap-1.5 transition-colors hover:text-ink"
+              className="t-label flex min-h-11 items-center gap-1.5 transition-colors hover:text-ink"
             >
               Top <ArrowUp size={12} />
             </button>

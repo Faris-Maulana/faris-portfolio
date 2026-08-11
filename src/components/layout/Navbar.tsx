@@ -73,7 +73,7 @@ export function Navbar() {
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             data-cursor="hover"
-            className="group relative z-10 flex items-baseline gap-[3px] font-display text-lg font-extrabold tracking-tight"
+            className="group relative z-10 flex h-11 items-center gap-[3px] font-display text-lg font-extrabold tracking-tight"
             aria-label="Back to top"
           >
             <span className="text-ink">FM</span>
@@ -114,7 +114,7 @@ export function Navbar() {
               href={SITE_CONFIG.cvPath}
               download
               data-cursor="hover"
-              className="hidden items-center gap-2 rounded-full border border-line-2 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2 transition-colors duration-300 hover:border-line-3 hover:text-ink sm:inline-flex"
+              className="hidden min-h-10 items-center gap-2 rounded-full border border-line-2 px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2 transition-colors duration-300 hover:border-line-3 hover:text-ink sm:inline-flex"
             >
               <Download size={12} />
               CV
@@ -122,7 +122,7 @@ export function Navbar() {
             <button
               onClick={() => go('#contact')}
               data-cursor="hover"
-              className="hidden items-center gap-1.5 rounded-full bg-ink px-4 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas transition-transform duration-300 hover:scale-[1.03] md:inline-flex"
+              className="hidden min-h-10 items-center gap-1.5 rounded-full bg-ink px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas transition-transform duration-300 hover:scale-[1.03] md:inline-flex"
             >
               Hire me
               <ArrowUpRight size={12} />

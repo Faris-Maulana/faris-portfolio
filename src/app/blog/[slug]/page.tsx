@@ -24,7 +24,7 @@ export default async function BlogPostPage({
       <div className="container max-w-3xl">
         <div className="flex flex-wrap gap-2 mb-4">
           {post.tags?.map((tag: string) => (
-            <span key={tag} className="px-2.5 py-0.5 rounded-full border border-cyan/20 text-cyan text-[10px] font-mono">
+            <span key={tag} className="px-2.5 py-0.5 rounded-full border border-cyan/20 text-cyan text-[11px] font-mono">
               {tag}
             </span>
           ))}

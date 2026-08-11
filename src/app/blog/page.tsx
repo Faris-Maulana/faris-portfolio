@@ -65,7 +65,7 @@ export default function BlogPage() {
                 )}
 
                 <div className="mt-auto flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-[10px] font-mono text-text-muted">
+                  <div className="flex items-center gap-3 text-[11px] font-mono text-text-muted">
                     {post.published_at && (
                       <span className="flex items-center gap-1">
                         <Calendar size={10} />

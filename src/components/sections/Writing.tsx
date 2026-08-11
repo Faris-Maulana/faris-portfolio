@@ -104,7 +104,7 @@ export function Writing({ posts }: { posts: BlogPost[] }) {
                           {post.tags.slice(0, 4).map(tag => (
                             <span
                               key={tag}
-                              className="rounded-md border border-line px-2 py-0.5 font-mono text-[10px] text-ink-3"
+                              className="rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-ink-3"
                             >
                               {tag}
                             </span>

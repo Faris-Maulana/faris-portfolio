@@ -78,7 +78,7 @@ export function QuantPortfolio() {
               >
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                   <span
-                    className="rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em]"
+                    className="rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em]"
                     style={{ color, borderColor: `color-mix(in oklab, ${color} 32%, transparent)` }}
                   >
                     {study.method}

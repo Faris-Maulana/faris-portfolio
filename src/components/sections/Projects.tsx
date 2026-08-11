@@ -72,7 +72,7 @@ export function Projects({ repos }: { repos: Repo[] }) {
               >
                 <div className="mb-5 flex items-start justify-between gap-4">
                   <span
-                    className="font-mono text-[10px] uppercase tracking-[0.18em]"
+                    className="font-mono text-[11px] uppercase tracking-[0.18em]"
                     style={{ color }}
                   >
                     {project.category}
@@ -92,7 +92,7 @@ export function Projects({ repos }: { repos: Repo[] }) {
                   {project.stack.map(tech => (
                     <li
                       key={tech}
-                      className="rounded-md border border-line px-2 py-0.5 font-mono text-[10px] text-ink-3"
+                      className="rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-ink-3"
                     >
                       {tech}
                     </li>
@@ -148,7 +148,7 @@ export function Projects({ repos }: { repos: Repo[] }) {
                   data-cursor="hover"
                   aria-pressed={isActive}
                   className={cn(
-                    'rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors duration-300',
+                    'inline-flex min-h-11 items-center rounded-full border px-4 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors duration-300',
                     isActive
                       ? 'border-transparent bg-ink text-canvas'
                       : 'border-line-2 text-ink-3 hover:border-line-3 hover:text-ink'
@@ -214,12 +214,12 @@ export function Projects({ repos }: { repos: Repo[] }) {
                             {prettify(repo.name)}
                           </span>
                           {repo.private ? (
-                            <span className="flex items-center gap-1 rounded border border-line px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-4">
+                            <span className="flex items-center gap-1 rounded border border-line px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-4">
                               <Lock size={9} /> Private
                             </span>
                           ) : null}
                           {repo.fork ? (
-                            <span className="rounded border border-line px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-4">
+                            <span className="rounded border border-line px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-4">
                               Fork
                             </span>
                           ) : null}

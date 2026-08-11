@@ -64,7 +64,7 @@ export function ChatWidget() {
         aria-label={isOpen ? 'Close assistant' : 'Open assistant'}
         aria-expanded={isOpen}
         data-cursor="hover"
-        className="group fixed bottom-5 right-5 z-[60] flex h-13 items-center gap-2.5 rounded-full border border-line-2 bg-surface/85 px-4 py-3 backdrop-blur-xl transition-colors duration-300 hover:border-line-3 sm:bottom-6 sm:right-6"
+        className="group fixed bottom-4 right-4 z-[60] flex h-12 w-12 items-center justify-center gap-2.5 rounded-full border border-line-2 bg-surface/90 backdrop-blur-xl transition-colors duration-300 hover:border-line-3 sm:bottom-6 sm:right-6 sm:h-auto sm:w-auto sm:px-4 sm:py-3"
       >
         <span className="relative flex h-5 w-5 items-center justify-center text-signal">
           {isOpen ? <X size={16} /> : <Bot size={16} />}
@@ -72,7 +72,7 @@ export function ChatWidget() {
             <span className="absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full bg-signal" />
           ) : null}
         </span>
-        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2 transition-colors group-hover:text-ink">
+        <span className="hidden font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2 transition-colors group-hover:text-ink sm:inline">
           {isOpen ? 'Close' : 'Ask ARIA'}
         </span>
       </button>
@@ -106,7 +106,7 @@ export function ChatWidget() {
                   <span className="block font-display text-sm font-bold leading-none text-ink">
                     ARIA
                   </span>
-                  <span className="mt-1 block font-mono text-[10px] text-ink-3">
+                  <span className="mt-1 block font-mono text-[11px] text-ink-3">
                     {subtitle}
                   </span>
                 </span>

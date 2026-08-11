@@ -56,7 +56,7 @@ export function Certificates() {
                 data-cursor="hover"
                 aria-pressed={isActive}
                 className={cn(
-                  'rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors duration-300',
+                  'inline-flex min-h-11 items-center rounded-full border px-4 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors duration-300',
                   isActive
                     ? 'border-transparent bg-ink text-canvas'
                     : 'border-line-2 text-ink-3 hover:border-line-3 hover:text-ink'
@@ -100,7 +100,7 @@ export function Certificates() {
                 >
                   <div className="mb-5 flex items-center justify-between gap-3">
                     <span
-                      className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em]"
+                      className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em]"
                       style={{ color: meta.color }}
                     >
                       <span

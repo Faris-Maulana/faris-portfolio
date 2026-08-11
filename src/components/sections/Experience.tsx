@@ -57,7 +57,7 @@ export function Experience() {
                           aria-hidden
                         />
                         <span
-                          className="font-mono text-[10px] uppercase tracking-[0.2em]"
+                          className="font-mono text-[11px] uppercase tracking-[0.2em]"
                           style={{ color: isActive ? color : 'var(--color-ink-4)' }}
                         >
                           {STATUS_COPY[exp.status] ?? exp.status}

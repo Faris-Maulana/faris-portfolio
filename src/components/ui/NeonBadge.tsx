@@ -24,7 +24,7 @@ export function NeonBadge({ children, color = 'cyan', size = 'sm', className }: 
     <span
       className={cn(
         'inline-flex items-center gap-1 rounded-full border font-mono',
-        size === 'sm' ? 'px-2.5 py-0.5 text-[10px]' : 'px-3 py-1 text-xs',
+        size === 'sm' ? 'px-2.5 py-0.5 text-[11px]' : 'px-3 py-1 text-xs',
         colorMap[color as keyof typeof colorMap] || colorMap.cyan,
         className
       )}

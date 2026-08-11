@@ -13,7 +13,7 @@ export function Hero() {
   return (
     <section
       id="hero"
-      className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden pt-28"
+      className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden pt-24 sm:pt-28"
     >
       {/* The one WebGL moment. Anchored right and masked so it frames the
           headline instead of competing with it, the previous full-bleed scene
@@ -42,7 +42,7 @@ export function Hero() {
 
       <div className="container relative flex flex-1 flex-col justify-center">
         {/* ── Status line ─────────────────────────────────────────────── */}
-        <Reveal className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-2">
+        <Reveal className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 sm:mb-8 sm:gap-x-5 sm:gap-y-2">
           <span className="flex items-center gap-2.5">
             <span className="pulse-dot" aria-hidden />
             <span className="t-label text-signal">Available for work</span>
@@ -89,14 +89,14 @@ export function Hero() {
         <Reveal
           as="p"
           delay={420}
-          className="mt-4 max-w-[52ch] text-sm text-ink-3"
+          className="mt-3.5 max-w-[52ch] text-sm text-ink-3 sm:mt-4"
         >
           Multi-agent LLM systems. Medallion data platforms. Smart contract
           security research.
         </Reveal>
 
         {/* ── Actions ─────────────────────────────────────────────────── */}
-        <Reveal delay={500} className="mt-9 flex flex-wrap items-center gap-3">
+        <Reveal delay={500} className="mt-7 flex flex-wrap items-center gap-3 sm:mt-9">
           <a href="#contact" className="btn btn-primary" data-cursor="hover">
             Start a conversation
             <ArrowUpRight size={14} />
@@ -135,8 +135,8 @@ export function Hero() {
       </div>
 
       {/* ── Metric ledger ─────────────────────────────────────────────── */}
-      <div className="container relative pb-10">
-        <Reveal delay={620} className="border-t border-line pt-7">
+      <div className="container relative pb-24 sm:pb-10">
+        <Reveal delay={620} className="border-t border-line pt-6 sm:pt-7">
           {/* Value before label: the labels wrap to different heights, and a
               label-first order would push each number to its own baseline. */}
           <dl className="grid grid-cols-2 gap-x-6 gap-y-7 md:grid-cols-4">
@@ -162,7 +162,7 @@ export function Hero() {
           href="#about"
           data-cursor="hover"
           aria-label="Scroll to about"
-          className="mt-8 inline-flex items-center gap-2 text-ink-4 transition-colors duration-300 hover:text-signal"
+          className="mt-6 hidden min-h-11 items-center gap-2 text-ink-4 transition-colors duration-300 hover:text-signal sm:mt-8 sm:inline-flex"
         >
           <span className="t-label">Scroll</span>
           <ArrowDownRight size={13} className="animate-bounce" />

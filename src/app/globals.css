@@ -92,9 +92,9 @@
 
 /* ═══ FLUID TYPE SCALE ═══════════════════════════════════════════════ */
 :root {
-  --text-3xs:  clamp(0.5625rem, 0.53rem + 0.16vw, 0.625rem);
-  --text-2xs:  clamp(0.625rem,  0.59rem + 0.18vw, 0.6875rem);
-  --text-xs:   clamp(0.6875rem, 0.65rem + 0.2vw,  0.75rem);
+  --text-3xs:  clamp(0.625rem,  0.60rem + 0.12vw, 0.6875rem);
+  --text-2xs:  clamp(0.6875rem, 0.66rem + 0.14vw, 0.75rem);
+  --text-xs:   clamp(0.75rem,   0.72rem + 0.16vw, 0.8125rem);
   --text-sm:   clamp(0.8125rem, 0.77rem + 0.22vw, 0.875rem);
   --text-base: clamp(0.9375rem, 0.89rem + 0.28vw, 1.0625rem);
   --text-lg:   clamp(1.0625rem, 0.97rem + 0.44vw, 1.25rem);
@@ -214,9 +214,12 @@ body {
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
   font-weight: 500;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--color-ink-3);
+}
+@media (min-width: 640px) {
+  .t-label { letter-spacing: 0.2em; }
 }
 
 .t-mono {
@@ -550,11 +553,35 @@ textarea.hud-input { min-height: 130px; }
 }
 
 /* ═══ ACCESSIBILITY ══════════════════════════════════════════════════ */
+
+/* Expands the touch region of a small control to the 44px minimum without
+   changing how big it looks. Padding would push the layout apart; this only
+   grows the hit test. */
+.tap { position: relative; }
+.tap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: max(100%, 44px);
+  transform: translateY(-50%);
+}
+
 @media (pointer: coarse) {
-  button, a[role='button'], [data-cursor='hover'] {
+  button,
+  a[role='button'],
+  [data-cursor='hover'] {
     min-height: 44px;
   }
-  p a, .prose a, li a { min-height: auto; }
+  /* Only genuine inline prose links are exempt. The previous rule exempted
+     every `li a`, which silently opted the entire footer and every nav list
+     out of the minimum and left them 16px tall. */
+  p a,
+  .prose a,
+  li p a {
+    min-height: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -585,6 +612,9 @@ textarea.hud-input { min-height: 130px; }
   position: fixed;
   top: 12px; left: 12px;
   z-index: 10000;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 10px 18px;
   border-radius: 99px;
   background: var(--color-signal);
@@ -596,6 +626,13 @@ textarea.hud-input { min-height: 130px; }
   transition: transform 0.3s var(--ease-out-expo);
 }
 .skip-link:focus { transform: none; }
+
+/* Reserve the corner the fixed assistant button occupies, so the last rows of
+   the footer are never covered by it. */
+.pad-for-fab { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+@media (min-width: 640px) {
+  .pad-for-fab { padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+}
 
 /* ═══ SAFE AREAS ═════════════════════════════════════════════════════ */
 .safe-bottom { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
