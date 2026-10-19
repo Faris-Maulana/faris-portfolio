@@ -73,6 +73,7 @@ export function IntroVideo({ className }: { className?: string }) {
           >
             <source src="/video/intro.webm" type="video/webm" />
             <source src="/video/intro.mp4" type="video/mp4" />
+            <track kind="captions" src="/video/intro.en.vtt" srcLang="en" label="English" default />
             Your browser cannot play this video.{' '}
             <a href="/video/intro.mp4" className="link-draw">Download it instead</a>.
           </video>
