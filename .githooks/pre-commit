@@ -1,0 +1,62 @@
+#!/bin/sh
+# Penjaga rahasia sebelum commit.
+#
+# ── KENAPA ADA ──
+# Ini SUDAH PERNAH GAGAL. Commit e5768d8 (19 Juni 2026) memasukkan kata sandi
+# database asli ke .env.example. Repositori privat, akunnya read-only, jadi
+# dampaknya terbatas — tapi kredensial yang pernah masuk riwayat Git harus
+# dianggap bocor selamanya, karena riwayat tidak bisa benar-benar dihapus dari
+# klon orang lain. Mencegahnya sekali jauh lebih murah daripada merotasi.
+#
+# Memeriksa yang DI-STAGE saja (bukan seluruh pohon kerja): yang belum di-stage
+# tidak akan ikut ter-commit, dan memeriksanya hanya menimbulkan alarm palsu.
+#
+# Darurat: `git commit --no-verify`. Kalau memakainya, catat alasannya.
+
+set -e
+gagal=0
+lapor() { echo "🛑 $1"; gagal=1; }
+
+# Berkas rahasia tidak boleh masuk sama sekali.
+for f in $(git diff --cached --name-only --diff-filter=ACM); do
+  case "$f" in
+    .env|.env.*|*.pem|*.key|*id_rsa*|*id_ed25519*)
+      [ "$f" = ".env.example" ] || lapor "berkas rahasia di-stage: $f" ;;
+  esac
+done
+
+# Isi yang di-stage. Placeholder sengaja dikecualikan supaya .env.example dan
+# dokumentasi tetap bisa memperlihatkan BENTUK nilainya tanpa nilainya.
+isi=$(git diff --cached -U0 --diff-filter=ACM | grep '^+' | grep -v '^+++' || true)
+bersih=$(printf '%s\n' "$isi" | grep -viE 'REPLACE_WITH|GANTI_DENGAN|<[a-z_]+>|xxx+|your[-_]|example|placeholder|\.\.\.' || true)
+
+cek() {
+  hasil=$(printf '%s\n' "$bersih" | grep -oE "$1" | head -1 || true)
+  [ -n "$hasil" ] && lapor "$2"
+  return 0
+}
+
+cek 'AIza[0-9A-Za-z_-]{30,}'                    "kunci API Google terdeteksi"
+cek '[0-9]{8,10}:AA[0-9A-Za-z_-]{30,}'          "token bot Telegram terdeteksi"
+cek 'sk-[A-Za-z0-9]{20,}'                       "kunci API gaya OpenAI terdeteksi"
+cek 'BEGIN [A-Z ]*PRIVATE KEY'                  "kunci privat terdeteksi"
+cek '(PASSWORD|PASSWD|SECRET|API_?KEY|TOKEN)[A-Z_]*[[:space:]]*=[[:space:]]*[^[:space:]#"'"'"']{8,}' \
+    "nilai kredensial terisi pada variabel rahasia"
+cek 'postgres(ql)?://[^:]+:[^@[:space:]]{4,}@'  "connection string berkata sandi terdeteksi"
+
+if [ "$gagal" -ne 0 ]; then
+  cat <<'PESAN'
+
+Commit DIBATALKAN — ada yang tampak seperti rahasia.
+
+  · Rahasia hanya boleh ada di .env (chmod 600, gitignored).
+  · Di berkas contoh & dokumentasi, pakai placeholder: REPLACE_WITH_...
+  · Kalau ini benar-benar alarm palsu:  git commit --no-verify
+
+Riwayat Git tidak bisa benar-benar dihapus dari klon orang lain. Kredensial
+yang sekali masuk harus dirotasi — jauh lebih mahal daripada memperbaikinya
+sekarang.
+PESAN
+  exit 1
+fi
+exit 0
