@@ -77,7 +77,6 @@ export function Footer() {
             <ul>
               {[
                 { label: 'Curriculum vitae', href: SITE_CONFIG.cvPath },
-                { label: 'Professional portfolio', href: SITE_CONFIG.portfolioPath },
                 { label: 'Quantitative portfolio', href: SITE_CONFIG.quantPath },
               ].map(doc => (
                 <li key={doc.href}>

@@ -18,7 +18,6 @@ export const SITE_CONFIG = {
 
   /* Served from /public. No database dependency, no expiring signed URL. */
   cvPath: '/cv/Faris_Maulana_CV.pdf',
-  portfolioPath: '/cv/Faris_Maulana_Portfolio.pdf',
   quantPath: '/cv/Faris_Maulana_Quantitative_Portfolio.pdf',
 } as const
 
