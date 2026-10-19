@@ -3,9 +3,9 @@ import { Analytics } from '@vercel/analytics/react'
 import { Toaster } from 'sonner'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
-import { CustomCursor } from '@/components/ui/CustomCursor'
 import { ScrollProgress } from '@/components/ui/ScrollProgress'
 import { SectionRail } from '@/components/ui/SectionRail'
+import { SceneMount } from '@/components/canvas/SceneMount'
 import { AnalyticsTracker } from '@/components/AnalyticsTracker'
 import { SmoothScrollProvider } from '@/components/providers/SmoothScrollProvider'
 import { RevealProvider } from '@/components/providers/RevealProvider'
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#07080A',
+  themeColor: '#05070B',
   colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
@@ -120,19 +120,21 @@ export default function RootLayout({
           Skip to content
         </a>
 
+        <SceneMount />
         <ScrollProgress />
-        <CustomCursor />
         <RevealProvider />
         <AnalyticsTracker />
 
         <Navbar />
         <SectionRail />
         <SmoothScrollProvider>
-          <main id="main" className="relative flex-1">
+          <main id="main" className="relative z-10 flex-1">
             {children}
           </main>
         </SmoothScrollProvider>
-        <Footer />
+        <div className="relative z-10">
+          <Footer />
+        </div>
         <ChatWidget />
 
         <Toaster
@@ -142,8 +144,8 @@ export default function RootLayout({
               background: 'var(--color-surface)',
               border: '1px solid var(--color-line-2)',
               color: 'var(--color-ink)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: '12px',
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
             },
           }}
         />

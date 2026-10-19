@@ -63,9 +63,8 @@ export function ChatWidget() {
         onClick={toggle}
         aria-label={isOpen ? 'Close assistant' : 'Open assistant'}
         aria-expanded={isOpen}
-        data-cursor="hover"
         className={cn(
-          'group fixed bottom-4 right-4 z-[60] h-12 w-12 items-center justify-center gap-2.5 rounded-full border border-line-2 bg-surface/90 backdrop-blur-xl transition-colors duration-300 hover:border-line-3 sm:bottom-6 sm:right-6 sm:h-auto sm:w-auto sm:px-4 sm:py-3',
+          'group fixed bottom-4 right-4 z-[60] h-12 w-12 items-center justify-center gap-2.5 rounded-lg border border-line-2 bg-surface/90 backdrop-blur-xl transition-colors duration-300 hover:border-line-3 sm:bottom-6 sm:right-6 sm:h-auto sm:w-auto sm:px-4 sm:py-3',
           // On a phone the panel is a full-width sheet and this button sits
           // exactly where its send button is. The sheet carries its own close
           // control in the header, so this one steps aside while it is open.
@@ -78,7 +77,7 @@ export function ChatWidget() {
             <span className="absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full bg-signal" />
           ) : null}
         </span>
-        <span className="hidden font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2 transition-colors group-hover:text-ink sm:inline">
+        <span className="hidden text-sm font-semibold text-ink-2 transition-colors group-hover:text-ink sm:inline">
           {isOpen ? 'Close' : 'Ask ARIA'}
         </span>
       </button>
@@ -112,7 +111,7 @@ export function ChatWidget() {
                   <span className="block font-display text-sm font-bold leading-none text-ink">
                     ARIA
                   </span>
-                  <span className="mt-1 block font-mono text-[11px] text-ink-3">
+                  <span className="mt-1 block text-xs text-ink-3">
                     {subtitle}
                   </span>
                 </span>
@@ -122,7 +121,6 @@ export function ChatWidget() {
                   onClick={clearHistory}
                   title="Clear history"
                   aria-label="Clear history"
-                  data-cursor="hover"
                   className="rounded-lg p-2 text-ink-4 transition-colors hover:text-ink-2"
                 >
                   <Trash2 size={13} />
@@ -130,7 +128,6 @@ export function ChatWidget() {
                 <button
                   onClick={toggle}
                   aria-label="Close assistant"
-                  data-cursor="hover"
                   className="rounded-lg p-2 text-ink-4 transition-colors hover:text-ink"
                 >
                   <X size={15} />
@@ -209,7 +206,6 @@ export function ChatWidget() {
                   onClick={handleSend}
                   disabled={isLoading}
                   aria-label="Send message"
-                  data-cursor="hover"
                   className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-lg bg-signal text-canvas transition-transform active:scale-95 disabled:opacity-40"
                 >
                   <Send size={14} />

@@ -60,14 +60,13 @@ export function QuantPortfolio() {
     <section id="research" className="section">
       <div className="container">
         <SectionHeader
-          index="05"
           label="Research"
-          meta="4 case studies"
+          meta="4 studies"
           title={['Models that changed', <span key="2" className="text-ink-3">a decision.</span>]}
-          lead="Applied quantitative work across maritime, telco, healthcare, and education. Every one of these produced a number someone acted on. The coefficient mattered less than what it made the business stop doing."
+          lead="Applied quantitative work across maritime, telco, healthcare and education. Every one produced a number someone acted on. Figures hold within each analysed dataset; they are not universal causal claims."
         />
 
-        <div className="mt-14 grid gap-3 lg:grid-cols-2">
+        <div className="mt-14 grid gap-4 lg:grid-cols-2">
           {QUANT_CASE_STUDIES.map((study, i) => {
             const color = ACCENT[study.accent] ?? 'var(--color-signal)'
             return (
@@ -78,15 +77,15 @@ export function QuantPortfolio() {
               >
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                   <span
-                    className="rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em]"
-                    style={{ color, borderColor: `color-mix(in oklab, ${color} 32%, transparent)` }}
+                    className="chip"
+                    style={{ color, borderColor: `color-mix(in oklab, ${color} 35%, transparent)` }}
                   >
                     {study.method}
                   </span>
-                  <span className="t-label">{study.company}</span>
+                  <span className="text-sm font-semibold text-ink-2">{study.company}</span>
                 </div>
 
-                <h3 className="font-display text-xl font-extrabold tracking-tight text-ink">
+                <h3 className="wide text-xl font-bold tracking-tight text-ink">
                   {study.title}
                 </h3>
 
@@ -98,7 +97,7 @@ export function QuantPortfolio() {
                   {Object.entries(study.metrics).map(([key, value]) => (
                     <div key={key} className="min-w-0">
                       <dd
-                        className="font-display text-xl font-extrabold leading-none tracking-tight tnum sm:text-2xl"
+                        className="wide text-xl font-extrabold leading-none tracking-tight tnum sm:text-2xl"
                         style={{ color }}
                       >
                         {value}
@@ -121,7 +120,6 @@ export function QuantPortfolio() {
             href={SITE_CONFIG.quantPath}
             target="_blank"
             rel="noopener noreferrer"
-            data-cursor="hover"
             className="btn btn-ghost"
           >
             Full quantitative portfolio

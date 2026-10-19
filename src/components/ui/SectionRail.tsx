@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils'
  * how far in am I, and how much is left. A scroll bar shows the first but
  * carries no meaning; this shows both, and each tick is a jump target.
  *
- * Hidden below xl, where there is no gutter to put it in.
+ * Hidden below 2xl: narrower screens have no gutter wide enough for the
+ * labels, and they ride over the content.
  */
 export function SectionRail() {
   const [active, setActive] = useState('')
@@ -47,9 +48,9 @@ export function SectionRail() {
   return (
     <nav
       aria-label="Section index"
-      className="fixed right-3 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-end gap-3 xl:flex"
+      className="fixed right-3 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-end gap-3 2xl:flex"
     >
-      {NAV_LINKS.map((link, i) => {
+      {NAV_LINKS.map(link => {
         const id = link.href.slice(1)
         const isActive = active === id
         const isHover = hovered === id
@@ -59,7 +60,7 @@ export function SectionRail() {
           <a
             key={link.href}
             href={link.href}
-            data-cursor="hover"
+           
             aria-current={isActive ? 'true' : undefined}
             onMouseEnter={() => setHovered(id)}
             onMouseLeave={() => setHovered(null)}
@@ -69,7 +70,7 @@ export function SectionRail() {
                 state stays a set of quiet ticks rather than a second menu. */}
             <span
               className={cn(
-                'font-mono text-[10px] uppercase tracking-[0.16em] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]',
+                'text-xs font-semibold transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]',
                 lit
                   ? 'translate-x-0 opacity-100'
                   : 'pointer-events-none translate-x-2 opacity-0',
@@ -79,15 +80,6 @@ export function SectionRail() {
               {link.label}
             </span>
 
-            <span
-              className={cn(
-                'font-mono text-[9px] tabular-nums transition-colors duration-300',
-                lit ? 'text-signal' : 'text-transparent'
-              )}
-              aria-hidden
-            >
-              {String(i + 1).padStart(2, '0')}
-            </span>
 
             <span
               className={cn(

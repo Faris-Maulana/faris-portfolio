@@ -105,7 +105,6 @@ export function Contact() {
     <section id="contact" className="section">
       <div className="container">
         <SectionHeader
-          index="08"
           label="Contact"
           meta={SITE_CONFIG.responseTime}
           title={['Tell me what', <span key="2" className="text-ink-3">you’re building.</span>]}
@@ -123,10 +122,10 @@ export function Contact() {
                       href={channel.href}
                       target={channel.href.startsWith('mailto:') ? undefined : '_blank'}
                       rel="noopener noreferrer"
-                      data-cursor="hover"
+                     
                       className="group flex items-center justify-between gap-4 py-5"
                     >
-                      <dt className="t-label">{channel.label}</dt>
+                      <dt className="text-sm font-semibold text-ink-3">{channel.label}</dt>
                       <dd className="flex min-w-0 items-center gap-2">
                         <span className="truncate text-sm text-ink-2 transition-colors group-hover:text-ink">
                           {channel.value}
@@ -145,7 +144,7 @@ export function Contact() {
             <Reveal delay={120} className="panel ticks mt-8 p-6">
               <div className="mb-4 flex items-center gap-2.5">
                 <span className="pulse-dot" aria-hidden />
-                <span className="t-label text-signal">Currently available</span>
+                <span className="text-sm font-semibold text-signal">Currently available</span>
               </div>
               <p className="text-sm leading-relaxed text-ink-2">
                 Based in {SITE_CONFIG.location} ({SITE_CONFIG.timezone}), working
@@ -163,8 +162,8 @@ export function Contact() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    data-cursor="hover"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-line text-ink-3 transition-colors hover:border-line-3 hover:text-ink"
+                   
+                    className="flex h-10 w-10 items-center justify-center rounded-md border border-line text-ink-3 transition-colors hover:border-line-3 hover:text-ink"
                   >
                     <Icon size={14} />
                   </a>
@@ -178,7 +177,7 @@ export function Contact() {
             <Reveal delay={80} className="panel p-6 sm:p-8">
               {sent ? (
                 <div className="flex flex-col items-start py-8">
-                  <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-signal/12 text-signal">
+                  <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-signal/12 text-signal">
                     <Check size={22} />
                   </span>
                   <h3 className="t-h3 text-ink">Message received.</h3>
@@ -196,7 +195,7 @@ export function Contact() {
                   <button
                     onClick={() => setSent(false)}
                     className="btn btn-ghost mt-8"
-                    data-cursor="hover"
+                   
                   >
                     Send another
                   </button>
@@ -213,7 +212,7 @@ export function Contact() {
 
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div>
-                      <label htmlFor="name" className="t-label mb-2 block">
+                      <label htmlFor="name" className="mb-2 block text-sm font-semibold text-ink-2">
                         Name *
                       </label>
                       <input
@@ -225,13 +224,13 @@ export function Contact() {
                         className="field"
                       />
                       {errors.name && (
-                        <p className="mt-1.5 font-mono text-[11px] text-threat">
+                        <p className="mt-1.5 text-xs font-semibold text-threat">
                           {errors.name.message}
                         </p>
                       )}
                     </div>
                     <div>
-                      <label htmlFor="email" className="t-label mb-2 block">
+                      <label htmlFor="email" className="mb-2 block text-sm font-semibold text-ink-2">
                         Email *
                       </label>
                       <input
@@ -244,7 +243,7 @@ export function Contact() {
                         className="field"
                       />
                       {errors.email && (
-                        <p className="mt-1.5 font-mono text-[11px] text-threat">
+                        <p className="mt-1.5 text-xs font-semibold text-threat">
                           {errors.email.message}
                         </p>
                       )}
@@ -252,7 +251,7 @@ export function Contact() {
                   </div>
 
                   <div>
-                    <label htmlFor="subject" className="t-label mb-2 block">
+                    <label htmlFor="subject" className="mb-2 block text-sm font-semibold text-ink-2">
                       Subject
                     </label>
                     <input
@@ -264,7 +263,7 @@ export function Contact() {
                   </div>
 
                   <div>
-                    <label htmlFor="message" className="t-label mb-2 block">
+                    <label htmlFor="message" className="mb-2 block text-sm font-semibold text-ink-2">
                       Message *
                     </label>
                     <textarea
@@ -276,7 +275,7 @@ export function Contact() {
                       className="field"
                     />
                     {errors.message && (
-                      <p className="mt-1.5 font-mono text-[11px] text-threat">
+                      <p className="mt-1.5 text-xs font-semibold text-threat">
                         {errors.message.message}
                       </p>
                     )}
@@ -285,7 +284,7 @@ export function Contact() {
                   {error && (
                     <div
                       role="alert"
-                      className="rounded-lg border border-threat/25 bg-threat/8 px-4 py-3.5"
+                      className="rounded-md border border-threat/25 bg-threat/8 px-4 py-3.5"
                     >
                       <p className="text-[13px] text-threat">{error}</p>
                       {fallbackHref ? (
@@ -296,7 +295,7 @@ export function Contact() {
                           </p>
                           <a
                             href={fallbackHref}
-                            data-cursor="hover"
+                           
                             className="btn btn-ghost mt-3.5"
                           >
                             <Mail size={13} />
@@ -310,7 +309,7 @@ export function Contact() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    data-cursor="hover"
+                   
                     className="btn btn-primary w-full disabled:opacity-60"
                   >
                     {isSubmitting ? (

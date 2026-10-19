@@ -1,172 +1,117 @@
 'use client'
 
-import { ArrowDownRight, ArrowUpRight, Download } from 'lucide-react'
-import { SignalField } from '@/components/canvas/SignalField'
+import { ArrowUpRight, Download } from 'lucide-react'
 import { Reveal, RevealLines } from '@/components/ui/Reveal'
-import { GithubIcon, LinkedinIcon } from '@/components/ui/Icons'
+import { IntroVideo } from '@/components/ui/IntroVideo'
 import { useClock } from '@/hooks/useClock'
 import { HERO_METRICS, SITE_CONFIG } from '@/lib/constants'
 
+/**
+ * The fold is a positioning statement, not a name. A recruiter decides in
+ * seconds; the first thing they read is what the job is and the scale it runs
+ * at. The name is still the first words of the h1 for search and for screen
+ * readers, set small above the statement.
+ *
+ * The map behind it is the fixed BackboneScene, mounted in the layout.
+ */
 export function Hero() {
   const clock = useClock('Asia/Jakarta')
 
   return (
     <section
       id="hero"
-      className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden pt-24 sm:pt-28"
+      className="relative flex min-h-[100svh] flex-col justify-end pt-20 sm:pt-24"
     >
-      {/* The one WebGL moment. Anchored right and masked so it frames the
-          headline instead of competing with it, the previous full-bleed scene
-          put moving geometry directly behind every line of text. */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <SignalField
-          className="absolute inset-y-[-10%] right-[-18%] left-[8%] md:left-[26%]"
-          intensity={1}
-        />
-        {/* Legibility scrim: darkens the canvas under the text column only. */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(100deg, var(--color-canvas) 6%, rgba(7,8,10,0.82) 34%, rgba(7,8,10,0.28) 62%, rgba(7,8,10,0.55) 100%)',
-          }}
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 h-56"
-          style={{
-            background:
-              'linear-gradient(to top, var(--color-canvas), transparent)',
-          }}
-        />
-      </div>
+      {/* Legibility scrim under the text column only; the right side stays
+          clear so the map reads. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(95deg, rgba(5,7,11,0.92) 0%, rgba(5,7,11,0.7) 38%, rgba(5,7,11,0) 66%), linear-gradient(to top, var(--color-canvas) 0%, rgba(5,7,11,0) 34%)',
+        }}
+      />
 
       <div className="container relative flex flex-1 flex-col justify-center">
-        {/* ── Status line ─────────────────────────────────────────────── */}
-        <Reveal className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 sm:mb-8 sm:gap-x-5 sm:gap-y-2">
+        <Reveal className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="flex items-center gap-2.5">
             <span className="pulse-dot" aria-hidden />
-            <span className="t-label text-signal">Available for work</span>
+            <span className="text-sm font-semibold text-signal">
+              Open to lead and manager roles
+            </span>
           </span>
-          <span className="hidden h-3 w-px bg-line-2 sm:block" aria-hidden />
-          <span className="t-label">{SITE_CONFIG.location}</span>
-          <span className="hidden h-3 w-px bg-line-2 sm:block" aria-hidden />
-          <span className="t-label tnum tabular-nums">
-            {clock ? `${clock} GMT+7` : 'GMT+7'}
-          </span>
+          <span className="t-meta">{SITE_CONFIG.location}</span>
+          <span className="t-meta">{clock ? `${clock} WIB` : 'WIB, GMT+7'}</span>
         </Reveal>
 
-        {/* ── Name ────────────────────────────────────────────────────────
-            Solid ink, no background-clip. Gradient text renders as a hole in
-            the page the moment anything creates a stacking context above it, which is exactly how this headline disappeared before. */}
-        <h1 className="t-display text-ink">
-          <span className="sr-only">Faris Maulana</span>
-          <span aria-hidden>
+        <h1>
+          <Reveal as="span" className="mb-4 block text-lg font-semibold text-ink-2 sm:text-xl">
+            Faris Maulana
+            <span className="text-ink-3">, AI Engineering Manager</span>
+          </Reveal>
+          <span className="t-display block max-w-[15ch] text-ink">
             <RevealLines
               lines={[
-                'FARIS',
+                'I build the',
+                'AI function',
                 <>
-                  MAULANA
-                  <span className="ml-3 inline-block h-[0.14em] w-[0.14em] translate-y-[-0.08em] rounded-full bg-signal align-middle" />
+                  on a <span className="text-signal">25,000 km</span>
                 </>,
+                'backbone.',
               ]}
-              stagger={110}
+              stagger={95}
+              delay={80}
             />
           </span>
         </h1>
 
-        {/* ── Positioning statement ───────────────────────────────────── */}
-        <Reveal
-          as="p"
-          delay={340}
-          className="t-lead mt-7 max-w-[46ch] text-balance"
-        >
-          {SITE_CONFIG.role} at a{' '}
-          <span className="text-ink">25,000&nbsp;km DWDM fiber backbone</span>{' '}
-          operator. I build the AI function, the data platform, and the agent
-          layer <span className="t-serif text-signal">from zero</span>.
-        </Reveal>
-
         <Reveal
           as="p"
           delay={420}
-          className="mt-3.5 max-w-[52ch] text-sm text-ink-3 sm:mt-4"
+          className="t-lead mt-7 max-w-[52ch]"
         >
-          Multi-agent LLM systems. Medallion data platforms. Smart contract
-          security research.
+          Manager of AI Engineering at {SITE_CONFIG.company}. I own the
+          function, the data platform and the agent layer, from an empty org
+          chart to production, fully on-premise.
         </Reveal>
 
-        {/* ── Actions ─────────────────────────────────────────────────── */}
-        <Reveal delay={500} className="mt-7 flex flex-wrap items-center gap-3 sm:mt-9">
-          <a href="#contact" className="btn btn-primary" data-cursor="hover">
+        <Reveal delay={500} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+          <a href="#contact" className="btn btn-primary">
             Start a conversation
-            <ArrowUpRight size={14} />
+            <ArrowUpRight size={15} />
           </a>
+          <IntroVideo />
           <a
             href={SITE_CONFIG.cvPath}
             download
-            className="btn btn-ghost"
-            data-cursor="hover"
+            className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink-2 transition-colors hover:text-ink"
           >
-            <Download size={14} />
-            Download CV
+            <Download size={15} />
+            <span className="link-draw text-current">CV, PDF</span>
           </a>
-
-          <span className="hidden h-6 w-px bg-line-2 sm:block" aria-hidden />
-
-          <span className="flex items-center gap-1">
-            {[
-              { Icon: GithubIcon, href: SITE_CONFIG.github, label: 'GitHub' },
-              { Icon: LinkedinIcon, href: SITE_CONFIG.linkedin, label: 'LinkedIn' },
-            ].map(({ Icon, href, label }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                data-cursor="hover"
-                className="flex h-11 w-11 items-center justify-center rounded-full text-ink-3 transition-colors duration-300 hover:text-ink"
-              >
-                <Icon size={16} />
-              </a>
-            ))}
-          </span>
         </Reveal>
       </div>
 
-      {/* ── Metric ledger ─────────────────────────────────────────────── */}
-      <div className="container relative pb-24 sm:pb-10">
-        <Reveal delay={620} className="border-t border-line pt-6 sm:pt-7">
-          {/* Value before label: the labels wrap to different heights, and a
-              label-first order would push each number to its own baseline. */}
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-7 md:grid-cols-4">
+      <div className="container relative pb-8 sm:pb-10">
+        <p className="t-label mb-3 opacity-80 lg:absolute lg:right-[var(--gutter)] lg:-top-1 lg:mb-0 lg:-translate-y-full lg:text-right">
+          Natural Earth land data. Routes are stylised, not a network map.
+        </p>
+        <Reveal delay={620} className="border-t border-line-2 pt-6">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-7 lg:grid-cols-4">
             {HERO_METRICS.map(metric => (
-              <div key={metric.label} className="min-w-0">
-                <dd className="font-display text-2xl font-extrabold leading-none tracking-tight text-ink tnum sm:text-3xl">
+              <div key={metric.label} className="flex min-w-0 flex-col-reverse">
+                <dt className="t-label mt-2 max-w-[26ch]">{metric.label}</dt>
+                <dd className="wide text-3xl font-extrabold leading-none tracking-tight text-ink tnum sm:text-4xl">
                   {metric.value}
                   {metric.unit ? (
-                    <span className="ml-1 text-base font-medium text-ink-3">
-                      {metric.unit}
-                    </span>
+                    <span className="ml-1 text-base font-semibold text-ink-3">{metric.unit}</span>
                   ) : null}
                 </dd>
-                <dt className="t-label mt-2.5 leading-relaxed">
-                  {metric.label}
-                </dt>
               </div>
             ))}
           </dl>
         </Reveal>
-
-        <a
-          href="#about"
-          data-cursor="hover"
-          aria-label="Scroll to about"
-          className="mt-6 hidden min-h-11 items-center gap-2 text-ink-4 transition-colors duration-300 hover:text-signal sm:mt-8 sm:inline-flex"
-        >
-          <span className="t-label">Scroll</span>
-          <ArrowDownRight size={13} className="animate-bounce" />
-        </a>
       </div>
     </section>
   )

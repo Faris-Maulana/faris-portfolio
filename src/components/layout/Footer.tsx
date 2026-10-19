@@ -20,10 +20,9 @@ export function Footer() {
         <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
           {/* ── Call to action ────────────────────────────────────────── */}
           <div className="lg:col-span-6">
-            <p className="t-label mb-5">Let’s build something</p>
+            <p className="mb-5 text-sm font-semibold text-ink-3">Let’s build something</p>
             <a
               href={`mailto:${SITE_CONFIG.email}`}
-              data-cursor="hover"
               className="group inline-flex max-w-full items-start gap-3"
             >
               <span className="t-h3 break-all text-ink transition-colors duration-300 group-hover:text-signal">
@@ -46,8 +45,7 @@ export function Footer() {
                     target={href.startsWith('mailto:') ? undefined : '_blank'}
                     rel="noopener noreferrer"
                     aria-label={label}
-                    data-cursor="hover"
-                    className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-ink-3 transition-colors duration-300 hover:border-line-3 hover:text-ink"
+                    className="flex h-11 w-11 items-center justify-center rounded-md border border-line text-ink-3 transition-colors duration-300 hover:border-line-3 hover:text-ink"
                   >
                     <Icon size={15} />
                   </a>
@@ -58,13 +56,12 @@ export function Footer() {
 
           {/* ── Index ─────────────────────────────────────────────────── */}
           <nav className="lg:col-span-3" aria-label="Footer">
-            <p className="t-label mb-5">Index</p>
+            <p className="mb-5 text-sm font-semibold text-ink-3">Index</p>
             <ul>
               {NAV_LINKS.map(link => (
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    data-cursor="hover"
                     className="inline-flex min-h-11 items-center py-1 text-sm text-ink-2 transition-colors hover:text-ink"
                   >
                     <span className="link-draw">{link.label}</span>
@@ -76,7 +73,7 @@ export function Footer() {
 
           {/* ── Documents ─────────────────────────────────────────────── */}
           <div className="lg:col-span-3">
-            <p className="t-label mb-5">Documents</p>
+            <p className="mb-5 text-sm font-semibold text-ink-3">Documents</p>
             <ul>
               {[
                 { label: 'Curriculum vitae', href: SITE_CONFIG.cvPath },
@@ -88,7 +85,6 @@ export function Footer() {
                     href={doc.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    data-cursor="hover"
                     className="inline-flex min-h-11 items-center py-1 text-sm text-ink-2 transition-colors hover:text-ink"
                   >
                     <span className="link-draw">{doc.label}</span>
@@ -107,11 +103,10 @@ export function Footer() {
           <div className="flex items-center gap-6">
             <span className="t-label flex items-center gap-2">
               <span className="pulse-dot" aria-hidden />
-              Operational
+              Available
             </span>
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              data-cursor="hover"
               className="t-label flex min-h-11 items-center gap-1.5 transition-colors hover:text-ink"
             >
               Top <ArrowUp size={12} />

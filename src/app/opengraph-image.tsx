@@ -23,7 +23,7 @@ export default function OpengraphImage() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          background: '#07080A',
+          background: '#05070B',
           padding: '68px 72px',
           fontFamily: 'sans-serif',
         }}
@@ -44,13 +44,13 @@ export default function OpengraphImage() {
               width: 9,
               height: 9,
               borderRadius: 99,
-              background: '#5CF2C0',
+              background: '#C8FF4D',
               display: 'flex',
             }}
           />
           <div
             style={{
-              color: '#5CF2C0',
+              color: '#C8FF4D',
               fontSize: 19,
               letterSpacing: 5,
               textTransform: 'uppercase',
@@ -61,7 +61,7 @@ export default function OpengraphImage() {
           </div>
           <div
             style={{
-              color: '#454D59',
+              color: '#48515E',
               fontSize: 19,
               letterSpacing: 5,
               textTransform: 'uppercase',
@@ -75,7 +75,7 @@ export default function OpengraphImage() {
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div
             style={{
-              color: '#ECEEF1',
+              color: '#EEF1F4',
               fontSize: 116,
               fontWeight: 800,
               letterSpacing: -5,
@@ -92,7 +92,7 @@ export default function OpengraphImage() {
                   width: 16,
                   height: 16,
                   borderRadius: 99,
-                  background: '#5CF2C0',
+                  background: '#C8FF4D',
                   display: 'flex',
                 }}
               />
@@ -101,7 +101,7 @@ export default function OpengraphImage() {
           <div
             style={{
               marginTop: 26,
-              color: '#A4AEBB',
+              color: '#AAB4C1',
               fontSize: 28,
               lineHeight: 1.4,
               maxWidth: 760,
@@ -127,7 +127,7 @@ export default function OpengraphImage() {
             >
               <div
                 style={{
-                  color: '#ECEEF1',
+                  color: '#EEF1F4',
                   fontSize: 38,
                   fontWeight: 800,
                   letterSpacing: -1,
@@ -140,7 +140,7 @@ export default function OpengraphImage() {
               <div
                 style={{
                   marginTop: 8,
-                  color: '#6C7684',
+                  color: '#7D8896',
                   fontSize: 17,
                   letterSpacing: 3,
                   textTransform: 'uppercase',

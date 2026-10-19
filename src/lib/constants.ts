@@ -13,7 +13,7 @@ export const SITE_CONFIG = {
   location: 'Bogor / Jakarta, Indonesia',
   timezone: 'GMT+7',
   available: true,
-  availableFor: 'Senior AI Engineering, Applied AI Research, and Consulting',
+  availableFor: 'AI Engineering leadership, applied AI architecture, and consulting',
   responseTime: 'Replies within 24 hours',
 
   /* Served from /public. No database dependency, no expiring signed URL. */
@@ -23,34 +23,20 @@ export const SITE_CONFIG = {
 } as const
 
 export const NAV_LINKS = [
-  { label: 'About', href: '#about' },
+  { label: 'Leadership', href: '#leadership' },
+  { label: 'Work', href: '#work' },
   { label: 'Experience', href: '#experience' },
-  { label: 'Projects', href: '#projects' },
-  { label: 'Skills', href: '#skills' },
   { label: 'Research', href: '#research' },
-  { label: 'Credentials', href: '#certificates' },
-  { label: 'Writing', href: '#blog' },
+  { label: 'Credentials', href: '#credentials' },
   { label: 'Contact', href: '#contact' },
 ] as const
 
 /** The four numbers that carry the hero. Each one is defensible from the CV. */
 export const HERO_METRICS = [
-  { value: '25,000', unit: 'km', label: 'Fiber backbone operated' },
-  { value: '5', unit: '+ yrs', label: 'Production AI and data' },
-  { value: '20', unit: '+', label: 'BI dashboards shipped' },
-  { value: '5', unit: '', label: 'Industries delivered in' },
-] as const
-
-export const LEDGER = [
-  'PT Trans Indonesia Superkoridor',
-  'iMerit Technology',
-  'Telkom Indonesia',
-  'Toyota Research Institute',
-  'PT Berlian Laju Tanker',
-  'Sherlock',
-  'Code4rena',
-  'Immunefi',
-  'Anak Bangsa Bisa',
+  { value: '25,000', unit: 'km', label: 'National fiber backbone I build AI on' },
+  { value: '1', unit: '', label: 'AI Engineering function, founded from zero' },
+  { value: '5', unit: '+ yrs', label: 'Production AI and data, five industries' },
+  { value: '20', unit: '+', label: 'BI dashboards shipped to leadership' },
 ] as const
 
 export const EXPERIENCES = [
@@ -287,105 +273,157 @@ export const QUANT_CASE_STUDIES = [
 ] as const
 
 /**
- * Rendered when Supabase is unreachable or empty. A portfolio showing an empty
- * grid because a database call failed is worse than one that ships its own
- * content. These come straight from the CV.
+ * Taken from the diploma and transcript in /public/certificates, which are the
+ * primary record. Older CV drafts said "B.Sc. Computer Science, July 2023, Cum
+ * Laude"; the documents say otherwise, and the documents win.
  */
-export const FALLBACK_PROJECTS = [
-  {
-    id: 'text2sql',
-    title: 'Text2SQL Multi-Agent Platform',
-    tagline: 'On-prem agent layer over a fiber network data platform',
-    description:
-      'End-to-end on-premise AI platform. ClickHouse and PostgreSQL medallion warehouse, dbt-core, Airflow, Airbyte, OpenMetadata, a LangGraph multi-agent Text2SQL layer, and vLLM or SGLang inference. Fully air-gapped for PP 71/2019 data sovereignty.',
-    stack: ['LangGraph', 'ClickHouse', 'dbt-core', 'Airflow', 'vLLM', 'FastAPI'],
-    category: 'LLM/AI',
-    year: 2026,
-    featured: true,
-    repo_url: null,
-    demo_url: null,
-    image_url: null,
-  },
-  {
-    id: 'antigravity',
-    title: 'Antigravity, RAG Evaluation System',
-    tagline: 'A RAGAS replacement that needs no ground-truth API calls',
-    description:
-      'Production RAG pipeline on LangChain, ChromaDB, a sentence-transformers bi-encoder, a cross-encoder reranker, and Groq inference. The evaluator scores faithfulness, relevance, and retrieval diversity entirely offline.',
-    stack: ['LangChain', 'ChromaDB', 'sentence-transformers', 'Groq'],
-    category: 'LLM/AI',
-    year: 2025,
-    featured: true,
-    repo_url: null,
-    demo_url: null,
-    image_url: null,
-  },
-  {
-    id: 'noc-agent',
-    title: 'NOC Monitoring AI Agent',
-    tagline: 'Natural language incident queries over live telco telemetry',
-    description:
-      'Network monitoring agent on FastAPI, LangChain, and ClickHouse with WhatsApp delivery through Fonnte. Handles real-time NOC alerting and natural language incident queries against operational data.',
-    stack: ['FastAPI', 'LangChain', 'ClickHouse', 'WhatsApp API'],
-    category: 'LLM/AI',
-    year: 2026,
-    featured: true,
-    repo_url: null,
-    demo_url: null,
-    image_url: null,
-  },
-  {
-    id: 'maritime-pa',
-    title: 'Maritime Performance Appraisal',
-    tagline: 'A parallel state machine in place of sequential approvals',
-    description:
-      'Role-based appraisal system on React, Node.js, and MySQL covering appraisees, supervisors, reviewers, and decision-makers. Replacing the sequential approval chain with a parallel state machine removed the bottleneck. Weighted scoring and audit logs throughout, covered by Playwright end to end.',
-    stack: ['React', 'Node.js', 'MySQL', 'Playwright'],
-    category: 'Full Stack',
-    year: 2025,
-    featured: false,
-    repo_url: null,
-    demo_url: null,
-    image_url: null,
-  },
-  {
-    id: 'medallion',
-    title: 'Medallion Data Platform',
-    tagline: 'Bronze, Silver, and Gold over undocumented legacy sources',
-    description:
-      'Medallion architecture feeding AI consumption. ClickHouse for OLAP, PostgreSQL for metadata and serving, dbt-core transformations, Airflow and Airbyte orchestration, OpenMetadata cataloging. Built on top of MySQL and MariaDB systems that had no schema documentation, plus legacy NMS sources.',
-    stack: ['ClickHouse', 'PostgreSQL', 'dbt-core', 'Airflow', 'Airbyte', 'OpenMetadata'],
-    category: 'Data Engineering',
-    year: 2026,
-    featured: true,
-    repo_url: null,
-    demo_url: null,
-    image_url: null,
-  },
-  {
-    id: 'web3-audits',
-    title: 'Smart Contract Security Research',
-    tagline: 'Reentrancy, access control, arithmetic overflow',
-    description:
-      'Active auditing on Sherlock, Code4rena, and Immunefi. Solidity vulnerability discovery with structured exploit write-ups, invariant testing, and oracle-manipulation analysis.',
-    stack: ['Solidity', 'Foundry', 'Hardhat'],
-    category: 'Security',
-    year: 2024,
-    featured: false,
-    repo_url: null,
-    demo_url: null,
-    image_url: null,
-  },
-] as const
-
 export const EDUCATION = {
-  degree: 'B.Sc. Computer Science',
+  degree: 'Sarjana Teknik (S.T.), Informatics Engineering',
   school: 'Universitas Pancasila, Jakarta',
-  graduated: 'July 2023',
-  honors: 'Cum Laude, GPA 3.78 of 4.00',
+  graduated: 'Yudisium 22 Feb 2024',
+  honors: 'GPA 3.78 of 4.00, 144 credits',
+  thesis: 'American Sign Language classification with a convolutional neural network',
   extras: [
     'National Science Olympiad (OSN Physics), 5th place, 2018',
     'PSN Mathematics finalist, IPB 2016',
     'Computer lab assistant for Algorithms and Data Structures',
   ],
 } as const
+
+/* ═══ LEADERSHIP ═════════════════════════════════════════════════════════
+   What a hiring manager is actually trying to find out at lead and manager
+   level: what this person owns, how they decide, and how they operate. */
+
+export const OWNERSHIP = [
+  {
+    area: 'The function',
+    body: 'Founding AI Engineering hire. Hiring, architecture and delivery for a team that did not exist before May 2026.',
+  },
+  {
+    area: 'The platform',
+    body: 'A medallion warehouse (Bronze, Silver, Gold) on ClickHouse, PostgreSQL and dbt-core, fed by Airbyte and Airflow and catalogued in OpenMetadata.',
+  },
+  {
+    area: 'The agent layer',
+    body: 'A LangGraph multi-agent Text2SQL system over network operations data, served on-premise with vLLM or SGLang.',
+  },
+  {
+    area: 'The room',
+    body: 'Architecture and progress reviews with the founder and IT leadership. Deployment boundaries agreed with operations and security.',
+  },
+] as const
+
+export const PRINCIPLES = [
+  {
+    title: 'Start from the process, not the chatbot',
+    body: 'I map the business workflow and the source systems first. The interface is the last decision, not the first.',
+  },
+  {
+    title: 'Lineage, access and tests are day-one design',
+    body: 'Data lineage, RBAC, testing and observability go into the first architecture review, not the hardening sprint.',
+  },
+  {
+    title: 'AI only where probability is acceptable',
+    body: 'Where a wrong answer is costly, a deterministic validator sits behind the model. The agent proposes; the system checks.',
+  },
+  {
+    title: 'Fit the team you actually have',
+    body: 'Architecture has to match the infrastructure, the budget, the people and the operating model on the ground today.',
+  },
+  {
+    title: 'Measure in operational terms',
+    body: 'Hours of reporting removed, questions answered without an analyst, decisions made faster. Not benchmark points.',
+  },
+] as const
+
+/** Architecture decisions, written the way they were made. */
+export const DECISIONS = [
+  {
+    id: 'ADR-001',
+    title: 'Fully on-premise, air-gapped serving',
+    context: 'Operational network data falls under PP 71/2019 data-sovereignty rules.',
+    decision: 'No third-party cloud anywhere in the inference path. vLLM and SGLang evaluated on Apple Silicon and Ubuntu servers we control.',
+    tradeoff: 'Smaller models and our own ops burden, in exchange for compliance that never has to be argued case by case.',
+  },
+  {
+    id: 'ADR-002',
+    title: 'Warehouse before agents',
+    context: 'Source systems were MySQL and MariaDB with undocumented schemas, plus legacy NMS tools.',
+    decision: 'Build governed Bronze, Silver and Gold layers first. Agents query the Gold layer from the warehouse, never spreadsheets or raw OSS tables.',
+    tradeoff: 'The first agent demo ships later. Every answer it gives is traceable to a modelled, catalogued source.',
+  },
+  {
+    id: 'ADR-003',
+    title: 'Six agents, not one prompt',
+    context: 'A single Text2SQL prompt fails silently: wrong table, wrong join, no explanation.',
+    decision: 'Separate schema discovery, planning, SQL generation, validation, execution and answer synthesis into LangGraph nodes.',
+    tradeoff: 'More latency and more moving parts, but each stage fails differently and gets its own guardrail and test.',
+  },
+] as const
+
+/* ═══ CASE STUDIES ═══════════════════════════════════════════════════════ */
+
+export type CaseStatus = 'In development' | 'Proof of concept' | 'Shipped'
+
+export const CASE_STUDIES = [
+  {
+    id: 'text2sql',
+    title: 'Enterprise Text-to-SQL platform',
+    org: 'PT Trans Indonesia Superkoridor',
+    year: '2026',
+    status: 'In development' as CaseStatus,
+    accent: 'agent',
+    problem:
+      'Operations and management staff need answers about the fiber network without knowing the schema. The hard part is not generating SQL. It is choosing the right source, respecting access boundaries, and explaining what was run.',
+    approach:
+      'Medallion warehouse on ClickHouse, PostgreSQL and dbt-core, ingested by Airbyte and Airflow, catalogued in OpenMetadata. A LangGraph graph splits discovery, planning, generation, validation, execution and synthesis. Served on-prem by vLLM or SGLang.',
+    outcome:
+      'Still being built. The target is a controlled path from OSS data to traceable natural-language decision support, sourced through the warehouse rather than spreadsheet exports.',
+    stack: ['LangGraph', 'ClickHouse', 'PostgreSQL', 'dbt-core', 'Airflow', 'OpenMetadata', 'vLLM'],
+  },
+  {
+    id: 'noc-agent',
+    title: 'NOC monitoring agent',
+    org: 'Telco infrastructure',
+    year: '2026',
+    status: 'Proof of concept' as CaseStatus,
+    accent: 'signal',
+    problem:
+      'NOC engineers need incident and telemetry answers fast, often without knowing which table holds them or how to query it.',
+    approach:
+      'FastAPI and LangChain over ClickHouse, with alert delivery to WhatsApp. Natural-language incident questions and proactive alerts through one channel.',
+    outcome:
+      'Showed conversational access can sit on top of network data and shorten triage. Production would need stronger authorisation, alert rules, observability and integration tests, and those are listed as the gap, not hidden.',
+    stack: ['FastAPI', 'LangChain', 'ClickHouse', 'WhatsApp API'],
+  },
+  {
+    id: 'rag-eval',
+    title: 'RAG pipeline and evaluation framework',
+    org: 'Independent build',
+    year: '2025',
+    status: 'Shipped' as CaseStatus,
+    accent: 'agent',
+    problem:
+      'Most RAG demos retrieve and generate and stop there. Without evaluation there is no way to know whether retrieval or generation is the weak link.',
+    approach:
+      'Ingests 50+ AI and ML articles into ChromaDB, retrieves with a bi-encoder, reranks with a cross-encoder, generates through Groq, then scores faithfulness, relevance and retrieval diversity without ground-truth API calls.',
+    outcome:
+      'A modular system covering ingestion, retrieval, reranking, generation and evaluation, with a Gradio interface. It is the reference I use when advising clients on RAG quality.',
+    stack: ['LangChain', 'ChromaDB', 'sentence-transformers', 'Cross-encoder', 'Groq', 'Gradio'],
+  },
+  {
+    id: 'appraisal',
+    title: 'Maritime performance appraisal',
+    org: 'PT Berlian Laju Tanker',
+    year: '2025',
+    status: 'Shipped' as CaseStatus,
+    accent: 'data',
+    problem:
+      'A multi-role, multi-stage appraisal ran sequentially. One slow appraiser held up everyone behind them.',
+    approach:
+      'RBAC across appraisees, supervisors, reviewers and decision makers, and a parallel state machine so peers in the same stage work independently. Weighted scoring, audit logs, Playwright end-to-end tests.',
+    outcome:
+      'A fragmented process became one traceable workflow, with progress, permissions and scoring visible across the whole appraisal cycle.',
+    stack: ['React', 'Node.js', 'MySQL', 'Playwright'],
+  },
+] as const

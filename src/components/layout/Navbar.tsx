@@ -72,15 +72,17 @@ export function Navbar() {
         <nav className="container relative flex h-16 items-center justify-between gap-4">
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            data-cursor="hover"
-            className="group relative z-10 flex h-11 items-center gap-[3px] font-display text-lg font-extrabold tracking-tight"
+           
+            className="group relative z-10 flex h-11 items-center gap-2.5"
             aria-label="Back to top"
           >
-            <span className="text-ink">FM</span>
-            <span className="h-1 w-1 rounded-full bg-signal transition-transform duration-300 group-hover:scale-150" />
+            <span className="wide flex h-8 w-8 items-center justify-center rounded-md bg-signal text-[13px] font-extrabold text-[#0B1200]">
+              FM
+            </span>
+            <span className="hidden text-sm font-semibold text-ink sm:inline">Faris Maulana</span>
           </button>
 
-          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center xl:flex">
+          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center lg:flex">
             <div className="pointer-events-auto flex items-center gap-1">
               {NAV_LINKS.map(link => {
                 const id = link.href.slice(1)
@@ -89,11 +91,11 @@ export function Navbar() {
                   <button
                     key={link.href}
                     onClick={() => go(link.href)}
-                    data-cursor="hover"
+                   
                     aria-current={isActive ? 'true' : undefined}
                     className={cn(
-                      'relative px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors duration-300',
-                      isActive ? 'text-ink' : 'text-ink-3 hover:text-ink-2'
+                      'relative px-3 py-2 text-sm font-semibold transition-colors duration-300',
+                      isActive ? 'text-ink' : 'text-ink-3 hover:text-ink'
                     )}
                   >
                     {link.label}
@@ -113,27 +115,27 @@ export function Navbar() {
             <a
               href={SITE_CONFIG.cvPath}
               download
-              data-cursor="hover"
-              className="hidden min-h-10 items-center gap-2 rounded-full border border-line-2 px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2 transition-colors duration-300 hover:border-line-3 hover:text-ink sm:inline-flex"
+             
+              className="hidden min-h-10 items-center gap-2 rounded-md border border-line-2 px-3.5 text-sm font-semibold text-ink-2 transition-colors duration-300 hover:border-line-3 hover:text-ink sm:inline-flex"
             >
               <Download size={12} />
               CV
             </a>
             <button
               onClick={() => go('#contact')}
-              data-cursor="hover"
-              className="hidden min-h-10 items-center gap-1.5 rounded-full bg-ink px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas transition-transform duration-300 hover:scale-[1.03] md:inline-flex"
+             
+              className="hidden min-h-10 items-center gap-1.5 rounded-md bg-ink px-3.5 text-sm font-semibold text-canvas transition-colors duration-300 hover:bg-signal md:inline-flex"
             >
-              Hire me
+              Get in touch
               <ArrowUpRight size={12} />
             </button>
 
             <button
               onClick={() => setOpen(v => !v)}
-              data-cursor="hover"
+             
               aria-label={open ? 'Close menu' : 'Open menu'}
               aria-expanded={open}
-              className="flex h-10 w-10 items-center justify-center xl:hidden"
+              className="flex h-10 w-10 items-center justify-center lg:hidden"
             >
               <span className="flex w-5 flex-col gap-[5px]">
                 <span
@@ -161,7 +163,7 @@ export function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.28 }}
-            className="safe-top safe-bottom safe-x fixed inset-0 z-[99] flex flex-col justify-center bg-canvas/97 px-[var(--gutter)] backdrop-blur-2xl xl:hidden"
+            className="safe-top safe-bottom safe-x fixed inset-0 z-[99] flex flex-col justify-center bg-canvas/97 px-[var(--gutter)] backdrop-blur-2xl lg:hidden"
           >
             <nav className="flex flex-col">
               {NAV_LINKS.map((link, i) => (
@@ -177,9 +179,7 @@ export function Navbar() {
                   <span className="t-h3 text-ink transition-colors group-hover:text-signal">
                     {link.label}
                   </span>
-                  <span className="t-label tnum">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
+                  <span className="h-px w-6 bg-line-3 transition-colors group-hover:bg-signal" aria-hidden />
                 </motion.button>
               ))}
             </nav>
@@ -194,7 +194,7 @@ export function Navbar() {
                 <Download size={13} /> Download CV
               </a>
               <a href={`mailto:${SITE_CONFIG.email}`} className="btn btn-primary">
-                Hire me <ArrowUpRight size={13} />
+                Get in touch <ArrowUpRight size={13} />
               </a>
             </motion.div>
           </motion.div>

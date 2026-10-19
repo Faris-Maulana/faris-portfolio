@@ -1,23 +1,22 @@
 import { Hero } from '@/components/sections/Hero'
-import { CredibilityStrip } from '@/components/sections/CredibilityStrip'
-import { About } from '@/components/sections/About'
+import { Leadership } from '@/components/sections/Leadership'
+import { Work } from '@/components/sections/Work'
 import { Experience } from '@/components/sections/Experience'
-import { Projects } from '@/components/sections/Projects'
-import { Skills } from '@/components/sections/Skills'
 import { QuantPortfolio } from '@/components/sections/QuantPortfolio'
-import { Certificates } from '@/components/sections/Certificates'
+import { Capabilities } from '@/components/sections/Capabilities'
+import { Credentials } from '@/components/sections/Credentials'
 import { Writing } from '@/components/sections/Writing'
 import { Contact } from '@/components/sections/Contact'
 import { getRepos } from '@/lib/github'
 import { getPosts } from '@/lib/posts'
 
 /**
- * Server component.
+ * Server component. The sections are client components, but rendering them
+ * on the server puts the actual content in the HTML for crawlers and slow
+ * connections.
  *
- * Every section used to be a `dynamic(..., { ssr: false })` import, which meant
- * crawlers, and anyone on a slow connection, received a page containing a
- * hero and seven loading skeletons. The sections are still client components,
- * but rendering them on the server puts the actual content in the HTML.
+ * Order follows what a hiring manager needs, in the order they need it: the
+ * claim, what is owned and how it is run, the evidence, then the history.
  */
 export const revalidate = 3600
 
@@ -27,14 +26,15 @@ export default async function Home() {
   return (
     <>
       <Hero />
-      <CredibilityStrip />
-      <About />
+      <Leadership />
+      <Work repos={repos} />
       <Experience />
-      <Projects repos={repos} />
-      <Skills />
       <QuantPortfolio />
-      <Certificates />
-      <Writing posts={posts} />
+      <Capabilities />
+      <Credentials />
+      {/* An empty "coming soon" section is dead weight at this level. It
+          appears the day there is something to read. */}
+      {posts.length > 0 ? <Writing posts={posts} /> : null}
       <Contact />
     </>
   )
