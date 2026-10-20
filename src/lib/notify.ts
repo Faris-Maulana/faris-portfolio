@@ -133,6 +133,11 @@ async function sendWhatsapp(m: VisitorMessage): Promise<boolean> {
 }
 
 /** Fans out to every configured channel. Never throws. */
+/** True when at least one channel can actually deliver a visitor message. */
+export function deliveryConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY || process.env.FONNTE_TOKEN)
+}
+
 export async function notifyOwner(m: VisitorMessage): Promise<DeliveryResult> {
   const unconfigured: string[] = []
   if (!process.env.RESEND_API_KEY) unconfigured.push('email')

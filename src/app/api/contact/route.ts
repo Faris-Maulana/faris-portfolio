@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@supabase/supabase-js'
 import { notifyOwner } from '@/lib/notify'
 import { clientKey, rateLimit } from '@/lib/rate-limit'
 
@@ -18,21 +17,6 @@ const schema = z.object({
 /** 5 messages per 10 minutes from one address is generous for a human. */
 const LIMIT = 5
 const WINDOW_MS = 10 * 60 * 1000
-
-/**
- * Writes with the service role rather than the anon key.
- *
- * The anon path depends on an RLS insert policy staying in place. If that
- * policy is ever tightened, every visitor message starts failing silently.
- * The service role is server-only and makes storage independent of RLS.
- */
-function storageClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return null
-  return createClient(url, key, { auth: { persistSession: false } })
-}
 
 export async function POST(req: NextRequest) {
   const limit = rateLimit(clientKey(req, 'contact'), LIMIT, WINDOW_MS)
@@ -57,7 +41,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Bots fill hidden fields. Accept silently so they do not learn anything.
-  if (data.honeypot) return NextResponse.json({ success: true, stored: true })
+  if (data.honeypot) return NextResponse.json({ success: true })
 
   const payload = {
     name: data.name.trim(),
@@ -66,46 +50,13 @@ export async function POST(req: NextRequest) {
     message: data.message.trim(),
   }
 
-  /* Storage and notification run independently and neither can sink the other.
-     The old route did `if (dbError) throw dbError`, so a database hiccup threw
-     away a message that the email channel could still have delivered. */
-  const [stored, delivery] = await Promise.all([
-    (async () => {
-      const supabase = storageClient()
-      if (!supabase) return false
-      try {
-        const { error } = await supabase
-          .from('contact_messages')
-          .insert({ ...payload, source: 'contact_form' })
-        if (error) return false
+  // No database: a message exists only if a channel delivers it. When none is
+  // configured the page never calls this route (see deliveryConfigured), so a
+  // failure here is a real delivery failure and the visitor gets the fallback.
+  const delivery = await notifyOwner({ ...payload, source: 'contact_form' })
 
-        await supabase
-          .from('visitor_leads')
-          .upsert(
-            {
-              email: payload.email,
-              name: payload.name,
-              purpose: 'general',
-              source: 'contact_form',
-              message: payload.message.slice(0, 500),
-              notified: false,
-            },
-            { onConflict: 'email,source', ignoreDuplicates: false }
-          )
-          .then(() => undefined, () => undefined)
-
-        return true
-      } catch {
-        return false
-      }
-    })(),
-    notifyOwner({ ...payload, source: 'contact_form' }),
-  ])
-
-  // Only a total loss is an error. If either side accepted the message, the
-  // visitor was heard and should be told so.
-  if (!stored && !delivery.notified) {
-    console.error('[contact] message not persisted and not delivered', {
+  if (!delivery.notified) {
+    console.error('[contact] message not delivered', {
       unconfigured: delivery.unconfigured,
     })
     return NextResponse.json(
@@ -120,7 +71,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    stored,
-    notified: delivery.notified,
   })
 }

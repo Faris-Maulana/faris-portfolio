@@ -52,8 +52,26 @@ function mailtoFallback(data: Partial<FormData>) {
   return `mailto:${SITE_CONFIG.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 }
 
-export function Contact() {
+/** The same message as a prefilled WhatsApp chat, for visitors without a mail app. */
+function whatsappDraft(data: Partial<FormData>) {
+  const text = [
+    data.subject?.trim(),
+    data.message?.trim(),
+    data.name ? `(${data.name.trim()}${data.email ? `, ${data.email.trim()}` : ''})` : null,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+  return `${SITE_CONFIG.whatsappLink}?text=${encodeURIComponent(text)}`
+}
+
+/**
+ * `serverDelivery` is false when no notification channel is configured. The
+ * form then hands the message to the visitor's own mail app (or WhatsApp)
+ * instead of posting it to a server that has nowhere to deliver it.
+ */
+export function Contact({ serverDelivery = false }: { serverDelivery?: boolean }) {
   const [sent, setSent] = useState(false)
+  const [handoff, setHandoff] = useState<{ mail: string; wa: string } | null>(null)
   const [error, setError] = useState('')
   const [fallbackHref, setFallbackHref] = useState('')
 
@@ -69,6 +87,15 @@ export function Contact() {
     if (data.honeypot) return
     setError('')
     setFallbackHref('')
+
+    if (!serverDelivery) {
+      const mail = mailtoFallback(data)
+      setHandoff({ mail, wa: whatsappDraft(data) })
+      setSent(true)
+      reset()
+      window.location.assign(mail)
+      return
+    }
 
     try {
       const res = await fetch('/api/contact', {
@@ -180,9 +207,35 @@ export function Contact() {
                   <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-signal/12 text-signal">
                     <Check size={22} />
                   </span>
-                  <h3 className="t-h3 text-ink">Message received.</h3>
+                  <h3 className="t-h3 text-ink">
+                    {handoff ? 'Your message is ready to send.' : 'Message received.'}
+                  </h3>
+                  {handoff ? (
+                    <>
+                      <p className="t-body mt-3 max-w-[46ch] text-sm">
+                        Your email app opened with it filled in; press send
+                        there. No mail app? Send the same text on WhatsApp. I
+                        reply within 24 hours.
+                      </p>
+                      <div className="mt-5 flex flex-wrap gap-3">
+                        <a href={handoff.mail} className="btn btn-ghost">
+                          <Mail size={13} />
+                          Open email again
+                        </a>
+                        <a
+                          href={handoff.wa}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-ghost"
+                        >
+                          <Send size={13} />
+                          Send on WhatsApp
+                        </a>
+                      </div>
+                    </>
+                  ) : (
                   <p className="t-body mt-3 max-w-[46ch] text-sm">
-                    It has landed in my inbox and been logged. I reply to
+                    It has reached me. I reply to
                     everything within 24 hours. If you do not hear back, email{' '}
                     <a
                       href={`mailto:${SITE_CONFIG.email}`}
@@ -192,8 +245,12 @@ export function Contact() {
                     </a>{' '}
                     directly.
                   </p>
+                  )}
                   <button
-                    onClick={() => setSent(false)}
+                    onClick={() => {
+                      setSent(false)
+                      setHandoff(null)
+                    }}
                     className="btn btn-ghost mt-8"
                    
                   >
@@ -320,7 +377,7 @@ export function Contact() {
                     ) : (
                       <>
                         <Send size={14} />
-                        Send message
+                        {serverDelivery ? 'Send message' : 'Send by email'}
                       </>
                     )}
                   </button>

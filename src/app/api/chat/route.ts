@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { extractEmail, detectIntent } from '@/lib/utils'
 import { notifyOwner } from '@/lib/notify'
 import { clientKey, rateLimit } from '@/lib/rate-limit'
@@ -92,13 +91,6 @@ function sanitiseReply(raw: string): string {
     .replace(/,\s*,/g, ',')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
-}
-
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return null
-  return createClient(url, key, { auth: { persistSession: false } })
 }
 
 /** 20 turns per 5 minutes is far above human pace and well below abuse. */
@@ -223,67 +215,17 @@ export async function POST(req: NextRequest) {
     )
     const extractedCompany = companyMatch ? companyMatch[1].trim() : undefined
 
-    const supabase = getSupabaseAdmin()
-    let visitorEmail: string | undefined
-    let visitorName: string | undefined
-    let isNewSession = true
-    let seenBefore = false
+    // Conversations are not stored server-side (the visitor's browser keeps its
+    // own copy), so identity comes from the transcript the client sends.
+    const visitorEmail = extractedEmail
+    const visitorName = extractedName
+    // Notify on the first turn, on the turn a visitor first shares an email,
+    // and every 8 turns after that. Keyed on the latest message so an email
+    // given once does not re-notify on every later turn.
+    const isNewSession = messageCount === 1
+    const emailJustShared = !!extractEmail(lastUserMsg)
 
-    if (supabase) {
-      try {
-        const updatedMessages = [
-          ...messages,
-          { role: 'assistant', content: aiReply, ts: new Date().toISOString() }
-        ]
-
-        const { data: existingSession } = await supabase
-          .from('chat_sessions')
-          .select('id, visitor_email, visitor_name, notified')
-          .eq('session_id', sessionId)
-          .maybeSingle()
-
-        isNewSession = !existingSession
-        visitorEmail = extractedEmail || existingSession?.visitor_email || undefined
-        visitorName  = extractedName  || existingSession?.visitor_name  || undefined
-        const visitorCompany = extractedCompany || undefined
-
-        await supabase.from('chat_sessions').upsert({
-          session_id:      sessionId,
-          messages:        updatedMessages,
-          visitor_email:   visitorEmail  ?? null,
-          visitor_name:    visitorName   ?? null,
-          visitor_company: visitorCompany ?? null,
-          purpose:         detectedIntent,
-          updated_at:      new Date().toISOString(),
-        }, { onConflict: 'session_id' })
-
-        if (visitorEmail) {
-          await supabase.from('visitor_leads').upsert({
-            email:      visitorEmail,
-            name:       visitorName    ?? null,
-            company:    visitorCompany ?? null,
-            purpose:    detectedIntent,
-            source:     'chat',
-            session_id: sessionId,
-            message:    lastUserMsg.slice(0, 500),
-            notified:   false,
-          }, { onConflict: 'email,source', ignoreDuplicates: false })
-        }
-
-        seenBefore = !!existingSession?.visitor_email
-
-        await supabase.from('chat_sessions').update({ notified: true }).eq('session_id', sessionId)
-      } catch (dbErr) {
-        console.error('Supabase error (non-fatal):', dbErr)
-      }
-    }
-
-    /* Notification sits outside the storage block on purpose.
-       It used to live inside `if (supabase)`, so with the database unreachable
-       a visitor could hand over their email in chat and nothing would ever
-       reach Faris. Storage is an optimisation here; being told is the point. */
-    const shouldNotify =
-      isNewSession || (!!extractedEmail && !seenBefore) || messageCount % 8 === 0
+    const shouldNotify = isNewSession || emailJustShared || messageCount % 8 === 0
 
     if (shouldNotify) {
       const transcript = [...messages, { role: 'assistant', content: aiReply }]

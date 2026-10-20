@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { ChatMessage } from '@/lib/supabase/types'
+import type { ChatMessage } from '@/lib/chat-types'
 import { getOrCreateSessionId } from '@/lib/utils'
 
 const MESSAGES_KEY = 'aria_chat_messages_v2'
