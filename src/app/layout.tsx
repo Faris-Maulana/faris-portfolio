@@ -6,7 +6,6 @@ import { Footer } from '@/components/layout/Footer'
 import { ScrollProgress } from '@/components/ui/ScrollProgress'
 import { SectionRail } from '@/components/ui/SectionRail'
 import { SceneMount } from '@/components/canvas/SceneMount'
-import { AnalyticsTracker } from '@/components/AnalyticsTracker'
 import { SmoothScrollProvider } from '@/components/providers/SmoothScrollProvider'
 import { RevealProvider } from '@/components/providers/RevealProvider'
 import { ChatWidget } from '@/components/chat/ChatWidget'
@@ -123,7 +122,6 @@ export default function RootLayout({
         <SceneMount />
         <ScrollProgress />
         <RevealProvider />
-        <AnalyticsTracker />
 
         <Navbar />
         <SectionRail />

@@ -16,7 +16,7 @@ Live: https://faris-portfolio-red.vercel.app
 | Type      | `next/font` (Inter, Inter Tight, JetBrains Mono, Instrument Serif)                     |
 | Motion    | CSS transitions driven by one IntersectionObserver. Framer Motion for overlays only    |
 | 3D        | react-three-fiber, a single scene in the hero                                          |
-| Data      | Supabase (blog, chat, analytics) and the GitHub REST API                               |
+| Data      | No database. Site content is in the repo; the GitHub REST API feeds the archive        |
 | Hosting   | Vercel                                                                                |
 
 ## Design system
@@ -65,7 +65,7 @@ public/
 
 Site copy lives in `src/lib/constants.ts`. Credentials live in
 `src/lib/credentials.ts` and point at files in `public/certificates`. Neither
-depends on a database, so both render even when Supabase is unreachable.
+depends on a database.
 
 The GitHub archive in the Projects section is fetched live and revalidated
 hourly. `src/data/github-repos.json` is a committed snapshot used when the API
@@ -84,8 +84,10 @@ npm install
 npm run dev
 ```
 
-Copy `.env.example` to `.env.local` and fill in the Supabase keys. The site
-renders without them. Only the blog, chat, and analytics routes need them.
+Copy `.env.example` to `.env.local`. Every key is optional: without
+`OPENROUTER_API_KEY` the ARIA chat answers with a fallback, and without
+`RESEND_API_KEY` or `FONNTE_TOKEN` the contact form hands the message to the
+visitor's own mail app or WhatsApp instead of posting it.
 
 ```bash
 npm run build
@@ -108,9 +110,10 @@ npx vercel --prod --yes
 - Sections render on the server. They were previously client-only dynamic
   imports, which meant crawlers received a hero and seven loading skeletons.
 - The homepage must stay statically prerendered. Anything that reads `cookies()`
-  during its render, including the cookie-backed Supabase client, silently opts
-  the whole route into per-request rendering. `lib/posts.ts` uses a plain anon
-  client for that reason.
+  during its render silently opts the whole route into per-request rendering.
+- The Supabase project behind the old blog, chat log and analytics stopped
+  resolving in Aug 2026. Those features were removed on 20 Oct 2026; the schema
+  is in git history (`supabase/`) if a database is ever wanted again.
 - The hero canvas suspends its render loop once the hero leaves the viewport.
 - Reduced motion disables the canvas, the smooth scroll, and every reveal.
 - The diploma and transcript in `public/certificates` are redacted rasters. The

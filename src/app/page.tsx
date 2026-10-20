@@ -5,10 +5,9 @@ import { Experience } from '@/components/sections/Experience'
 import { QuantPortfolio } from '@/components/sections/QuantPortfolio'
 import { Capabilities } from '@/components/sections/Capabilities'
 import { Credentials } from '@/components/sections/Credentials'
-import { Writing } from '@/components/sections/Writing'
 import { Contact } from '@/components/sections/Contact'
 import { getRepos } from '@/lib/github'
-import { getPosts } from '@/lib/posts'
+import { deliveryConfigured } from '@/lib/notify'
 
 /**
  * Server component. The sections are client components, but rendering them
@@ -21,7 +20,7 @@ import { getPosts } from '@/lib/posts'
 export const revalidate = 3600
 
 export default async function Home() {
-  const [repos, posts] = await Promise.all([getRepos(), getPosts()])
+  const repos = await getRepos()
 
   return (
     <>
@@ -32,10 +31,9 @@ export default async function Home() {
       <QuantPortfolio />
       <Capabilities />
       <Credentials />
-      {/* An empty "coming soon" section is dead weight at this level. It
-          appears the day there is something to read. */}
-      {posts.length > 0 ? <Writing posts={posts} /> : null}
-      <Contact />
+      {/* Without a delivery key the form hands the message to the visitor's own
+          mail or WhatsApp instead of a server that cannot pass it on. */}
+      <Contact serverDelivery={deliveryConfigured()} />
     </>
   )
 }
