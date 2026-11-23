@@ -169,7 +169,7 @@ test('assistant welcome stays at the top and starter questions send a real reque
 
   await page.setViewportSize({ width: 320, height: 480 })
   await expect(title).toBeInViewport()
-  expect(await title.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true)
+  await expect.poll(() => title.evaluate(node => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(1)
 
   await dialog.getByRole('button', { name: /How is generated SQL validated before execution/ }).click()
   await expect(log.locator('.chat-message', { hasText: 'Syntax, permission and query-scope checks run before execution.' })).toBeVisible()
