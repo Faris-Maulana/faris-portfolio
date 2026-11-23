@@ -15,7 +15,7 @@ export function Footer() {
         <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
           <div className="lg:col-span-7">
             <p className="kicker">A useful first conversation</p>
-            <a href={`mailto:${SITE_CONFIG.email}`} className="group mt-6 inline-flex max-w-full items-start gap-3 font-display text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl wide">
+            <a href={`mailto:${SITE_CONFIG.email}`} className="group mt-6 inline-flex max-w-[13ch] items-start gap-3 font-display text-4xl font-semibold leading-[0.98] tracking-tight text-ink sm:text-6xl lg:text-7xl wide">
               Bring me the constraint.<ArrowUpRight className="mt-1 shrink-0 text-signal transition-transform group-hover:-translate-y-1 group-hover:translate-x-1" size={30} aria-hidden />
             </a>
             <p className="t-body mt-5 max-w-xl text-base">{SITE_CONFIG.availability.detail}. Direct email is always available if the form or assistant is not.</p>

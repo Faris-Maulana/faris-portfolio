@@ -8,7 +8,6 @@ export function Experience() {
     <section id="experience" className="section section-dark">
       <div className="container">
         <SectionHeader
-          index="03"
           label="Experience"
           meta={`${EXPERIENCES.length} roles / telco, maritime, research and security`}
           title={['Different domains.', <span key="2" className="text-ink-3">One operating discipline.</span>]}

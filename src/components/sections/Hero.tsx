@@ -10,7 +10,7 @@ export function Hero() {
 
   return (
     <section id="hero" className="atlas-grid relative min-h-[100svh] overflow-hidden border-b border-line">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_35%,var(--color-signal-glow),transparent_36%)]" aria-hidden />
+      <div className="hero-ambient pointer-events-none absolute inset-0" aria-hidden />
       <span className="atlas-coordinate absolute right-4 top-28 hidden xl:block" aria-hidden>06.2088 S / 106.8456 E</span>
 
       <div className="container relative flex min-h-[100svh] flex-col pb-8 pt-28 sm:pt-32">
@@ -24,7 +24,7 @@ export function Hero() {
               <span className="t-meta">{SITE_CONFIG.location} <span className="tnum">{clock}</span></span>
             </div>
 
-            <h1 className="t-display max-w-[13ch]">
+            <h1 className="hero-title t-display max-w-[13ch]">
               <span className="mb-5 block font-body text-sm font-semibold normal-case tracking-normal text-ink-2">
                 {SITE_CONFIG.name} / {SITE_CONFIG.role}
               </span>
@@ -44,7 +44,7 @@ export function Hero() {
 
           <aside className="relative lg:col-span-4" aria-label="Current technical mandate">
             <StaticAtlas />
-            <div className="panel corner-mark relative z-10 mt-[-2rem] ml-auto w-[88%] p-5 sm:p-6">
+            <div className="panel corner-mark relative z-10 mt-5 p-5 sm:p-6">
               <p className="t-meta text-signal">Current mandate / 2026</p>
               <p className="t-h3 mt-3">One backbone.<br />Three ownership layers.</p>
               <ol className="mt-5 space-y-3 text-sm text-ink-2">
@@ -57,7 +57,7 @@ export function Hero() {
           </aside>
         </div>
 
-        <dl className="grid border-y border-line sm:grid-cols-3">
+        <dl className="hero-metrics grid border-y border-line sm:grid-cols-3">
           {HERO_METRICS.map((metric, i) => (
             <div key={metric.label} className={`py-5 sm:px-6 ${i > 0 ? 'border-t border-line sm:border-l sm:border-t-0' : ''}`}>
               <dt className="order-2 mt-2 text-sm text-ink-2">{metric.label}</dt>

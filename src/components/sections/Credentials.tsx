@@ -35,7 +35,6 @@ export function Credentials() {
     <section id="credentials" className="section section-mineral">
       <div className="container">
         <SectionHeader
-          index="06"
           label="Credential evidence"
           meta={`${CREDENTIALS.length} records on file`}
           title={['Documents first.', <span key="2" className="text-ink-3">Claims second.</span>]}

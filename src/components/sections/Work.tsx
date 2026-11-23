@@ -27,7 +27,6 @@ export function Work({ repos }: { repos: ArchiveRepo[] }) {
     <section id="work" className="section section-mineral">
       <div className="container">
         <SectionHeader
-          index="02"
           label="Selected work"
           meta={`${CASE_STUDIES.length} public case studies`}
           title={['Engineering evidence.', <span key="2" className="text-ink-3">Maturity included.</span>]}

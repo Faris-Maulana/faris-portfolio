@@ -84,7 +84,6 @@ export function Contact() {
     <section id="contact" className="section section-dark">
       <div className="container">
         <SectionHeader
-          index="07"
           label="Start a conversation"
           meta={SITE_CONFIG.responseTime}
           title={['Bring the context.', <span key="2" className="text-ink-3">Especially the constraint.</span>]}

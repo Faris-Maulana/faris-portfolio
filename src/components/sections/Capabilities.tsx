@@ -7,7 +7,6 @@ export function Capabilities() {
     <section id="capabilities" className="section section-dark">
       <div className="container">
         <SectionHeader
-          index="05"
           label="Technical field"
           meta="Tools grouped by decision, not keyword volume"
           title={['A full-stack view', <span key="2" className="text-ink-3">of AI delivery.</span>]}

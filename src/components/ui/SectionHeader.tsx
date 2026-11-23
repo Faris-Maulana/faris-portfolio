@@ -2,21 +2,19 @@ import type { ReactNode } from 'react'
 import { Reveal, RevealLines } from '@/components/ui/Reveal'
 import { cn } from '@/lib/utils'
 
-export function SectionHeader({ label, title, lead, meta, index, className }: {
+export function SectionHeader({ label, title, lead, meta, className }: {
   label: string
   title: ReactNode[]
   lead?: ReactNode
   meta?: ReactNode
-  index?: string
   className?: string
 }) {
   return (
     <header className={cn('relative grid gap-7 lg:grid-cols-12 lg:gap-10', className)}>
       <Reveal className="lg:col-span-3">
-        <div className="flex items-center gap-3 lg:block">
-          {index ? <span className="t-meta text-signal">{index}</span> : null}
-          <p className="kicker lg:mt-3">{label}</p>
-          {meta ? <p className="t-meta mt-3">{meta}</p> : null}
+        <div className="lg:pt-3">
+          <p className="kicker">{label}</p>
+          {meta ? <p className="t-meta mt-3 max-w-[24ch] leading-relaxed">{meta}</p> : null}
         </div>
       </Reveal>
       <div className="lg:col-span-9">
