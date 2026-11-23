@@ -1,117 +1,72 @@
 'use client'
 
-import { ArrowUpRight, Download } from 'lucide-react'
-import { Reveal, RevealLines } from '@/components/ui/Reveal'
-import { IntroVideo } from '@/components/ui/IntroVideo'
+import { ArrowDown, ArrowUpRight, Download } from 'lucide-react'
 import { useClock } from '@/hooks/useClock'
 import { HERO_METRICS, SITE_CONFIG } from '@/lib/constants'
+import { StaticAtlas } from '@/components/canvas/StaticAtlas'
 
-/**
- * The fold is a positioning statement, not a name. A recruiter decides in
- * seconds; the first thing they read is what the job is and the scale it runs
- * at. The name is still the first words of the h1 for search and for screen
- * readers, set small above the statement.
- *
- * The map behind it is the fixed BackboneScene, mounted in the layout.
- */
 export function Hero() {
   const clock = useClock('Asia/Jakarta')
 
   return (
-    <section
-      id="hero"
-      className="relative flex min-h-[100svh] flex-col justify-end pt-20 sm:pt-24"
-    >
-      {/* Legibility scrim under the text column only; the right side stays
-          clear so the map reads. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(95deg, rgba(5,7,11,0.92) 0%, rgba(5,7,11,0.7) 38%, rgba(5,7,11,0) 66%), linear-gradient(to top, var(--color-canvas) 0%, rgba(5,7,11,0) 34%)',
-        }}
-      />
+    <section id="hero" className="atlas-grid relative min-h-[100svh] overflow-hidden border-b border-line">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_35%,var(--color-signal-glow),transparent_36%)]" aria-hidden />
+      <span className="atlas-coordinate absolute right-4 top-28 hidden xl:block" aria-hidden>06.2088 S / 106.8456 E</span>
 
-      <div className="container relative flex flex-1 flex-col justify-center">
-        <Reveal className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <span className="flex items-center gap-2.5">
-            <span className="pulse-dot" aria-hidden />
-            <span className="text-sm font-semibold text-signal">
-              Open to lead and manager roles
-            </span>
-          </span>
-          <span className="t-meta">{SITE_CONFIG.location}</span>
-          <span className="t-meta">{clock ? `${clock} WIB` : 'WIB, GMT+7'}</span>
-        </Reveal>
+      <div className="container relative flex min-h-[100svh] flex-col pb-8 pt-28 sm:pt-32">
+        <div className="grid flex-1 items-center gap-12 py-10 lg:grid-cols-12 lg:gap-10 lg:py-14">
+          <div className="lg:col-span-8">
+            <div className="mb-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <span className="inline-flex items-center gap-3 text-sm text-ink">
+                <span className="status-dot" aria-hidden />
+                {SITE_CONFIG.availability.status}
+              </span>
+              <span className="t-meta">{SITE_CONFIG.location} <span className="tnum">{clock}</span></span>
+            </div>
 
-        <h1>
-          <Reveal as="span" className="mb-4 block text-lg font-semibold text-ink-2 sm:text-xl">
-            Faris Maulana
-            <span className="text-ink-3">, AI Engineering Manager</span>
-          </Reveal>
-          <span className="t-display block max-w-[15ch] text-ink">
-            <RevealLines
-              lines={[
-                'I build the',
-                'AI function',
-                <>
-                  on a <span className="text-signal">25,000 km</span>
-                </>,
-                'backbone.',
-              ]}
-              stagger={95}
-              delay={80}
-            />
-          </span>
-        </h1>
+            <h1 className="t-display max-w-[13ch]">
+              <span className="mb-5 block font-body text-sm font-semibold normal-case tracking-normal text-ink-2">
+                {SITE_CONFIG.name} / {SITE_CONFIG.role}
+              </span>
+              Accountable <span className="text-signal">AI systems.</span>
+            </h1>
+            <p className="t-lead mt-8 max-w-2xl lg:ml-[16.666%]">
+              I build the data foundations, evaluation controls and operating models that let AI survive real infrastructure, not just the demo.
+            </p>
 
-        <Reveal
-          as="p"
-          delay={420}
-          className="t-lead mt-7 max-w-[52ch]"
-        >
-          Manager of AI Engineering at {SITE_CONFIG.company}. I own the
-          function, the data platform and the agent layer, from an empty org
-          chart to production, fully on-premise.
-        </Reveal>
+            <div className="mt-9 flex flex-wrap gap-3 lg:ml-[16.666%]">
+              <a href="#work" className="btn btn-primary">Inspect the systems <ArrowDown size={17} aria-hidden /></a>
+              <a href={SITE_CONFIG.cvPath} download className="btn btn-ghost">
+                <Download size={17} aria-hidden /> Executive CV
+              </a>
+            </div>
+          </div>
 
-        <Reveal delay={500} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
-          <a href="#contact" className="btn btn-primary">
-            Start a conversation
-            <ArrowUpRight size={15} />
-          </a>
-          <IntroVideo />
-          <a
-            href={SITE_CONFIG.cvPath}
-            download
-            className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink-2 transition-colors hover:text-ink"
-          >
-            <Download size={15} />
-            <span className="link-draw text-current">CV, PDF</span>
-          </a>
-        </Reveal>
-      </div>
+          <aside className="relative lg:col-span-4" aria-label="Current technical mandate">
+            <StaticAtlas />
+            <div className="panel corner-mark relative z-10 mt-[-2rem] ml-auto w-[88%] p-5 sm:p-6">
+              <p className="t-meta text-signal">Current mandate / 2026</p>
+              <p className="t-h3 mt-3">One backbone.<br />Three ownership layers.</p>
+              <ol className="mt-5 space-y-3 text-sm text-ink-2">
+                <li className="grid grid-cols-[2rem_1fr] gap-2"><span className="t-meta text-signal">01</span><span>AI engineering function</span></li>
+                <li className="grid grid-cols-[2rem_1fr] gap-2"><span className="t-meta text-signal">02</span><span>Governed data platform</span></li>
+                <li className="grid grid-cols-[2rem_1fr] gap-2"><span className="t-meta text-signal">03</span><span>Controlled agent layer</span></li>
+              </ol>
+              <a href="#leadership" className="link-draw mt-6 inline-flex items-center gap-2 text-sm font-semibold">Read the mandate <ArrowUpRight size={15} aria-hidden /></a>
+            </div>
+          </aside>
+        </div>
 
-      <div className="container relative pb-8 sm:pb-10">
-        <p className="t-label mb-3 opacity-80 lg:absolute lg:right-[var(--gutter)] lg:-top-1 lg:mb-0 lg:-translate-y-full lg:text-right">
-          Natural Earth land data. Routes are stylised, not a network map.
-        </p>
-        <Reveal delay={620} className="border-t border-line-2 pt-6">
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-7 lg:grid-cols-4">
-            {HERO_METRICS.map(metric => (
-              <div key={metric.label} className="flex min-w-0 flex-col-reverse">
-                <dt className="t-label mt-2 max-w-[26ch]">{metric.label}</dt>
-                <dd className="wide text-3xl font-extrabold leading-none tracking-tight text-ink tnum sm:text-4xl">
-                  {metric.value}
-                  {metric.unit ? (
-                    <span className="ml-1 text-base font-semibold text-ink-3">{metric.unit}</span>
-                  ) : null}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </Reveal>
+        <dl className="grid border-y border-line sm:grid-cols-3">
+          {HERO_METRICS.map((metric, i) => (
+            <div key={metric.label} className={`py-5 sm:px-6 ${i > 0 ? 'border-t border-line sm:border-l sm:border-t-0' : ''}`}>
+              <dt className="order-2 mt-2 text-sm text-ink-2">{metric.label}</dt>
+              <dd className="font-display text-3xl font-semibold tracking-tight text-ink wide">
+                {metric.value}<span className="ml-2 font-body text-sm font-normal tracking-normal text-signal">{metric.unit}</span>
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   )

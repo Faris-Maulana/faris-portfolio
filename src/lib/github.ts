@@ -1,4 +1,5 @@
-import snapshot from '@/data/github-repos.json'
+import { z } from 'zod'
+import snapshot from '../data/github-repos.json'
 
 export interface Repo {
   name: string
@@ -8,62 +9,33 @@ export interface Repo {
   language: string | null
   topics: string[]
   stargazers_count: number
-  private: boolean
+  /** Kept false for compatibility with the previous archive row component. */
+  private: false
   fork: boolean
   created_at: string
   pushed_at: string
 }
 
-/**
- * Repos are tiered rather than dumped in one flat list.
- *
- * The account spans six years, from first-year coursework to production AI
- * work. Presenting a 2020 HTML assignment beside a RAG pipeline reads as
- * inflation and drags the whole page down to the level of its weakest item, so
- * the tier drives both ordering and how much space each card gets.
- */
+/** Legacy exports remain while the Work UI moves to one curated collection. */
 export type Tier = 'applied' | 'practice' | 'foundations'
 
 export const TIER_META: Record<Tier, { label: string; blurb: string }> = {
   applied: {
     label: 'Applied',
-    blurb: 'Production systems and working tools',
+    blurb: 'Selected public projects',
   },
   practice: {
     label: 'Machine learning practice',
-    blurb: 'CNN, VGG, YOLO, and classical ML notebooks from 2021',
+    blurb: 'Earlier practice repositories',
   },
   foundations: {
     label: 'Foundations',
-    blurb: 'Coursework and first builds, 2020 to 2021',
+    blurb: 'Earlier coursework',
   },
 }
 
-const PRACTICE_HINTS = [
-  'classification',
-  'object-detection',
-  'opencv',
-  'machine-learning',
-  'training-data',
-  'ai_dengan_python',
-  'klasifikasi',
-]
+export const tierOf: (repo: Repo) => Tier = () => 'applied'
 
-export function tierOf(repo: Repo): Tier {
-  const year = Number(repo.pushed_at.slice(0, 4))
-  if (year >= 2022) return 'applied'
-
-  const name = repo.name.toLowerCase()
-  if (
-    repo.language === 'Jupyter Notebook' ||
-    PRACTICE_HINTS.some(hint => name.includes(hint))
-  ) {
-    return 'practice'
-  }
-  return 'foundations'
-}
-
-/** Language → the accent token used for its dot. */
 export const LANGUAGE_COLOR: Record<string, string> = {
   Python: 'var(--color-signal)',
   TypeScript: 'var(--color-data)',
@@ -76,74 +48,113 @@ export const LANGUAGE_COLOR: Record<string, string> = {
 }
 
 const GITHUB_USER = 'Faris-Maulana'
+const GITHUB_TIMEOUT_MS = 8_000
 
-function normalise(raw: unknown[]): Repo[] {
-  return raw
-    .map(item => item as Record<string, unknown>)
-    // The profile README repo shares the account name and is not a project.
-    .filter(r => !r.archived && r.name !== GITHUB_USER)
-    .map(r => ({
-      name: String(r.name),
-      description: (r.description as string | null) ?? null,
-      html_url: String(r.html_url),
-      homepage: (r.homepage as string) || null,
-      language: (r.language as string | null) ?? null,
-      topics: (r.topics as string[]) ?? [],
-      stargazers_count: Number(r.stargazers_count ?? 0),
-      private: Boolean(r.private),
-      fork: Boolean(r.fork),
-      created_at: String(r.created_at).slice(0, 10),
-      pushed_at: String(r.pushed_at).slice(0, 10),
-    }))
-    .sort((a, b) => b.pushed_at.localeCompare(a.pushed_at))
-}
+export const CURATED_REPOS = [
+  'rag-system',
+  'faris-portfolio',
+  'wealth-advisor-agents',
+  'ottodot-trial-booking',
+] as const
 
-/**
- * Live repo list with a committed snapshot as the floor.
- *
- * Two endpoints, chosen by whether a token is configured:
- *
- *   GITHUB_TOKEN set    /user/repos      public + private, 5,000 req/hour
- *   no token            /users/:u/repos  public only, 60 req/hour
- *
- * Private repositories are invisible to the unauthenticated API, so without a
- * token the archive can only ever show what GitHub shows a stranger. Set
- * GITHUB_TOKEN in the deployment environment (a fine-grained token with
- * read-only "Metadata" access is enough) and the private work appears on its
- * own with no code change.
- *
- * A failed fetch falls back to the committed snapshot rather than rendering an
- * empty section, so the page is never worse than the last commit.
- */
-export async function getRepos(): Promise<Repo[]> {
-  const token = process.env.GITHUB_TOKEN
+const githubDate = z
+  .string()
+  .max(40)
+  .regex(/^\d{4}-\d{2}-\d{2}(?:T|$)/, 'Invalid date')
+  .refine(value => !Number.isNaN(Date.parse(value)), 'Invalid date')
 
-  const url = token
-    ? 'https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner'
-    : `https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updated&type=all`
+const githubRepoSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(1000).nullable(),
+  html_url: z.url(),
+  homepage: z.string().max(500).nullable().optional(),
+  language: z.string().max(100).nullable(),
+  topics: z.array(z.string().max(50)).max(30).default([]),
+  stargazers_count: z.number().int().nonnegative().default(0),
+  private: z.boolean().default(false),
+  fork: z.boolean().default(false),
+  archived: z.boolean().default(false),
+  created_at: githubDate,
+  pushed_at: githubDate,
+})
 
+function publicHomepage(value: string | undefined | null): string | null {
+  if (!value) return null
   try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      next: { revalidate: 3600 },
-    })
-    if (!res.ok) throw new Error(`GitHub responded ${res.status}`)
-
-    const data = (await res.json()) as unknown[]
-    if (!Array.isArray(data) || data.length === 0) throw new Error('Empty payload')
-
-    const repos = normalise(data)
-    // A token that resolves to the wrong account would silently replace the
-    // archive with someone else's work.
-    return repos.length >= snapshot.length ? repos : (snapshot as Repo[])
+    const url = new URL(value)
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null
   } catch {
-    return snapshot as Repo[]
+    return null
   }
 }
 
-export const REPO_SNAPSHOT = snapshot as Repo[]
+/**
+ * Validates external data and returns only explicitly selected public projects,
+ * in editorial order. Unlisted, private, archived, and malformed entries are
+ * discarded rather than being promoted by recent activity.
+ */
+export function curateRepos(raw: unknown): Repo[] {
+  if (!Array.isArray(raw)) return []
+
+  const selected = new Map<string, Repo>()
+  for (const item of raw) {
+    const parsed = githubRepoSchema.safeParse(item)
+    if (!parsed.success || parsed.data.private || parsed.data.archived) continue
+
+    const repo = parsed.data
+    const index = CURATED_REPOS.findIndex(
+      name => name.toLowerCase() === repo.name.toLowerCase()
+    )
+    if (index < 0) continue
+
+    const name = CURATED_REPOS[index]
+    const key = name.toLowerCase()
+    if (selected.has(key)) continue
+
+    selected.set(key, {
+      name,
+      description: repo.description?.trim() || null,
+      html_url: `https://github.com/${GITHUB_USER}/${name}`,
+      homepage: publicHomepage(repo.homepage),
+      language: repo.language,
+      topics: repo.topics,
+      stargazers_count: repo.stargazers_count,
+      private: false,
+      fork: repo.fork,
+      created_at: repo.created_at.slice(0, 10),
+      pushed_at: repo.pushed_at.slice(0, 10),
+    })
+  }
+
+  return CURATED_REPOS.map(name => selected.get(name.toLowerCase())).filter(
+    (repo): repo is Repo => Boolean(repo)
+  )
+}
+
+export const REPO_SNAPSHOT = curateRepos(snapshot)
+
+/** Hourly ISR with the committed curated snapshot as the failure floor. */
+export async function getRepos(): Promise<Repo[]> {
+  try {
+    const res = await fetch(
+      `https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&type=owner`,
+      {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+        next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS),
+      }
+    )
+    if (!res.ok) return REPO_SNAPSHOT
+
+    const data: unknown = await res.json()
+    const repos = curateRepos(data)
+    return repos.length > 0 ? repos : REPO_SNAPSHOT
+  } catch {
+    return REPO_SNAPSHOT
+  }
+}
+
 export const GITHUB_PROFILE = `https://github.com/${GITHUB_USER}`

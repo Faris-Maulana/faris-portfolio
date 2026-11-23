@@ -1,205 +1,82 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUpRight, Download } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { ArrowUpRight, Download, Menu, X } from 'lucide-react'
 import { NAV_LINKS, SITE_CONFIG } from '@/lib/constants'
+import { useActiveSection } from '@/hooks/useActiveSection'
 import { cn } from '@/lib/utils'
 
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
+  const pathname = usePathname()
+  const active = useActiveSection()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
-  const [active, setActive] = useState('')
+  const href = (anchor: string) => pathname === '/' ? anchor : `/${anchor}`
 
-  /* Scroll state + active section, coalesced into a single rAF per frame.
-     The previous implementation ran a full querySelectorAll + getBoundingClientRect
-     loop on every scroll event, which is a forced reflow per event. */
-  useEffect(() => {
-    let queued = false
-
-    const read = () => {
-      queued = false
-      setScrolled(window.scrollY > 24)
-
-      let current = ''
-      for (const section of document.querySelectorAll<HTMLElement>('section[id]')) {
-        if (section.getBoundingClientRect().top <= 140) current = section.id
-      }
-      setActive(current)
-    }
-
-    const onScroll = () => {
-      if (queued) return
-      queued = true
-      requestAnimationFrame(read)
-    }
-
-    read()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  // Lock the page while the mobile sheet is open.
   useEffect(() => {
     if (!open) return
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = previous
-      window.removeEventListener('keydown', onKey)
-    }
+    return () => { document.body.style.overflow = previous }
   }, [open])
 
-  const go = (href: string) => {
-    setOpen(false)
-    document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' })
+  const openMenu = () => {
+    dialog.current?.showModal()
+    setOpen(true)
   }
+  const closeMenu = () => dialog.current?.close()
 
   return (
-    <>
-      <header
-        className={cn(
-          'fixed top-0 inset-x-0 z-[100] transition-[background,border-color,backdrop-filter] duration-500',
-          scrolled
-            ? 'border-b border-line bg-canvas/72 backdrop-blur-xl backdrop-saturate-150'
-            : 'border-b border-transparent bg-transparent'
-        )}
-      >
-        {/* Three independent tracks. The nav is absolutely centred so that a
-            long brand or a wide action group can never push it into either. */}
-        <nav className="container relative flex h-16 items-center justify-between gap-4">
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-           
-            className="group relative z-10 flex h-11 items-center gap-2.5"
-            aria-label="Back to top"
-          >
-            <span className="wide flex h-8 w-8 items-center justify-center rounded-md bg-signal text-[13px] font-extrabold text-[#0B1200]">
-              FM
-            </span>
-            <span className="hidden text-sm font-semibold text-ink sm:inline">Faris Maulana</span>
-          </button>
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-line bg-canvas/90 backdrop-blur-md">
+      <div className="container flex h-20 items-center gap-6">
+        <Link href="/" className="group flex items-center gap-3" title="Faris Maulana, home">
+          <span className="grid h-9 w-9 place-items-center border border-signal font-display text-sm font-bold text-signal transition-colors group-hover:bg-signal group-hover:text-on-signal">FM</span>
+          <span className="hidden sm:block"><span className="block font-display text-sm font-semibold text-ink">Faris Maulana</span><span className="t-meta block">AI engineering / Jakarta</span></span>
+          <span className="sr-only">Home</span>
+        </Link>
 
-          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center lg:flex">
-            <div className="pointer-events-auto flex items-center gap-1">
-              {NAV_LINKS.map(link => {
-                const id = link.href.slice(1)
-                const isActive = active === id
-                return (
-                  <button
-                    key={link.href}
-                    onClick={() => go(link.href)}
-                   
-                    aria-current={isActive ? 'true' : undefined}
-                    className={cn(
-                      'relative px-3 py-2 text-sm font-semibold transition-colors duration-300',
-                      isActive ? 'text-ink' : 'text-ink-3 hover:text-ink'
-                    )}
-                  >
-                    {link.label}
-                    <span
-                      className={cn(
-                        'absolute inset-x-3 bottom-1 h-px origin-center bg-signal transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]',
-                        isActive ? 'scale-x-100' : 'scale-x-0'
-                      )}
-                    />
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="relative z-10 flex items-center gap-2">
-            <a
-              href={SITE_CONFIG.cvPath}
-              download
-             
-              className="hidden min-h-10 items-center gap-2 rounded-md border border-line-2 px-3.5 text-sm font-semibold text-ink-2 transition-colors duration-300 hover:border-line-3 hover:text-ink sm:inline-flex"
-            >
-              <Download size={12} />
-              CV
-            </a>
-            <button
-              onClick={() => go('#contact')}
-             
-              className="hidden min-h-10 items-center gap-1.5 rounded-md bg-ink px-3.5 text-sm font-semibold text-canvas transition-colors duration-300 hover:bg-signal md:inline-flex"
-            >
-              Get in touch
-              <ArrowUpRight size={12} />
-            </button>
-
-            <button
-              onClick={() => setOpen(v => !v)}
-             
-              aria-label={open ? 'Close menu' : 'Open menu'}
-              aria-expanded={open}
-              className="flex h-10 w-10 items-center justify-center lg:hidden"
-            >
-              <span className="flex w-5 flex-col gap-[5px]">
-                <span
-                  className={cn(
-                    'h-px w-full origin-center bg-ink transition-transform duration-300',
-                    open && 'translate-y-[3px] rotate-45'
-                  )}
-                />
-                <span
-                  className={cn(
-                    'h-px w-full origin-center bg-ink transition-transform duration-300',
-                    open && '-translate-y-[3px] -rotate-45'
-                  )}
-                />
-              </span>
-            </button>
-          </div>
+        <nav className="ml-auto hidden items-center gap-6 lg:flex" aria-label="Primary navigation">
+          {NAV_LINKS.map(link => (
+            <Link key={link.href} href={href(link.href)} aria-current={active === link.href.slice(1) ? 'location' : undefined} className={cn('link-draw py-3 text-sm font-semibold transition-colors', active === link.href.slice(1) ? 'text-signal' : 'text-ink-2 hover:text-ink')}>{link.label}</Link>
+          ))}
         </nav>
-      </header>
+        <div className="hidden xl:block"><a href={SITE_CONFIG.cvPath} download className="btn btn-ghost min-h-10 px-3 text-xs"><Download size={14} aria-hidden /> CV</a></div>
+        <div className="ml-auto lg:hidden">
+          <button ref={trigger} type="button" className="icon-btn" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="site-navigation" onClick={open ? closeMenu : openMenu}>
+            {open ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
+          </button>
+        </div>
+      </div>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.28 }}
-            className="safe-top safe-bottom safe-x fixed inset-0 z-[99] flex flex-col justify-center bg-canvas/97 px-[var(--gutter)] backdrop-blur-2xl lg:hidden"
-          >
-            <nav className="flex flex-col">
-              {NAV_LINKS.map((link, i) => (
-                <motion.button
-                  key={link.href}
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ delay: 0.04 + i * 0.045, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                  onClick={() => go(link.href)}
-                  className="group flex items-baseline justify-between border-b border-line py-4 text-left"
-                >
-                  <span className="t-h3 text-ink transition-colors group-hover:text-signal">
-                    {link.label}
-                  </span>
-                  <span className="h-px w-6 bg-line-3 transition-colors group-hover:bg-signal" aria-hidden />
-                </motion.button>
-              ))}
-            </nav>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.34 }}
-              className="mt-10 flex flex-wrap items-center gap-3"
-            >
-              <a href={SITE_CONFIG.cvPath} download className="btn btn-ghost">
-                <Download size={13} /> Download CV
-              </a>
-              <a href={`mailto:${SITE_CONFIG.email}`} className="btn btn-primary">
-                Get in touch <ArrowUpRight size={13} />
-              </a>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+      <dialog
+        ref={dialog}
+        id="site-navigation"
+        aria-label="Site navigation"
+        className="atlas-dialog m-0 h-[100dvh] max-h-none w-[min(24rem,100vw)] max-w-none rounded-none border-y-0 border-l p-0 lg:hidden"
+        onClose={() => { setOpen(false); trigger.current?.focus() }}
+        onClick={event => { if (event.target === event.currentTarget) closeMenu() }}
+      >
+        <div className="safe-top safe-x flex items-center justify-between border-b border-line">
+          <span className="t-meta text-signal">Navigation index</span>
+          <button type="button" className="icon-btn" aria-label="Close menu" onClick={closeMenu} autoFocus><X size={20} aria-hidden /></button>
+        </div>
+        <nav className="safe-x overflow-y-auto py-6" aria-label="Mobile navigation">
+          <ol>
+            {NAV_LINKS.map((link, index) => (
+              <li key={link.href} className="border-b border-line">
+                <Link href={href(link.href)} onClick={closeMenu} className="flex min-h-20 items-center gap-4 py-4 font-display text-2xl font-semibold text-ink">
+                  <span className="t-meta text-signal">0{index + 1}</span><span className="flex-1">{link.label}</span><ArrowUpRight size={19} className="text-ink-3" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ol>
+          <a href={SITE_CONFIG.cvPath} download onClick={closeMenu} className="btn btn-primary mt-8 w-full"><Download size={17} aria-hidden /> Download executive CV</a>
+          <p className="t-meta mt-8 leading-relaxed">{SITE_CONFIG.location}<br />{SITE_CONFIG.email}</p>
+        </nav>
+      </dialog>
+    </header>
   )
 }

@@ -1,265 +1,295 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { extractEmail, detectIntent } from '@/lib/utils'
-import { notifyOwner } from '@/lib/notify'
-import { clientKey, rateLimit } from '@/lib/rate-limit'
+import { NextResponse, type NextRequest } from 'next/server'
+import { z } from 'zod'
+import { chatRequestSchema, type ChatRequestMessage } from '../../../lib/chat-schema'
+import { notifyOwner } from '../../../lib/notify'
+import { clientKey, rateLimit } from '../../../lib/rate-limit'
+import { readJsonBody } from '../../../lib/request-body'
+import { detectIntent, extractEmail } from '../../../lib/utils'
+import { SITE_URL } from '../../../lib/site'
 
-const SYSTEM_PROMPT = `You are ARIA, the assistant on Faris Maulana's portfolio website.
+const SYSTEM_PROMPT = `You are ARIA, an AI portfolio assistant for Faris Maulana.
+Answer questions about Faris using only the facts below. Be concise, accurate, and technical when the question calls for it. If a fact is not included here, say that you do not have that information and suggest the site's contact form. Never invent experience, metrics, credentials, availability, response times, or guarantees. Do not solicit a visitor's name, email, employer, or other personal details.
 
-═══ WHO YOU REPRESENT ═══
-Faris Maulana is Manager of AI Engineering at PT Trans Indonesia Superkoridor (TIS).
-• Builds production AI systems: Text2SQL multi-agent, RAG pipelines, LangGraph orchestration
-• Data engineering: ClickHouse, PostgreSQL, dbt-core, Airflow, Airbyte, medallion DWH
-• LLM lifecycle: RLHF, fine-tuning, red-teaming, vLLM inference, guardrails
-• Web3 security researcher: Sherlock, Code4rena, Immunefi (Solidity auditing)
-• Based in Bogor/Jakarta, Indonesia
-• Email: maulanafaris016@gmail.com
-• Open to AI Engineering leadership roles, applied AI architecture, and consulting
+Faris is Manager of AI Engineering at PT Trans Indonesia Superkoridor in Indonesia. He builds production AI systems, including Text2SQL multi-agent workflows, RAG pipelines, LangGraph orchestration, evaluation harnesses, and data platforms using ClickHouse, PostgreSQL, dbt, Airflow, and Airbyte. His background includes AI and data roles at iMerit, Berlian Laju Tanker, Toyota Research Institute, and Telkom Indonesia. He also researches smart contract security.
 
-═══ EDUCATION AND CREDENTIALS (state only these) ═══
-• S.T. (Sarjana Teknik) in Informatics Engineering, Universitas Pancasila. Yudisium February 2024, GPA 3.78/4.00
-• BNSP Certificate of Competence, Lead Programmer (issued November 2022, three-year validity)
-• Anthropic Claude certificates (2026), plus Dicoding, Simplilearn, Kaggle and Snowflake courses
-• Every credential has a verify link or document in the Credentials section of the site. If asked about
-  a certification not listed there, say it is not on record on the site and suggest emailing Faris
+Selected work includes an enterprise Text2SQL platform currently in development, a RAG pipeline with retrieval evaluation, a NOC monitoring agent proof of concept, and maritime fleet analytics. Do not describe work in progress or proofs of concept as completed production deployments.
 
-═══ KEY PROJECTS ═══
-1. Text2SQL Multi-Agent Platform (TIS, 2026): LangGraph + ClickHouse, PP 71/2019 compliant, air-gapped
-2. Antigravity RAG System (2025): custom RAGAS-replacement eval, cross-encoder reranking, Groq inference
-3. NOC Monitoring AI Agent (2026): FastAPI + LangChain + ClickHouse + WhatsApp (Fonnte) alerting
-4. Maritime Fleet Analytics (BLT): PCA + OLS on Danaos ERP, 11.2% TCE yield lift
-5. Smart Contract Security Research: reentrancy, access-control, overflow bugs on Sherlock/Code4rena
+Critical architecture rule: a model may propose or generate a query, but deterministic validation checks syntax, permissions and query scope before execution. Schema discovery, planning, SQL generation, validation, execution and synthesis are separate stages. Validation is the hard boundary before consequential execution. Never infer guarantees, scaling behavior, monitoring or other implementation details from a tool name.
 
-═══ LEAD CAPTURE RULES (CRITICAL) ═══
-Your PRIMARY job beyond answering questions is to capture visitor identity.
-On the FIRST or SECOND visitor message, naturally ask for their name and purpose.
-Do it conversationally. Weave it into your response rather than asking as a form.
+Faris earned an S.T. in Informatics Engineering from Universitas Pancasila, with yudisium in February 2024 and GPA 3.78/4.00. Only credentials listed on the website are on record.
 
-═══ RESPONSE STYLE ═══
-• Concise: under 120 words unless a technical deep-dive is explicitly requested
-• Warm but precise. You represent a senior engineer, not a chatbot
-• For hiring/collab: be enthusiastic and proactive
-• For technical: match the visitor's depth level
-• End responses with a light CTA: "Anything else I can help you with?"
-• Never use em dashes or en dashes. Use a comma, a colon, or a full stop.
-  The rest of the site is written that way and your replies sit inside it.
-• No bullet lists unless asked. Write in sentences, like a person typing.
+For hiring, consulting, or collaboration questions, explain the relevant experience and offer the public contact options. Public email: maulanafaris016@gmail.com. Keep replies under 120 words unless the visitor explicitly requests a deep dive. Never use em dashes or en dashes.`
 
-═══ WHAT YOU NEVER DO ═══
-• Never say you "can't" answer something. Redirect gracefully
-• Never fabricate project details or metrics
-• Never share home addresses, IDs, or sensitive personal data
-• Never claim Faris is unavailable. Always say "he'll respond within 24h"`
-
-/**
- * Ordered fallback chain.
- *
- * Model ids rot. The previous single id, google/gemini-2.0-flash-001, was
- * retired upstream and every chat request had been 404ing ever since with no
- * signal other than visitors being told to email instead. A chain means one
- * retirement degrades to the next option rather than taking the feature down,
- * and the console names whichever one served.
- */
-const OPENROUTER_MODELS = [
-  process.env.OPENROUTER_MODEL,
-  // Instruction-tuned and cheap. Reasoning models are deliberately not first:
-  // several of them emit their working out as the reply, which is unusable in
-  // a widget a stranger is reading.
+const DEFAULT_MODELS = [
   'mistralai/mistral-nemo',
   'google/gemma-4-31b-it:free',
-  'nvidia/nemotron-3-super-120b-a12b:free',
-].filter((m): m is string => !!m)
+  'inclusionai/ling-3.2-flash:free',
+]
+const MAX_MODEL_ATTEMPTS = 3
+const OPENROUTER_TIMEOUT_MS = 10_000
+const MAX_BODY_BYTES = 128 * 1024
+const CHAT_LIMIT = 20
+const CHAT_WINDOW_MS = 5 * 60 * 1000
 
-/**
- * Last line of defence on reply formatting.
- *
- * Two things a prompt cannot guarantee. Reasoning models sometimes prepend
- * their deliberation, and every model reaches for em dashes no matter how
- * plainly it is told not to. Both are cheap to fix deterministically, so they
- * are fixed here rather than hoped for upstream.
- */
+const completionSchema = z.object({
+  choices: z
+    .array(
+      z.object({
+        message: z.object({
+          content: z.string().max(8_000),
+        }),
+      })
+    )
+    .min(1)
+    .max(4),
+})
+
+type CompletionResult =
+  | { availability: 'ok'; reply: string }
+  | { availability: 'unavailable' }
+  | { availability: 'rate_limited'; retryAfter?: number }
+
+function models(): string[] {
+  return [
+    ...new Set(
+      [process.env.OPENROUTER_MODEL, ...DEFAULT_MODELS].filter(
+        (model): model is string => Boolean(model)
+      )
+    ),
+  ].slice(0, MAX_MODEL_ATTEMPTS)
+}
+
 function sanitiseReply(raw: string): string {
   let text = raw.trim()
-
-  // Strip explicit thinking blocks and common leaked-deliberation openers.
   text = text.replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim()
   const leak = text.match(/^(?:we|i)\s+(?:need to|should|must)\b[\s\S]*?\n\n/i)
   if (leak) text = text.slice(leak[0].length).trim()
 
   return text
-    .replace(/\s*[—–]\s*/g, ', ')
+    .replace(/\s*[\u2014\u2013]\s*/g, ', ')
     .replace(/\s+,/g, ',')
     .replace(/,\s*,/g, ',')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
 
-/** 20 turns per 5 minutes is far above human pace and well below abuse. */
-const CHAT_LIMIT = 20
-const CHAT_WINDOW_MS = 5 * 60 * 1000
+function parseRetryAfter(value: string | null): number | undefined {
+  if (!value) return undefined
+  const seconds = Number(value)
+  if (Number.isFinite(seconds)) return Math.max(1, Math.ceil(seconds))
 
-/** Hard ceiling on what reaches the model, so nobody can bill us by payload. */
-const MAX_TURNS = 30
-const MAX_CHARS = 4000
+  const date = Date.parse(value)
+  if (Number.isNaN(date)) return undefined
+  return Math.max(1, Math.ceil((date - Date.now()) / 1000))
+}
+
+/**
+ * One bounded attempt per model. Authentication, quota, and provider rate-limit
+ * errors stop immediately; model-specific and transient failures use the next
+ * fallback. There is no unbounded retry loop.
+ */
+async function completeChat(
+  messages: ChatRequestMessage[],
+  apiKey: string
+): Promise<CompletionResult> {
+  for (const model of models()) {
+    let response: Response
+    try {
+      response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+          'HTTP-Referer': SITE_URL,
+          'X-Title': 'Faris Maulana Portfolio - ARIA',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 450,
+          temperature: 0.4,
+          messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+        }),
+        signal: AbortSignal.timeout(OPENROUTER_TIMEOUT_MS),
+        cache: 'no-store',
+      })
+    } catch {
+      continue
+    }
+
+    if (response.status === 429) {
+      return {
+        availability: 'rate_limited',
+        retryAfter: parseRetryAfter(response.headers.get('retry-after')),
+      }
+    }
+    if (
+      response.status === 401 ||
+      response.status === 402 ||
+      response.status === 403
+    ) {
+      return { availability: 'unavailable' }
+    }
+    if (!response.ok) {
+      if (
+        response.status === 404 ||
+        response.status === 408 ||
+        response.status >= 500
+      ) {
+        continue
+      }
+      return { availability: 'unavailable' }
+    }
+
+    let data: unknown
+    try {
+      data = await response.json()
+    } catch {
+      continue
+    }
+
+    const parsed = completionSchema.safeParse(data)
+    if (!parsed.success) continue
+
+    const reply = sanitiseReply(parsed.data.choices[0].message.content)
+    if (reply) return { availability: 'ok', reply }
+  }
+
+  return { availability: 'unavailable' }
+}
+
+function visitorName(messages: ChatRequestMessage[]): string | undefined {
+  const userText = messages
+    .filter(message => message.role === 'user')
+    .map(message => message.content)
+    .join('\n')
+  const match = userText.match(
+    /(?:i[''`]?m|my name is|this is|i am|call me)\s+([A-Z][a-z]+(?: [A-Z][a-z]+)?)/
+  )
+  return match?.[1]
+}
+
+function visitorCompany(messages: ChatRequestMessage[]): string | undefined {
+  const userText = messages
+    .filter(message => message.role === 'user')
+    .map(message => message.content)
+    .join('\n')
+  const match = userText.match(
+    /(?:from|at|work(?:ing)? (?:at|for)|representing|with)\s+([A-Z][A-Za-z\s&]{2,30}?)(?:\.|,|\s*$|\s+and)/
+  )
+  return match?.[1].trim()
+}
+
+const UNAVAILABLE_REPLY =
+  'ARIA is unavailable right now. Please try again later or contact Faris at maulanafaris016@gmail.com.'
 
 export async function POST(req: NextRequest) {
   const limit = rateLimit(clientKey(req, 'chat'), CHAT_LIMIT, CHAT_WINDOW_MS)
   if (!limit.ok) {
     return NextResponse.json(
-      { reply: "You are sending messages faster than I can answer. Give it a moment, or email maulanafaris016@gmail.com and Faris will pick it up directly." },
+      {
+        reply:
+          'You are sending messages too quickly. Please wait a moment and try again.',
+        availability: 'rate_limited',
+      },
       { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
     )
   }
 
+  const body = await readJsonBody(req, MAX_BODY_BYTES)
+  if (!body.ok) {
+    return NextResponse.json(
+      {
+        error: body.reason === 'too_large'
+          ? 'Request is too large.'
+          : body.reason === 'unsupported_type'
+            ? 'Expected application/json.'
+            : 'Malformed request.',
+        reply: 'Please start a new chat and try again.',
+      },
+      { status: body.reason === 'too_large' ? 413 : body.reason === 'unsupported_type' ? 415 : 400 }
+    )
+  }
+
+  const parsed = chatRequestSchema.safeParse(body.data)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid request.', reply: 'Please start a new chat and try again.' },
+      { status: 400 }
+    )
+  }
+
+  const { messages, sessionId } = parsed.data
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey) {
+    return NextResponse.json(
+      {
+        reply:
+          'ARIA is not configured on this deployment. Please use the contact form or email maulanafaris016@gmail.com.',
+        availability: 'unconfigured',
+      },
+      { status: 503 }
+    )
+  }
+
   try {
-    const body = await req.json()
-    const sessionId = typeof body?.sessionId === 'string' ? body.sessionId.slice(0, 100) : ''
-    const rawMessages = body?.messages
-
-    if (!Array.isArray(rawMessages) || !sessionId) {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
-    }
-
-    const messages = rawMessages
-      .filter(
-        (m: unknown): m is { role: string; content: string } =>
-          !!m &&
-          typeof m === 'object' &&
-          typeof (m as { content?: unknown }).content === 'string' &&
-          ((m as { role?: unknown }).role === 'user' ||
-            (m as { role?: unknown }).role === 'assistant')
+    const completion = await completeChat(messages, apiKey)
+    if (completion.availability === 'rate_limited') {
+      return NextResponse.json(
+        {
+          reply: 'The AI service is busy right now. Please try again shortly.',
+          availability: 'rate_limited',
+        },
+        {
+          status: 429,
+          ...(completion.retryAfter
+            ? { headers: { 'Retry-After': String(completion.retryAfter) } }
+            : {}),
+        }
       )
-      .slice(-MAX_TURNS)
-      .map(m => ({ role: m.role, content: m.content.slice(0, MAX_CHARS) }))
-
-    if (messages.length === 0) {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    }
+    if (completion.availability === 'unavailable') {
+      return NextResponse.json(
+        { reply: UNAVAILABLE_REPLY, availability: 'unavailable' },
+        { status: 503 }
+      )
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY
-    if (!apiKey) {
-      return NextResponse.json({
-        reply: "ARIA is temporarily offline. Please reach out directly: maulanafaris016@gmail.com."
-      })
-    }
+    const latestUserMessage = messages.at(-1)!
+    const latestEmail = extractEmail(latestUserMessage.content)
+    const name = visitorName(messages)
 
-    const upstream = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'https://faris-portfolio-red.vercel.app',
-      'X-Title': 'Faris Maulana Portfolio - ARIA',
-    }
-
-    let aiReply = ''
-    let servedBy = ''
-    const failures: string[] = []
-
-    for (const model of OPENROUTER_MODELS) {
-      try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: upstream,
-          body: JSON.stringify({
-            model,
-            max_tokens: 450,
-            temperature: 0.7,
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
-              ...messages.map(m => ({ role: m.role, content: m.content })),
-            ],
-          }),
-        })
-
-        if (!response.ok) {
-          failures.push(`${model}: HTTP ${response.status}`)
-          continue
-        }
-
-        const data = await response.json()
-        const text: string = data?.choices?.[0]?.message?.content || ''
-        if (!text) {
-          failures.push(`${model}: empty completion`)
-          continue
-        }
-
-        aiReply = sanitiseReply(text)
-        if (!aiReply) {
-          failures.push(`${model}: empty after sanitising`)
-          continue
-        }
-        servedBy = model
-        break
-      } catch (err) {
-        failures.push(`${model}: ${err instanceof Error ? err.message : 'threw'}`)
-      }
-    }
-
-    if (!aiReply) {
-      console.error('[chat] every model failed', failures)
-      return NextResponse.json({
-        reply: `I cannot reach my model right now. Email ${process.env.OWNER_EMAIL || 'maulanafaris016@gmail.com'} and Faris will answer you directly.`,
-      })
-    }
-
-    if (failures.length) console.warn('[chat] served by', servedBy, 'after', failures)
-    const fullText = messages.map((m: { content: string }) => m.content).join(' ')
-    const lastUserMsg = messages.filter((m: { role: string }) => m.role === 'user').slice(-1)[0]?.content || ''
-    const extractedEmail   = extractEmail(fullText)
-    const detectedIntent   = detectIntent(lastUserMsg)
-    const messageCount     = messages.filter((m: { role: string }) => m.role === 'user').length
-    const nameMatch = fullText.match(
-      /(?:i[''`]?m|my name is|this is|i am|call me)\s+([A-Z][a-z]+(?: [A-Z][a-z]+)?)/
-    )
-    const extractedName = nameMatch ? nameMatch[1] : undefined
-    const companyMatch = fullText.match(
-      /(?:from|at|work(?:ing)? (?:at|for)|representing|with)\s+([A-Z][A-Za-z\s&]{2,30}?)(?:\.|,|\s*$|\s+and)/
-    )
-    const extractedCompany = companyMatch ? companyMatch[1].trim() : undefined
-
-    // Conversations are not stored server-side (the visitor's browser keeps its
-    // own copy), so identity comes from the transcript the client sends.
-    const visitorEmail = extractedEmail
-    const visitorName = extractedName
-    // Notify on the first turn, on the turn a visitor first shares an email,
-    // and every 8 turns after that. Keyed on the latest message so an email
-    // given once does not re-notify on every later turn.
-    const isNewSession = messageCount === 1
-    const emailJustShared = !!extractEmail(lastUserMsg)
-
-    const shouldNotify = isNewSession || emailJustShared || messageCount % 8 === 0
-
-    if (shouldNotify) {
-      const transcript = [...messages, { role: 'assistant', content: aiReply }]
-        .slice(-6)
-        .map(m => `${m.role === 'user' ? 'Visitor' : 'ARIA'}: ${m.content}`)
-        .join('\n\n')
-
+    // A chat is forwarded only when the latest user message explicitly contains
+    // an email. Earlier addresses and anonymous turn counts never trigger one.
+    if (latestEmail) {
       await notifyOwner({
-        name: visitorName || 'Anonymous visitor',
-        email: visitorEmail || 'no-reply@example.com',
-        subject: isNewSession
-          ? `New visitor in ARIA${visitorName ? `, ${visitorName}` : ''} (${detectedIntent})`
-          : `ARIA chat update${visitorName ? ` from ${visitorName}` : ''}, message ${messageCount}`,
-        message: transcript,
+        name: name || 'Portfolio visitor',
+        email: latestEmail,
+        subject: `ARIA chat contact${name ? ` from ${name}` : ''}`,
+        message: latestUserMessage.content,
         source: 'aria_chat',
         meta: {
           Session: sessionId,
-          Intent: detectedIntent,
-          Company: extractedCompany,
-          Messages: messageCount,
+          Intent: detectIntent(latestUserMessage.content),
+          Company: visitorCompany(messages),
+          Messages: messages.filter(message => message.role === 'user').length,
         },
       })
     }
 
     return NextResponse.json({
-      reply:        aiReply,
-      visitorName,
-      visitorEmail: visitorEmail ? '***' : undefined,
+      reply: completion.reply,
+      availability: 'ok',
+      visitorName: name,
+      visitorEmail: latestEmail ? '***' : undefined,
     })
-
   } catch (error) {
-    console.error('Chat route error:', error)
-    return NextResponse.json({
-      reply: "ARIA encountered an error. Please try again or contact Faris at maulanafaris016@gmail.com."
-    })
+    console.error(
+      '[chat] unexpected request failure',
+      error instanceof Error ? error.name : 'unknown'
+    )
+    return NextResponse.json(
+      { reply: UNAVAILABLE_REPLY, availability: 'unavailable' },
+      { status: 500 }
+    )
   }
 }

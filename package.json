@@ -2,41 +2,47 @@
   "name": "faris-portfolio",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && eslint . --max-warnings 0 && npm run build"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "evaluate:chat": "node scripts/evaluate-chat.mjs",
+    "check:uicopy": "node scripts/check-ui.mjs src",
+    "verify": "npm run typecheck && eslint . --max-warnings 0 && npm run test && npm run check:uicopy && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
-    "@react-three/fiber": "^9.6.1",
     "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.40.0",
     "lenis": "^1.3.23",
     "lucide-react": "^1.16.0",
-    "next": "16.2.6",
+    "next": "^16.4.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.76.0",
-    "resend": "^6.12.3",
-    "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
-    "three": "^0.184.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/three": "^0.185.4",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "^16.4.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.1.1"
   }
 }

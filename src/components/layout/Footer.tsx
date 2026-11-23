@@ -1,8 +1,5 @@
-'use client'
-
-import { ArrowUpRight, ArrowUp } from 'lucide-react'
+import { ArrowUp, ArrowUpRight, Mail } from 'lucide-react'
 import { GithubIcon, LinkedinIcon } from '@/components/ui/Icons'
-import { Mail } from 'lucide-react'
 import { NAV_LINKS, SITE_CONFIG } from '@/lib/constants'
 
 const SOCIALS = [
@@ -12,105 +9,26 @@ const SOCIALS = [
 ]
 
 export function Footer() {
-  const year = new Date().getFullYear()
-
   return (
-    <footer className="relative border-t border-line">
+    <footer className="border-t border-line bg-canvas-2">
       <div className="pad-for-fab container pt-16 lg:pt-20">
         <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
-          {/* ── Call to action ────────────────────────────────────────── */}
-          <div className="lg:col-span-6">
-            <p className="mb-5 text-sm font-semibold text-ink-3">Let’s build something</p>
-            <a
-              href={`mailto:${SITE_CONFIG.email}`}
-              className="group inline-flex max-w-full items-start gap-3"
-            >
-              <span className="t-h3 break-all text-ink transition-colors duration-300 group-hover:text-signal">
-                {SITE_CONFIG.email}
-              </span>
-              <ArrowUpRight
-                size={20}
-                className="mt-1 flex-none text-ink-3 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-signal"
-              />
+          <div className="lg:col-span-7">
+            <p className="kicker">A useful first conversation</p>
+            <a href={`mailto:${SITE_CONFIG.email}`} className="group mt-6 inline-flex max-w-full items-start gap-3 font-display text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl wide">
+              Bring me the constraint.<ArrowUpRight className="mt-1 shrink-0 text-signal transition-transform group-hover:-translate-y-1 group-hover:translate-x-1" size={30} aria-hidden />
             </a>
-            <p className="mt-5 max-w-[42ch] text-sm text-ink-3">
-              {SITE_CONFIG.availableFor}. {SITE_CONFIG.responseTime}.
-            </p>
-
-            <ul className="mt-8 flex items-center gap-2">
-              {SOCIALS.map(({ Icon, href, label }) => (
-                <li key={label}>
-                  <a
-                    href={href}
-                    target={href.startsWith('mailto:') ? undefined : '_blank'}
-                    rel="noopener noreferrer"
-                    aria-label={label}
-                    className="flex h-11 w-11 items-center justify-center rounded-md border border-line text-ink-3 transition-colors duration-300 hover:border-line-3 hover:text-ink"
-                  >
-                    <Icon size={15} />
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <p className="t-body mt-5 max-w-xl text-base">{SITE_CONFIG.availability.detail}. Direct email is always available if the form or assistant is not.</p>
           </div>
-
-          {/* ── Index ─────────────────────────────────────────────────── */}
-          <nav className="lg:col-span-3" aria-label="Footer">
-            <p className="mb-5 text-sm font-semibold text-ink-3">Index</p>
-            <ul>
-              {NAV_LINKS.map(link => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="inline-flex min-h-11 items-center py-1 text-sm text-ink-2 transition-colors hover:text-ink"
-                  >
-                    <span className="link-draw">{link.label}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* ── Documents ─────────────────────────────────────────────── */}
-          <div className="lg:col-span-3">
-            <p className="mb-5 text-sm font-semibold text-ink-3">Documents</p>
-            <ul>
-              {[
-                { label: 'Curriculum vitae', href: SITE_CONFIG.cvPath },
-                { label: 'Quantitative portfolio', href: SITE_CONFIG.quantPath },
-              ].map(doc => (
-                <li key={doc.href}>
-                  <a
-                    href={doc.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center py-1 text-sm text-ink-2 transition-colors hover:text-ink"
-                  >
-                    <span className="link-draw">{doc.label}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
+          <div className="grid gap-8 text-sm lg:col-span-5 lg:grid-cols-2">
+            <nav aria-label="Footer navigation"><p className="t-meta mb-4">Index</p><ul className="space-y-2">{NAV_LINKS.map(link => <li key={link.href}><a href={`/${link.href}`} className="text-ink-2 hover:text-signal">{link.label}</a></li>)}</ul></nav>
+            <div><p className="t-meta mb-4">Elsewhere</p><ul className="space-y-3">{SOCIALS.map(({ Icon, href, label }) => <li key={label}><a href={href} target={href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer" className="inline-flex items-center gap-2 text-ink-2 hover:text-signal"><Icon size={15} aria-hidden />{label}</a></li>)}</ul></div>
           </div>
         </div>
-
-        {/* ── Colophon ────────────────────────────────────────────────── */}
-        <div className="mt-14 flex flex-col gap-5 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">
-          <p className="t-label">
-            © {year} {SITE_CONFIG.name} · {SITE_CONFIG.location}
-          </p>
-          <div className="flex items-center gap-6">
-            <span className="t-label flex items-center gap-2">
-              <span className="pulse-dot" aria-hidden />
-              Available
-            </span>
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="t-label flex min-h-11 items-center gap-1.5 transition-colors hover:text-ink"
-            >
-              Top <ArrowUp size={12} />
-            </button>
-          </div>
+        <div className="mt-14 flex flex-col gap-4 border-t border-line py-6 sm:flex-row sm:items-center">
+          <p className="t-meta">© {new Date().getFullYear()} Faris Maulana / Built with Next.js</p>
+          <p className="t-meta sm:ml-auto"><span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-signal" aria-hidden />{SITE_CONFIG.availability.status}</p>
+          <a href="#main" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink-2 hover:text-signal sm:ml-6"><ArrowUp size={15} aria-hidden /> Back to top</a>
         </div>
       </div>
     </footer>
