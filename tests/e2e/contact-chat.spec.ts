@@ -137,6 +137,43 @@ test('assistant opens at the newest line of a saved transcript', async ({ page }
 
   await expect(log.locator('.chat-message', { hasText: 'Saved message 20.' })).toBeVisible()
   await expect.poll(() => transcriptDistance(log)).toBeLessThanOrEqual(1)
+
+  await log.evaluate(node => {
+    node.scrollTop = 0
+    node.dispatchEvent(new Event('scroll'))
+  })
+  const jump = page.getByRole('button', { name: 'Latest message' })
+  await expect(jump).toBeVisible()
+  await jump.click()
+  await expect.poll(() => transcriptDistance(log)).toBeLessThanOrEqual(1)
+})
+
+test('assistant welcome stays at the top and starter questions send a real request', async ({ page }) => {
+  await page.route('**/api/chat', async route => {
+    const payload = route.request().postDataJSON() as { messages: Array<Record<string, unknown>> }
+    expect(payload.messages.at(-1)).toEqual({ role: 'user', content: 'How is generated SQL validated before execution?' })
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ reply: 'Syntax, permission and query-scope checks run before execution.', availability: 'ok' }),
+    })
+  })
+  await page.goto('/')
+  const { dialog, log } = await openAssistant(page)
+
+  const title = dialog.locator('.chat-welcome-title')
+  await expect(title).toHaveText(/Interrogate\s*the\s*work\./)
+  await expect(title).toBeInViewport()
+  expect(await title.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true)
+  expect(await log.evaluate(node => node.scrollTop)).toBe(0)
+
+  await page.setViewportSize({ width: 320, height: 480 })
+  await expect(title).toBeInViewport()
+  expect(await title.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true)
+
+  await dialog.getByRole('button', { name: /How is generated SQL validated before execution/ }).click()
+  await expect(log.locator('.chat-message', { hasText: 'Syntax, permission and query-scope checks run before execution.' })).toBeVisible()
+  await expect(dialog.getByTestId('chat-loading')).toHaveCount(0)
 })
 
 test('a late reply does not pull the transcript away from earlier messages', async ({ page }) => {

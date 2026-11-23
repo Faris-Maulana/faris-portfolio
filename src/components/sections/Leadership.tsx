@@ -8,7 +8,6 @@ export function Leadership() {
     <section id="leadership" className="section section-dark">
       <div className="container">
         <SectionHeader
-          index="01"
           label="Leadership mandate"
           meta="Scope before self-description"
           title={['Own the system.', <span key="2" className="text-ink-3">Not only the model.</span>]}

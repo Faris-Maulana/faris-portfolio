@@ -8,7 +8,6 @@ export function QuantPortfolio() {
     <section id="research" className="section section-mineral">
       <div className="container">
         <SectionHeader
-          index="04"
           label="Research and evaluation"
           meta="Methods visible / private source records excluded"
           title={['Evidence, not', <span key="2" className="text-ink-3">decorative certainty.</span>]}
