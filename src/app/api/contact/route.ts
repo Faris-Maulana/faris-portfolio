@@ -1,18 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { notifyOwner } from '@/lib/notify'
-import { clientKey, rateLimit } from '@/lib/rate-limit'
+import { NextResponse, type NextRequest } from 'next/server'
+import { contactSchema } from '../../../lib/contact-schema'
+import { notifyOwner } from '../../../lib/notify'
+import { clientKey, rateLimit } from '../../../lib/rate-limit'
+import { readJsonBody } from '../../../lib/request-body'
 
-const schema = z.object({
-  name: z.string().min(2).max(100),
-  email: z.string().email().max(200),
-  subject: z.string().max(200).optional(),
-  message: z.string().min(10).max(2000),
-  // Not constrained here on purpose. A schema rejection returns a 400 that
-  // tells a bot exactly which field is the trap; the check below accepts the
-  // request and quietly drops it instead.
-  honeypot: z.string().max(200).optional(),
-})
+const MAX_BODY_BYTES = 16 * 1024
 
 /** 5 messages per 10 minutes from one address is generous for a human. */
 const LIMIT = 5
@@ -27,33 +19,45 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  let data: z.infer<typeof schema>
-  try {
-    data = schema.parse(await req.json())
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', issues: error.issues },
-        { status: 400 }
-      )
-    }
-    return NextResponse.json({ error: 'Malformed request' }, { status: 400 })
+  const body = await readJsonBody(req, MAX_BODY_BYTES)
+  if (!body.ok) {
+    return NextResponse.json(
+      {
+        error:
+          body.reason === 'too_large'
+            ? 'Request is too large.'
+            : body.reason === 'unsupported_type'
+              ? 'Expected application/json.'
+              : 'Malformed request.',
+      },
+      { status: body.reason === 'too_large' ? 413 : body.reason === 'unsupported_type' ? 415 : 400 }
+    )
   }
+
+  const parsed = contactSchema.safeParse(body.data)
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: 'Please check your details and try again.',
+        fieldErrors: parsed.error.flatten().fieldErrors,
+      },
+      { status: 400 }
+    )
+  }
+
+  const data = parsed.data
 
   // Bots fill hidden fields. Accept silently so they do not learn anything.
   if (data.honeypot) return NextResponse.json({ success: true })
 
-  const payload = {
-    name: data.name.trim(),
-    email: data.email.trim().toLowerCase(),
-    subject: data.subject?.trim() || undefined,
-    message: data.message.trim(),
-  }
-
-  // No database: a message exists only if a channel delivers it. When none is
-  // configured the page never calls this route (see deliveryConfigured), so a
-  // failure here is a real delivery failure and the visitor gets the fallback.
-  const delivery = await notifyOwner({ ...payload, source: 'contact_form' })
+  // No database: a message exists only if a channel delivers it.
+  const delivery = await notifyOwner({
+    name: data.name,
+    email: data.email.toLowerCase(),
+    subject: data.subject || undefined,
+    message: data.message,
+    source: 'contact_form',
+  })
 
   if (!delivery.notified) {
     console.error('[contact] message not delivered', {
@@ -69,7 +73,5 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  return NextResponse.json({
-    success: true,
-  })
+  return NextResponse.json({ success: true })
 }

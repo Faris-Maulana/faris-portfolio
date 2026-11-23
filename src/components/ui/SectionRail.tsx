@@ -1,100 +1,28 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { NAV_LINKS } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { useActiveSection } from '@/hooks/useActiveSection'
 
-/**
- * Fixed index rail down the right gutter.
- *
- * It answers two questions a long single-page site normally leaves unanswered:
- * how far in am I, and how much is left. A scroll bar shows the first but
- * carries no meaning; this shows both, and each tick is a jump target.
- *
- * Hidden below 2xl: narrower screens have no gutter wide enough for the
- * labels, and they ride over the content.
- */
 export function SectionRail() {
-  const [active, setActive] = useState('')
-  const [hovered, setHovered] = useState<string | null>(null)
-
-  useEffect(() => {
-    const ids = NAV_LINKS.map(l => l.href.slice(1))
-    let queued = false
-
-    const read = () => {
-      queued = false
-      let current = ''
-      for (const id of ids) {
-        const el = document.getElementById(id)
-        if (el && el.getBoundingClientRect().top <= window.innerHeight * 0.4) {
-          current = id
-        }
-      }
-      setActive(current)
-    }
-
-    const onScroll = () => {
-      if (queued) return
-      queued = true
-      requestAnimationFrame(read)
-    }
-
-    read()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
+  const active = useActiveSection()
+  const pathname = usePathname()
+  if (pathname !== '/') return null
   return (
-    <nav
-      aria-label="Section index"
-      className="fixed right-3 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-end gap-3 2xl:flex"
-    >
-      {NAV_LINKS.map(link => {
-        const id = link.href.slice(1)
-        const isActive = active === id
-        const isHover = hovered === id
-        const lit = isActive || isHover
-
-        return (
-          <a
-            key={link.href}
-            href={link.href}
-           
-            aria-current={isActive ? 'true' : undefined}
-            onMouseEnter={() => setHovered(id)}
-            onMouseLeave={() => setHovered(null)}
-            className="group flex h-5 items-center justify-end gap-2.5"
-          >
-            {/* Label rides in from the right only while lit, so the resting
-                state stays a set of quiet ticks rather than a second menu. */}
-            <span
-              className={cn(
-                'text-xs font-semibold transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]',
-                lit
-                  ? 'translate-x-0 opacity-100'
-                  : 'pointer-events-none translate-x-2 opacity-0',
-                isActive ? 'text-ink' : 'text-ink-3'
-              )}
-            >
-              {link.label}
-            </span>
-
-
-            <span
-              className={cn(
-                'h-px transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
-                isActive
-                  ? 'w-6 bg-signal'
-                  : isHover
-                    ? 'w-4 bg-ink-2'
-                    : 'w-2.5 bg-ink-4'
-              )}
-              aria-hidden
-            />
-          </a>
-        )
-      })}
+    <nav className="fixed right-4 top-1/2 z-40 hidden -translate-y-1/2 2xl:block" aria-label="Page sections">
+      <ol className="space-y-3">
+        {NAV_LINKS.map(link => {
+          const id = link.href.slice(1)
+          return (
+            <li key={id}>
+              <a href={link.href} aria-label={link.label} aria-current={active === id ? 'location' : undefined} className="group flex items-center justify-end gap-3 py-1">
+                <span className="t-meta translate-x-2 bg-canvas px-2 py-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">{link.label}</span>
+                <span className={`block h-px transition-all ${active === id ? 'w-8 bg-signal' : 'w-4 bg-line-3 group-hover:w-6 group-hover:bg-ink-2'}`} aria-hidden />
+              </a>
+            </li>
+          )
+        })}
+      </ol>
     </nav>
   )
 }

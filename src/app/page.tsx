@@ -7,7 +7,6 @@ import { Capabilities } from '@/components/sections/Capabilities'
 import { Credentials } from '@/components/sections/Credentials'
 import { Contact } from '@/components/sections/Contact'
 import { getRepos } from '@/lib/github'
-import { deliveryConfigured } from '@/lib/notify'
 
 /**
  * Server component. The sections are client components, but rendering them
@@ -31,9 +30,7 @@ export default async function Home() {
       <QuantPortfolio />
       <Capabilities />
       <Credentials />
-      {/* Without a delivery key the form hands the message to the visitor's own
-          mail or WhatsApp instead of a server that cannot pass it on. */}
-      <Contact serverDelivery={deliveryConfigured()} />
+      <Contact />
     </>
   )
 }

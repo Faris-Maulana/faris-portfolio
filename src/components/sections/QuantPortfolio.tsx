@@ -1,131 +1,70 @@
-'use client'
-
+import { ArrowUpRight, FileSearch, ShieldAlert } from 'lucide-react'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { Reveal } from '@/components/ui/Reveal'
 import { QUANT_CASE_STUDIES, SITE_CONFIG } from '@/lib/constants'
-import { ArrowUpRight } from 'lucide-react'
-
-const ACCENT: Record<string, string> = {
-  signal: 'var(--color-signal)',
-  agent: 'var(--color-agent)',
-  data: 'var(--color-data)',
-  cred: 'var(--color-cred)',
-}
-
-const PATHS: Record<string, string> = {
-  line: 'M 2 46 L 20 34 L 38 40 L 56 22 L 74 28 L 98 12',
-  survival: 'M 2 8 L 22 9 L 40 14 L 58 26 L 78 42 L 98 50',
-  tradeoff: 'M 2 48 Q 30 44 50 26 Q 70 12 98 8',
-  bar: 'M 2 50 L 26 40 L 50 26 L 74 18 L 98 8',
-}
-
-/**
- * Sparkline drawn with stroke-dashoffset so the line traces itself when the
- * card enters the viewport, one CSS transition instead of a per-frame JS
- * animation, and it inherits the same reveal timing as everything else.
- */
-function Sparkline({ type, color }: { type: string; color: string }) {
-  const d = PATHS[type] ?? PATHS.line
-  return (
-    <svg
-      viewBox="0 0 100 56"
-      preserveAspectRatio="none"
-      className="h-16 w-full"
-      aria-hidden
-    >
-      <defs>
-        <linearGradient id={`fade-${type}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.16" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={`${d} L 98 56 L 2 56 Z`} fill={`url(#fade-${type})`} />
-      <path
-        d={d}
-        pathLength={1}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-        className="spark-path"
-      />
-    </svg>
-  )
-}
 
 export function QuantPortfolio() {
   return (
-    <section id="research" className="section">
+    <section id="research" className="section section-mineral">
       <div className="container">
         <SectionHeader
-          label="Research"
-          meta="4 studies"
-          title={['Models that changed', <span key="2" className="text-ink-3">a decision.</span>]}
-          lead="Applied quantitative work across maritime, telco, healthcare and education. Every one produced a number someone acted on. Figures hold within each analysed dataset; they are not universal causal claims."
+          index="04"
+          label="Research and evaluation"
+          meta="Methods visible / private source records excluded"
+          title={['Evidence, not', <span key="2" className="text-ink-3">decorative certainty.</span>]}
+          lead="The useful part of quantitative work is the question, inferential boundary and decision it informs. These notes deliberately omit performance graphics and precision that cannot be reproduced from public artifacts."
         />
 
-        <div className="mt-14 grid gap-4 lg:grid-cols-2">
-          {QUANT_CASE_STUDIES.map((study, i) => {
-            const color = ACCENT[study.accent] ?? 'var(--color-signal)'
-            return (
-              <Reveal
-                key={study.title}
-                delay={Math.min(i, 4) * 80}
-                className="panel panel-interactive flex flex-col p-6 sm:p-8"
-              >
-                <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                  <span
-                    className="chip"
-                    style={{ color, borderColor: `color-mix(in oklab, ${color} 35%, transparent)` }}
-                  >
-                    {study.method}
-                  </span>
-                  <span className="text-sm font-semibold text-ink-2">{study.company}</span>
-                </div>
-
-                <h3 className="wide text-xl font-bold tracking-tight text-ink">
-                  {study.title}
-                </h3>
-
-                <div className="my-6">
-                  <Sparkline type={study.chartType} color={color} />
-                </div>
-
-                <dl className="grid grid-cols-3 gap-4 border-y border-line py-5">
-                  {Object.entries(study.metrics).map(([key, value]) => (
-                    <div key={key} className="min-w-0">
-                      <dd
-                        className="wide text-xl font-extrabold leading-none tracking-tight tnum sm:text-2xl"
-                        style={{ color }}
-                      >
-                        {value}
-                      </dd>
-                      <dt className="t-label mt-2 leading-snug">{key}</dt>
-                    </div>
-                  ))}
-                </dl>
-
-                <p className="mt-5 text-[13px] leading-relaxed text-ink-2">
-                  {study.description}
-                </p>
-              </Reveal>
-            )
-          })}
+        <div className="mt-12 flex items-start gap-4 border-l-2 border-cred bg-surface p-5">
+          <FileSearch className="mt-1 shrink-0 text-cred" size={21} aria-hidden />
+          <div>
+            <h3 className="font-display font-semibold text-ink">Evidence boundary</h3>
+            <p className="mt-2 text-sm text-ink-2">Private ERP, patient and enterprise records are not published. Conceptual system diagrams are labelled as diagrams; no invented series is rendered as an observed chart.</p>
+          </div>
         </div>
 
-        <Reveal delay={140} className="mt-10">
-          <a
-            href={SITE_CONFIG.quantPath}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-ghost"
-          >
-            Full quantitative portfolio
-            <ArrowUpRight size={13} />
-          </a>
-        </Reveal>
+        <div className="mt-10 border-t border-line">
+          {QUANT_CASE_STUDIES.map((study, index) => (
+            <Reveal key={study.title} delay={index * 45}>
+              <details className="group border-b border-line" name="research-studies">
+                <summary className="grid cursor-pointer list-none gap-4 py-7 md:grid-cols-12 md:items-center">
+                  <span className="t-meta md:col-span-2">R{String(index + 1).padStart(2, '0')} / {study.method}</span>
+                  <span className="md:col-span-6"><span className="t-h3 block">{study.title}</span><span className="mt-2 block text-sm text-ink-3">{study.company}</span></span>
+                  <span className="text-sm text-ink-2 md:col-span-3">{study.question}</span>
+                  <span className="font-mono text-2xl text-signal transition-transform group-open:rotate-45 md:col-span-1 md:text-right" aria-hidden>+</span>
+                </summary>
+                <div className="grid gap-8 pb-9 md:grid-cols-12">
+                  <div className="md:col-start-3 md:col-span-5">
+                    <h4 className="t-meta mb-3 text-signal">Analytical approach</h4>
+                    <p className="t-body text-base">{study.approach}</p>
+                    <h4 className="t-meta mb-3 mt-6 text-threat">Limit</h4>
+                    <p className="text-base text-ink-2">{study.limitation}</p>
+                  </div>
+                  <dl className="md:col-span-4">
+                    {study.evidence.map(item => <div key={item.label} className="flex items-baseline justify-between gap-4 border-t border-line py-4 last:border-b"><dt className="text-sm text-ink-3">{item.label}</dt><dd className="text-right text-sm font-semibold text-ink">{item.value}</dd></div>)}
+                  </dl>
+                </div>
+              </details>
+            </Reveal>
+          ))}
+        </div>
+
+        <div className="mt-14 grid gap-8 lg:grid-cols-12">
+          <Reveal className="lg:col-span-7">
+            <p className="kicker text-threat">Adversarial research track</p>
+            <h3 className="t-h3 mt-5 max-w-xl">Security review informs system design, not a separate personality.</h3>
+            <p className="t-body mt-5 max-w-2xl">Independent Web3 security work uses the same discipline as AI evaluation: model the failure, reproduce it, bound its impact and test the mitigation.</p>
+          </Reveal>
+          <div className="panel p-6 lg:col-span-5">
+            <ShieldAlert className="text-threat" size={25} aria-hidden />
+            <ol className="mt-5 space-y-4">
+              {['Map assets, actors and trust boundaries', 'Exercise invariants and adversarial state transitions', 'Write a reproducible proof of concept', 'Pair each finding with a testable mitigation'].map((step, index) => (
+                <li key={step} className="flex gap-3 text-sm text-ink-2"><span className="t-meta text-threat">0{index + 1}</span>{step}</li>
+              ))}
+            </ol>
+            <a href={SITE_CONFIG.github} target="_blank" rel="noopener noreferrer" className="link-draw mt-6 inline-flex items-center gap-2 text-sm font-semibold">Public research code <ArrowUpRight size={15} aria-hidden /></a>
+          </div>
+        </div>
       </div>
     </section>
   )

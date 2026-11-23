@@ -1,15 +1,6 @@
-import { Archivo } from 'next/font/google'
+import { Archivo, Source_Sans_3 } from 'next/font/google'
 
-/**
- * One variable family carries the whole system.
- *
- * Archivo ships both a weight and a width axis, so the expanded display cut and
- * the normal-width text cut are the same file. That is one font request instead
- * of four, and the headline and body type share their proportions by
- * construction rather than by pairing.
- *
- * Self-hosted at build time by next/font: no runtime request to Google.
- */
+/** Display uses Archivo's width axis; long-form reading uses Source Sans 3. */
 export const fontArchivo = Archivo({
   subsets: ['latin'],
   display: 'swap',
@@ -17,4 +8,10 @@ export const fontArchivo = Archivo({
   axes: ['wdth'],
 })
 
-export const fontVariables = fontArchivo.variable
+export const fontSourceSans = Source_Sans_3({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--f-source-sans',
+})
+
+export const fontVariables = `${fontArchivo.variable} ${fontSourceSans.variable}`

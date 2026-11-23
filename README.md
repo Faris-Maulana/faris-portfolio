@@ -1,122 +1,141 @@
-# faris-portfolio
+# Faris Maulana, Infrastructure Atlas
 
-Personal site for Faris Maulana. AI Engineering Manager at PT Trans Indonesia
-Superkoridor, working on multi-agent LLM systems and medallion data platforms
-over a 25,000 km DWDM fiber backbone.
+AI engineering leadership portfolio for Faris Maulana, Manager of AI Engineering
+at PT Trans Indonesia Superkoridor. The site presents architecture decisions,
+system maturity, evaluation practice and public credential evidence without
+publishing private operational data.
 
 Live: https://faris-portfolio-red.vercel.app
 
 ## Stack
 
-| Layer     | Choice                                                                              |
-| --------- | ----------------------------------------------------------------------------------- |
-| Framework | Next.js 16 (App Router, Turbopack)                                                    |
-| Language  | TypeScript, React 19                                                                  |
-| Styling   | Tailwind CSS v4 with a token layer in `globals.css`                                   |
-| Type      | `next/font` (Inter, Inter Tight, JetBrains Mono, Instrument Serif)                     |
-| Motion    | CSS transitions driven by one IntersectionObserver. Framer Motion for overlays only    |
-| 3D        | react-three-fiber, a single scene in the hero                                          |
-| Data      | No database. Site content is in the repo; the GitHub REST API feeds the archive        |
-| Hosting   | Vercel                                                                                |
+| Layer | Choice |
+| --- | --- |
+| Framework | Next.js 16 App Router, React 19, TypeScript |
+| Styling | Tailwind CSS 4 with semantic tokens in `src/app/globals.css` |
+| Typography | Self-hosted Archivo variable display and Source Sans 3 body |
+| Motion | One progressive IntersectionObserver, reduced-motion aware CSS and Lenis |
+| Data | Repository content plus an hourly curated public GitHub snapshot |
+| APIs | Route Handlers plus direct OpenRouter and Resend/Fonnte HTTP adapters |
+| Testing | Vitest for contracts/providers, Playwright and axe for browser behavior |
+| Hosting | Vercel; the app remains portable to a normal Node 22 runtime |
 
-## Design system
+## Infrastructure Atlas design system
 
-Everything visual comes from `src/app/globals.css`. Colours are semantic rather
-than decorative: each accent maps to a domain, so a violet chip always means
-agent or LLM work and a coral one always means security.
+Basalt surfaces, phosphor signal lime, mineral blue and survey lines form the
+visual language. Color has a stable role: signal marks current/actionable work,
+agent marks AI systems, data marks data/evaluation, cred marks documents and
+threat marks limits/security. The atlas is a lightweight conceptual SVG, not
+live network telemetry.
 
-```
-signal  #5CF2C0   platform, live systems, primary action
-agent   #8B7BFF   AI, LLM, multi-agent
-data    #58B9FF   data engineering, BI
-cred    #FFB454   credentials and documents
-threat  #FF6B7A   security research
-```
+Type primitives (`t-display`, `t-h2`, `t-h3`, `t-meta`, `t-lead`, `t-body`) and
+layout/surface primitives (`container`, `section`, `panel`, `corner-mark`) keep
+all routes consistent. Runtime colors used by Satori and viewport metadata live
+in `src/lib/design-tokens.ts`.
 
-Type primitives (`t-display`, `t-h2`, `t-h3`, `t-label`, `t-lead`, `t-body`) and
-surface primitives (`panel`, `ticks`, `rule`) keep eight independently built
-sections reading as one publication.
+`npm run check:uicopy` runs the project-local mechanical UI validator. Satori
+metadata images use inline styles by design, but all colors still reference the
+shared palette rather than embedding local one-off colors.
 
 ## Structure
 
-```
+```text
 src/
   app/
-    page.tsx              server component, fetches repos, composes sections
-    layout.tsx            fonts, metadata, Person JSON-LD, page chrome
-    opengraph-image.tsx   link preview card, generated from live constants
-    sitemap.ts robots.ts
+    page.tsx                 Server homepage composition and public repositories
+    work/[slug]/page.tsx     Static case studies with architecture and limitations
+    api/                     Strict chat/contact boundaries
+    layout.tsx               Fonts, canonical metadata, JSON-LD and page chrome
+    opengraph-image.tsx      Build-time social card from shared content
+    globals.css             Infrastructure Atlas tokens and primitives
   components/
-    canvas/               hero backbone visual (topology generator + renderer)
-    sections/             one file per section
-    layout/               navbar, footer
-    providers/            reveal observer, smooth scroll
-    ui/                   shared primitives
+    canvas/StaticAtlas.tsx   Lightweight conceptual topology
+    sections/               Server sections except small interactive islands
+    layout/                 Accessible native-dialog navigation and footer
+    chat/                    Cancellable, disclosed assistant interaction
+    providers/               Shared reveal and reduced-motion scroll behavior
   lib/
-    constants.ts          site copy and CV data
-    credentials.ts        certifications, served from /public
-    github.ts             live repo fetch with a committed snapshot fallback
+    constants.ts            Leadership, experience and public case-study content
+    case-study-details.ts   Architecture, evaluation and limitations
+    contact-schema.ts       Shared client/server contact validation
+    site.ts                  Validated canonical site origin
+    github.ts               Public-only curation, validation and snapshot fallback
+    notify.ts               Bounded notification provider adapters
 public/
-  cv/                     CV and portfolio PDFs
-  certificates/           certification documents
+  cv/                       Current CV and quantitative portfolio documents
+  certificates/             Public credential evidence
 ```
 
-## Content
+## Content and evidence policy
 
-Site copy lives in `src/lib/constants.ts`. Credentials live in
-`src/lib/credentials.ts` and point at files in `public/certificates`. Neither
-depends on a database.
+Case studies state their actual maturity: in development, proof of concept or
+shipped. Architecture descriptions omit private schemas and records.
+Quantitative method notes do not render invented series as observed charts or
+turn observational associations into causal outcomes. Unsupported precision
+must be removed until source artifacts can support it.
 
-The GitHub archive in the Projects section is fetched live and revalidated
-hourly. `src/data/github-repos.json` is a committed snapshot used when the API
-is rate limited, so the section is never empty.
+The GitHub archive is hand curated, public only and revalidated hourly. It does
+not request private repository metadata or use `GITHUB_TOKEN`. A committed
+snapshot covers provider outage/rate limiting without producing an empty page.
 
-To refresh the snapshot:
-
-```bash
-curl -s "https://api.github.com/users/Faris-Maulana/repos?per_page=100&sort=updated" > /tmp/repos.json
-```
+Credential entries point to issuer verification or local public documents. The
+redacted diploma/transcript rasters must never be replaced with unredacted
+originals.
 
 ## Local development
 
+Node 22.12 or newer is required.
+
 ```bash
-npm install
+npm ci
+cp .env.example .env.local
 npm run dev
 ```
 
-Copy `.env.example` to `.env.local`. Every key is optional: without
-`OPENROUTER_API_KEY` the ARIA chat answers with a fallback, and without
-`RESEND_API_KEY` or `FONNTE_TOKEN` the contact form hands the message to the
-visitor's own mail app or WhatsApp instead of posting it.
+Every provider credential is optional and server-only. Without OpenRouter the
+assistant reports itself unavailable. Without Resend/Fonnte, contact uses the
+existing prefilled email/WhatsApp handoff after the API reports that delivery
+is unconfigured. Do not paste provider credentials into source, docs or chat.
+
+There is no application database. Chat stores a capped browser copy for up to
+30 days, sends conversation context to OpenRouter to generate responses, and
+can forward recent context when the visitor deliberately includes an email.
+Clear history removes only the local copy. Contact data goes to whichever
+notification providers are configured.
+
+Provider success means accepted for delivery, not guaranteed inbox receipt.
+
+## Verification
 
 ```bash
-npm run build
-npm run lint
-npx tsc --noEmit
+PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright install chromium
+npm run verify          # typecheck, lint, unit tests, UI validator, production build
+PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npm run test:e2e
+npm audit --omit=dev
 ```
 
-## Deploying
+E2E tests mock paid/external API routes. A real OpenRouter evaluation must be
+run deliberately with the existing local key, never in CI and never by printing
+the key. Real Resend/Fonnte delivery requires local credentials; unconfigured
+fallback behavior does not prove provider delivery.
 
-The Vercel project is linked through the CLI, not the GitHub app, so **pushing
-to `main` does not deploy anything**. Until the repository is connected in the
-Vercel dashboard, production only updates when someone runs:
+The local in-memory limiter is best effort on serverless, not a global billing
+quota. Configure Vercel Firewall/provider spend limits for production abuse
+control. Add an atomic shared store if measured traffic requires fixed global
+budgets.
 
-```bash
-npx vercel --prod --yes
-```
+## Deployment and hosting
 
-## Notes
+Vercel remains the default host: ISR, Route Handlers, Next `after()` behavior and
+analytics fit its runtime, and the previous production baseline did not show a
+hosting bottleneck. `vercel.json` uses `npm ci` for reproducible installs.
 
-- Sections render on the server. They were previously client-only dynamic
-  imports, which meant crawlers received a hero and seven loading skeletons.
-- The homepage must stay statically prerendered. Anything that reads `cookies()`
-  during its render silently opts the whole route into per-request rendering.
-- The Supabase project behind the old blog, chat log and analytics stopped
-  resolving in Aug 2026. Those features were removed on 20 Oct 2026; the schema
-  is in git history (`supabase/`) if a database is ever wanted again.
-- The hero canvas suspends its render loop once the hero leaves the viewport.
-- Reduced motion disables the canvas, the smooth scroll, and every reveal.
-- The diploma and transcript in `public/certificates` are redacted rasters. The
-  national ID, student number, and date of birth are painted over the pixels
-  before encoding, so there is no text layer and no removable overlay. Never
-  replace them with the originals.
+Pushing `main` only deploys if the Vercel Git integration is connected. The saved
+CLI token observed during the audit was invalid; production deployment requires
+fresh interactive authentication or a working Git integration. Do not place a
+deployment token in documentation or source.
+
+For another host, provide Node 22, reverse-proxy body/rate limits, canonical
+`NEXT_PUBLIC_SITE_URL`, production secrets and an analytics alternative or Vercel
+runtime. Multi-instance self-hosting needs shared rate limiting and coordinated
+caching. Static export is not compatible with the POST APIs.
