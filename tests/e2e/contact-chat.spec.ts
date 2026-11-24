@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 async function expectVisibleFieldError(field: Locator, page: Page) {
@@ -210,11 +211,199 @@ test('a late reply does not pull the transcript away from earlier messages', asy
   expect(await log.evaluate(node => Math.round(node.scrollTop))).toBe(0)
 })
 
+test('assistant compact and expanded views stay contained across responsive changes', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  await page.goto('/')
+  const { dialog } = await openAssistant(page)
+  await expect.poll(() => dialog.evaluate(node => node.getBoundingClientRect().width)).toBe(576)
+  await dialog.getByRole('button', { name: 'Expand assistant', exact: true }).click()
+  await expect.poll(() => dialog.evaluate(node => node.getBoundingClientRect().width)).toBe(1056)
+  expect(await dialog.locator('.chat-welcome').evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true)
+  await expect(dialog.getByRole('button', { name: 'Restore compact assistant', exact: true })).toBeVisible()
+  await dialog.getByRole('button', { name: 'Restore compact assistant', exact: true }).click()
+  await expect.poll(() => dialog.evaluate(node => node.getBoundingClientRect().width)).toBe(576)
+
+  await page.keyboard.press('Escape')
+  await page.setViewportSize({ width: 390, height: 844 })
+  const mobile = await openAssistant(page)
+  await expect(mobile.dialog).toHaveCSS('width', '390px')
+  await expect(mobile.dialog.locator('.chat-welcome')).toHaveCSS('display', 'block')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+  for (const name of ['Export conversation as Markdown', 'Clear conversation history']) {
+    await expect(mobile.dialog.getByRole('button', { name, exact: true })).toBeVisible()
+  }
+  await expect(mobile.dialog.getByRole('textbox', { name: 'Message', exact: true })).toBeVisible()
+  await expect(mobile.dialog.getByRole('button', { name: 'Close portfolio assistant', exact: true })).toBeVisible()
+})
+
+test('assistant ignores malformed saved timestamps without crashing', async ({ page }) => {
+  await page.addInitScript(key => {
+    localStorage.setItem(key, JSON.stringify([{ role: 'user', content: 'Invalid saved timestamp', ts: 'not-a-date' }]))
+  }, CHAT_STORAGE_KEY)
+  await page.goto('/')
+  const { dialog } = await openAssistant(page)
+  await expect(dialog.locator('.chat-welcome-title')).toBeVisible()
+  await expect(dialog.getByText('Invalid saved timestamp', { exact: false })).toHaveCount(0)
+})
+
+test('assistant stopping a pending response restores the draft without accepting a late reply', async ({ page }) => {
+  await page.addInitScript(() => {
+    let requestCount = 0
+    let releaseFirstReply = () => {}
+    Object.assign(window, { chatTest: { requestCount: () => requestCount, releaseFirstReply: () => releaseFirstReply() } })
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      if (!url.includes('/api/chat')) return originalFetch(input, init)
+      requestCount += 1
+      if (requestCount > 1) return Promise.resolve(new Response(JSON.stringify({ reply: 'Retried response marker.', availability: 'ok' }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      return new Promise<Response>(resolve => {
+        releaseFirstReply = () => resolve(new Response(JSON.stringify({ reply: 'Cancelled response marker.', availability: 'ok' }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      })
+    }
+  })
+  await page.goto('/')
+  const { dialog } = await openAssistant(page)
+  const composer = dialog.getByRole('textbox', { name: 'Message', exact: true })
+  await composer.fill('Explain the evaluation release gates.')
+  await dialog.getByRole('button', { name: 'Send message', exact: true }).click()
+  await expect(dialog.getByTestId('chat-loading')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => (window as unknown as Window & { chatTest: { requestCount: () => number } }).chatTest.requestCount())).toBe(1)
+
+  await dialog.getByRole('button', { name: 'Stop generating response', exact: true }).click()
+  await expect(composer).toHaveValue('Explain the evaluation release gates.')
+  await expect(composer).toBeFocused()
+  await expect(dialog.getByTestId('chat-loading')).toHaveCount(0)
+  await expect(dialog.locator('.chat-message')).toHaveCount(0)
+  expect(await page.evaluate(key => localStorage.getItem(key), CHAT_STORAGE_KEY)).toBe('[]')
+  await page.evaluate(() => (window as unknown as Window & { chatTest: { releaseFirstReply: () => void } }).chatTest.releaseFirstReply())
+  await composer.press('Enter')
+  await expect(dialog.locator('.chat-message', { hasText: 'Retried response marker.' })).toBeVisible()
+  await expect(dialog.locator('.chat-message', { hasText: 'Cancelled response marker.' })).toHaveCount(0)
+  await expect.poll(() => page.evaluate(() => (window as unknown as Window & { chatTest: { requestCount: () => number } }).chatTest.requestCount())).toBe(2)
+})
+
+test('assistant stopping preserves newer text composed during a pending response', async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      if (!url.includes('/api/chat')) return originalFetch(input, init)
+      return new Promise<Response>(() => {})
+    }
+  })
+  await page.goto('/')
+  const { dialog } = await openAssistant(page)
+  const composer = dialog.getByRole('textbox', { name: 'Message', exact: true })
+  await composer.fill('First question')
+  await dialog.getByRole('button', { name: 'Send message', exact: true }).click()
+  await expect(dialog.getByTestId('chat-loading')).toBeVisible()
+  await composer.fill('Newer unfinished draft')
+  await dialog.getByRole('button', { name: 'Stop generating response', exact: true }).click()
+  await expect(composer).toHaveValue('Newer unfinished draft')
+  await expect(dialog.locator('.chat-message')).toHaveCount(0)
+})
+
+test('assistant marks a late failed reply as unread while closed', async ({ page }) => {
+  let releaseReply = () => {}
+  const replyGate = new Promise<void>(resolve => { releaseReply = resolve })
+  await page.route('**/api/chat', async route => {
+    await replyGate
+    await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' })
+  })
+  await page.goto('/')
+  const { dialog } = await openAssistant(page)
+  await dialog.getByRole('textbox', { name: 'Message', exact: true }).fill('Question before closing')
+  await dialog.getByRole('button', { name: 'Send message', exact: true }).click()
+  await expect(dialog.getByTestId('chat-loading')).toBeVisible()
+  await dialog.getByRole('button', { name: 'Close portfolio assistant', exact: true }).click()
+  releaseReply()
+  await expect(page.getByRole('button', { name: /open portfolio assistant/i })).toHaveAccessibleName(/unread reply/)
+})
+
+test('assistant copies responses, exports Markdown, follows up, and confirms destructive clearing', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  let questionNumber = 0
+  await page.route('**/api/chat', async route => {
+    questionNumber += 1
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ reply: `Deterministic response ${questionNumber}.`, availability: 'ok' }) })
+  })
+  await page.goto('/')
+  const { dialog } = await openAssistant(page)
+  await dialog.getByRole('textbox', { name: 'Message', exact: true }).fill('How is generated SQL validated?')
+  await dialog.getByRole('button', { name: 'Send message', exact: true }).click()
+  await expect(dialog.locator('.chat-message', { hasText: 'Deterministic response 1.' })).toBeVisible()
+
+  await dialog.getByRole('button', { name: /Copy response from/ }).click()
+  await expect(dialog.getByRole('button', { name: /Copy response from/ })).toHaveText('Copied')
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('Deterministic response 1.')
+  await expect(dialog.getByRole('status').filter({ hasText: 'Response copied to clipboard.' })).toBeAttached()
+
+  const downloadEvent = page.waitForEvent('download')
+  await dialog.getByRole('button', { name: 'Export conversation as Markdown', exact: true }).click()
+  const download = await downloadEvent
+  expect(download.suggestedFilename()).toMatch(/^aria-portfolio-conversation-\d{4}-\d{2}-\d{2}\.md$/)
+  const exportPath = await download.path()
+  const markdown = await readFile(exportPath!, 'utf8')
+  expect(markdown).toContain('How is generated SQL validated?')
+  expect(markdown).toContain('Deterministic response 1.')
+  expect(markdown).toContain('public portfolio context')
+
+  const followUp = dialog.getByRole('button', { name: 'Which validation boundaries are deterministic?', exact: true })
+  await expect(followUp).toBeVisible()
+  await followUp.click()
+  await expect(dialog.locator('.chat-message', { hasText: 'Deterministic response 2.' })).toBeVisible()
+  await expect(dialog.locator('.chat-message')).toHaveCount(4)
+
+  await dialog.getByRole('button', { name: 'Clear conversation history', exact: true }).click()
+  await expect(dialog.getByText("Clear this browser's conversation?", { exact: true })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Keep', exact: true })).toBeFocused()
+  await dialog.getByRole('button', { name: 'Keep', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: 'Clear conversation history', exact: true })).toBeFocused()
+  await expect(dialog.locator('.chat-message')).toHaveCount(4)
+  await dialog.getByRole('button', { name: 'Clear conversation history', exact: true }).click()
+  await dialog.locator('.chat-confirm').getByRole('button', { name: 'Clear', exact: true }).click()
+  await expect(dialog.locator('.chat-message')).toHaveCount(0)
+  await expect(dialog.locator('.chat-welcome-title')).toBeVisible()
+  expect(await page.evaluate(key => localStorage.getItem(key), CHAT_STORAGE_KEY)).toBeNull()
+})
+
+test('assistant protects IME composition and ordinary Enter submission', async ({ page }) => {
+  let requests = 0
+  await page.route('**/api/chat', async route => {
+    requests += 1
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ reply: 'Evaluation uses explicit quality gates.', availability: 'ok' }) })
+  })
+  await page.goto('/')
+  const { dialog } = await openAssistant(page)
+  const composer = dialog.getByRole('textbox', { name: 'Message', exact: true })
+  await composer.fill('評価方法')
+  for (const isComposing of [true, false]) {
+    const defaultPrevented = await composer.evaluate((node, composing) => {
+      const event = new KeyboardEvent('keydown', { key: 'Enter', keyCode: 229, isComposing: composing, bubbles: true, cancelable: true })
+      node.dispatchEvent(event)
+      return event.defaultPrevented
+    }, isComposing)
+    expect(defaultPrevented).toBe(false)
+    expect(requests).toBe(0)
+    await expect(composer).toHaveValue('評価方法')
+    await expect(dialog.getByTestId('chat-loading')).toHaveCount(0)
+  }
+  await composer.press('Enter')
+  await expect(dialog.locator('.chat-message', { hasText: 'Evaluation uses explicit quality gates.' })).toBeVisible()
+  expect(requests).toBe(1)
+})
+
 test('assistant closes with Escape and restores focus to its launcher', async ({ page }) => {
   await page.goto('/')
   const launcher = page.getByRole('button', { name: /open portfolio assistant/i })
   await launcher.click()
-  await expect(page.getByRole('dialog', { name: 'Portfolio assistant' })).toBeVisible()
+  const dialog = page.getByRole('dialog', { name: 'Portfolio assistant' })
+  await expect(dialog).toBeVisible()
+  for (let index = 0; index < 12; index += 1) {
+    await page.keyboard.press(index === 11 ? 'Shift+Tab' : 'Tab')
+    await expect.poll(() => page.evaluate(() => document.querySelector('#portfolio-assistant')?.contains(document.activeElement))).toBe(true)
+  }
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog', { name: 'Portfolio assistant' })).toHaveCount(0)
   await expect(launcher).toBeFocused()

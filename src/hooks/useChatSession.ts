@@ -18,7 +18,8 @@ const INTRO: ChatMessage = {
 function isMessage(value: unknown): value is ChatMessage {
   if (!value || typeof value !== 'object') return false
   const item = value as Record<string, unknown>
-  return (item.role === 'user' || item.role === 'assistant') && typeof item.content === 'string' && typeof item.ts === 'string'
+  return (item.role === 'user' || item.role === 'assistant') && typeof item.content === 'string'
+    && typeof item.ts === 'string' && Number.isFinite(Date.parse(item.ts))
 }
 
 function restoreMessages(): ChatMessage[] {
@@ -64,6 +65,7 @@ export function useChatSession() {
   const generation = useRef(0)
   const openRef = useRef(false)
   const pending = useRef<AbortController | null>(null)
+  const pendingDraft = useRef<{ content: string; previousMessages: ChatMessage[] } | null>(null)
 
   useEffect(() => { openRef.current = isOpen }, [isOpen])
   useEffect(() => {
@@ -88,27 +90,28 @@ export function useChatSession() {
     generation.current += 1
     pending.current?.abort()
     pending.current = null
+    pendingDraft.current = null
     setLoading(false)
     setMessages([INTRO])
     setHasNewReply(false)
-    setAvailability('online')
     try { window.localStorage.removeItem(MESSAGES_KEY) } catch { /* No persistent copy is available. */ }
   }, [])
 
   const sendMessage = useCallback(async (content: string) => {
     const trimmed = content.trim().slice(0, MAX_CONTENT)
-    if (!trimmed || isLoading) return
+    if (!trimmed || pending.current) return
 
     const requestGeneration = ++generation.current
     const userMessage: ChatMessage = { role: 'user', content: trimmed, ts: new Date().toISOString() }
-    const nextMessages = [...messages.filter(message => message.ts), userMessage].slice(-MAX_MESSAGES)
+    const previousMessages = messages.filter(message => message.ts)
+    const nextMessages = [...previousMessages, userMessage].slice(-MAX_MESSAGES)
+    pendingDraft.current = { content: trimmed, previousMessages }
     setMessages(nextMessages)
     persist(nextMessages)
     setInput('')
     setLoading(true)
 
     const controller = new AbortController()
-    pending.current?.abort()
     pending.current = controller
     const timeout = window.setTimeout(() => controller.abort(), 35_000)
 
@@ -146,18 +149,33 @@ export function useChatSession() {
       const completed = [...nextMessages, reply].slice(-MAX_MESSAGES)
       setMessages(completed)
       persist(completed)
+      if (!openRef.current) setHasNewReply(true)
     } finally {
       window.clearTimeout(timeout)
       if (generation.current === requestGeneration) {
         setLoading(false)
         pending.current = null
+        pendingDraft.current = null
       }
     }
-  }, [isLoading, messages])
+  }, [messages])
+
+  const cancelRequest = useCallback(() => {
+    const draft = pendingDraft.current
+    if (!draft) return
+    generation.current += 1
+    pending.current?.abort()
+    pending.current = null
+    pendingDraft.current = null
+    setLoading(false)
+    setMessages(draft.previousMessages.length ? draft.previousMessages : [INTRO])
+    persist(draft.previousMessages)
+    setInput(current => current || draft.content)
+  }, [])
 
   return {
     isOpen, openChat, closeChat,
     messages, input, setInput, isLoading, sendMessage,
-    hasNewReply, availability, clearHistory,
+    hasNewReply, availability, clearHistory, cancelRequest,
   }
 }

@@ -27,6 +27,26 @@ test.describe('with reduced motion', () => {
   })
 })
 
+test('desktop hero headline does not collide with the infrastructure atlas', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  for (const width of [1024, 1280, 1440, 1600, 1920]) {
+    await page.setViewportSize({ width, height: 1100 })
+    const metrics = await page.evaluate(() => {
+      const walker = document.createTreeWalker(document.querySelector('h1')!, NodeFilter.SHOW_TEXT)
+      let headlineRight = 0
+      while (walker.nextNode()) {
+        if (walker.currentNode.textContent?.trim() !== 'Accountable') continue
+        const range = document.createRange()
+        range.selectNodeContents(walker.currentNode)
+        headlineRight = range.getBoundingClientRect().right
+      }
+      return { headlineRight, atlasLeft: document.querySelector('.atlas-figure')!.getBoundingClientRect().left }
+    })
+    expect(metrics.headlineRight, `headline collision at ${width}px`).toBeLessThanOrEqual(metrics.atlasLeft)
+  }
+})
+
 for (const width of [320, 375]) {
   test(`homepage has no horizontal overflow at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 })

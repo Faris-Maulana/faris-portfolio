@@ -15,7 +15,7 @@ export function Hero() {
 
       <div className="container relative flex min-h-[100svh] flex-col pb-8 pt-28 sm:pt-32">
         <div className="grid flex-1 items-center gap-12 py-10 lg:grid-cols-12 lg:gap-10 lg:py-14">
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-7">
             <div className="mb-7 flex flex-wrap items-center gap-x-6 gap-y-3">
               <span className="inline-flex items-center gap-3 text-sm text-ink">
                 <span className="status-dot" aria-hidden />
@@ -42,16 +42,16 @@ export function Hero() {
             </div>
           </div>
 
-          <aside className="relative lg:col-span-4" aria-label="Current technical mandate">
+          <aside className="relative lg:col-span-5" aria-label="Infrastructure explorer and current technical mandate">
             <StaticAtlas />
             <div className="panel corner-mark relative z-10 mt-5 p-5 sm:p-6">
               <p className="t-meta text-signal">Current mandate / 2026</p>
               <p className="t-h3 mt-3">One backbone.<br />Three ownership layers.</p>
-              <ol className="mt-5 space-y-3 text-sm text-ink-2">
-                <li className="grid grid-cols-[2rem_1fr] gap-2"><span className="t-meta text-signal">01</span><span>AI engineering function</span></li>
-                <li className="grid grid-cols-[2rem_1fr] gap-2"><span className="t-meta text-signal">02</span><span>Governed data platform</span></li>
-                <li className="grid grid-cols-[2rem_1fr] gap-2"><span className="t-meta text-signal">03</span><span>Controlled agent layer</span></li>
-              </ol>
+              <dl className="mandate-scope mt-5 border-t border-line">
+                <div><dt>Function</dt><dd>AI engineering function</dd></div>
+                <div><dt>Platform</dt><dd>Governed data platform</dd></div>
+                <div><dt>Agents</dt><dd>Controlled agent layer</dd></div>
+              </dl>
               <a href="#leadership" className="link-draw mt-6 inline-flex items-center gap-2 text-sm font-semibold">Read the mandate <ArrowUpRight size={15} aria-hidden /></a>
             </div>
           </aside>
