@@ -25,8 +25,10 @@ Live: https://faris-portfolio-red.vercel.app
 Basalt surfaces, phosphor signal lime, mineral blue and survey lines form the
 visual language. Color has a stable role: signal marks current/actionable work,
 agent marks AI systems, data marks data/evaluation, cred marks documents and
-threat marks limits/security. The atlas is a lightweight conceptual SVG, not
-live network telemetry.
+threat marks limits/security. The atlas renders source-derived, geometry-only
+SVG corridors from an authorized infrastructure KMZ over Natural Earth land.
+Placemarks, points, names, styles and operational metadata are excluded. Routes
+are simplified for public display and do not represent live network telemetry.
 
 Type primitives (`t-display`, `t-h2`, `t-h3`, `t-meta`, `t-lead`, `t-body`) and
 layout/surface primitives (`container`, `section`, `panel`, `corner-mark`) keep
@@ -49,11 +51,13 @@ src/
     opengraph-image.tsx      Build-time social card from shared content
     globals.css             Infrastructure Atlas tokens and primitives
   components/
-    canvas/StaticAtlas.tsx   Lightweight conceptual topology
+    canvas/StaticAtlas.tsx   Source-derived public infrastructure corridors
     sections/               Server sections except small interactive islands
     layout/                 Accessible native-dialog navigation and footer
     chat/                    Cancellable, disclosed assistant interaction
     providers/               Shared reveal and reduced-motion scroll behavior
+  data/
+    infrastructure-atlas.ts  Generated geometry-only routes and land paths
   lib/
     constants.ts            Leadership, experience and public case-study content
     case-study-details.ts   Architecture, evaluation and limitations
@@ -61,6 +65,8 @@ src/
     site.ts                  Validated canonical site origin
     github.ts               Public-only curation, validation and snapshot fallback
     notify.ts               Bounded notification provider adapters
+scripts/
+  generate-infrastructure-atlas.py  Authorized KMZ to public geometry artifact
 public/
   cv/                       Current CV and quantitative portfolio documents
   certificates/             Public credential evidence
@@ -81,6 +87,14 @@ snapshot covers provider outage/rate limiting without producing an empty page.
 Credential entries point to issuer verification or local public documents. The
 redacted diploma/transcript rasters must never be replaced with unredacted
 originals.
+
+The raw infrastructure KMZ stays outside the repository. After receiving an
+updated authorized source, regenerate the sanitized route asset with Python 3
+and a local path. The generator fetches public-domain Natural Earth land data:
+
+```bash
+python3 scripts/generate-infrastructure-atlas.py "/path/to/authorized-source.kmz"
+```
 
 ## Local development
 
