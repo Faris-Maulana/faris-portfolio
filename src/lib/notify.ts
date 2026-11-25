@@ -11,6 +11,16 @@ export interface DeliveryResult {
 
 export const NOTIFICATION_TIMEOUT_MS = 8_000
 
+export interface NotificationOptions {
+  readonly signal?: AbortSignal
+  readonly timeoutMs?: number
+}
+
+function notificationSignal(options: NotificationOptions, timeoutMs: number): AbortSignal {
+  const timeout = AbortSignal.timeout(timeoutMs)
+  return options.signal ? AbortSignal.any([options.signal, timeout]) : timeout
+}
+
 export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -85,9 +95,10 @@ function buildWhatsappText(m: VisitorMessage): string {
     .join('\n')
 }
 
-async function sendResend(m: VisitorMessage): Promise<boolean> {
+async function sendResend(m: VisitorMessage, options: NotificationOptions): Promise<boolean> {
   const key = process.env.RESEND_API_KEY
-  if (!key) return false
+  const timeoutMs = options.timeoutMs ?? NOTIFICATION_TIMEOUT_MS
+  if (!key || options.signal?.aborted || timeoutMs <= 0) return false
 
   try {
     const subject = plain(m.subject || `Message from ${m.name}`).slice(0, 200)
@@ -104,7 +115,7 @@ async function sendResend(m: VisitorMessage): Promise<boolean> {
         subject: `[Portfolio] ${subject}`,
         html: buildEmailHtml(m),
       }),
-      signal: AbortSignal.timeout(NOTIFICATION_TIMEOUT_MS),
+      signal: notificationSignal(options, timeoutMs),
       cache: 'no-store',
     })
     if (!res.ok) return false
@@ -122,9 +133,10 @@ async function sendResend(m: VisitorMessage): Promise<boolean> {
   }
 }
 
-async function sendWhatsapp(m: VisitorMessage): Promise<boolean> {
+async function sendWhatsapp(m: VisitorMessage, options: NotificationOptions): Promise<boolean> {
   const token = process.env.FONNTE_TOKEN
-  if (!token) return false
+  const timeoutMs = options.timeoutMs ?? NOTIFICATION_TIMEOUT_MS
+  if (!token || options.signal?.aborted || timeoutMs <= 0) return false
 
   try {
     const res = await fetch('https://api.fonnte.com/send', {
@@ -135,7 +147,7 @@ async function sendWhatsapp(m: VisitorMessage): Promise<boolean> {
         message: buildWhatsappText(m),
         countryCode: '62',
       }),
-      signal: AbortSignal.timeout(NOTIFICATION_TIMEOUT_MS),
+      signal: notificationSignal(options, timeoutMs),
       cache: 'no-store',
     })
     if (!res.ok) return false
@@ -154,12 +166,12 @@ export function deliveryConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY || process.env.FONNTE_TOKEN)
 }
 
-/** Fans out to configured channels. Timeouts and provider failures return false. */
-export async function notifyOwner(m: VisitorMessage): Promise<DeliveryResult> {
+/** Fans out to configured channels. Timeouts, cancellation and provider failures return false. */
+export async function notifyOwner(m: VisitorMessage, options: NotificationOptions = {}): Promise<DeliveryResult> {
   const unconfigured: string[] = []
   if (!process.env.RESEND_API_KEY) unconfigured.push('email')
   if (!process.env.FONNTE_TOKEN) unconfigured.push('whatsapp')
 
-  const [email, whatsapp] = await Promise.all([sendResend(m), sendWhatsapp(m)])
+  const [email, whatsapp] = await Promise.all([sendResend(m, options), sendWhatsapp(m, options)])
   return { email, whatsapp, notified: email || whatsapp, unconfigured }
 }

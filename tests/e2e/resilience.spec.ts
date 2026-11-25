@@ -32,6 +32,7 @@ test('desktop hero headline does not collide with the infrastructure atlas', asy
   await page.goto('/')
   for (const width of [1024, 1280, 1440, 1600, 1920]) {
     await page.setViewportSize({ width, height: 1100 })
+    await page.evaluate(() => document.fonts.ready)
     const metrics = await page.evaluate(() => {
       const walker = document.createTreeWalker(document.querySelector('h1')!, NodeFilter.SHOW_TEXT)
       let headlineRight = 0
@@ -41,9 +42,21 @@ test('desktop hero headline does not collide with the infrastructure atlas', asy
         range.selectNodeContents(walker.currentNode)
         headlineRight = range.getBoundingClientRect().right
       }
-      return { headlineRight, atlasLeft: document.querySelector('.atlas-figure')!.getBoundingClientRect().left }
+      const atlasBox = document.querySelector('.atlas-figure')!.getBoundingClientRect()
+      return {
+        desktopGrid: matchMedia('(min-width: 64rem)').matches,
+        headlineRight,
+        headlineBottom: document.querySelector('h1')!.getBoundingClientRect().bottom,
+        atlasLeft: atlasBox.left,
+        atlasTop: atlasBox.top,
+      }
     })
-    expect(metrics.headlineRight, `headline collision at ${width}px`).toBeLessThanOrEqual(metrics.atlasLeft)
+    if (metrics.desktopGrid) {
+      expect(metrics.headlineRight, `headline collision at ${width}px`).toBeLessThanOrEqual(metrics.atlasLeft)
+    } else {
+      // Classic scrollbars can reduce the CSS viewport below the requested window width.
+      expect(metrics.headlineBottom, `stacked hero collision at ${width}px`).toBeLessThanOrEqual(metrics.atlasTop)
+    }
   }
 })
 

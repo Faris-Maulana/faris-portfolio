@@ -1,5 +1,9 @@
 import { z } from 'zod'
 
+// Avoid Zod's Function constructor probe in the browser. Even when caught, it
+// violates an enforced CSP that intentionally omits 'unsafe-eval'.
+z.config({ jitless: true })
+
 /**
  * Shared by the contact form and its route. Trimming happens before validation
  * so values containing only whitespace cannot pass the minimum lengths.

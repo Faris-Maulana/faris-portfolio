@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowUpRight, Check, Loader2, Send } from 'lucide-react'
@@ -8,6 +8,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader'
 import { Reveal } from '@/components/ui/Reveal'
 import { GithubIcon, LinkedinIcon } from '@/components/ui/Icons'
 import { SITE_CONFIG } from '@/lib/constants'
+import { trackPortfolioEvent } from '@/lib/analytics'
 import { contactSchema, type ContactFormData } from '@/lib/contact-schema'
 
 const CHANNELS = [
@@ -39,10 +40,20 @@ export function Contact() {
     defaultValues: { name: '', email: '', subject: '', message: '', honeypot: '' },
   })
 
+  useEffect(() => {
+    if (result) document.getElementById('contact-result-title')?.focus()
+  }, [result])
+
   const showResult = (next: Exclude<Result, null>, data: ContactFormData) => {
     setDraft(data)
     setResult(next)
-    requestAnimationFrame(() => document.getElementById('contact-result-title')?.focus())
+    trackPortfolioEvent(next === 'accepted'
+      ? { name: 'contact_provider_accepted', channel: 'form' }
+      : { name: 'contact_unavailable', outcome: 'handoff' })
+  }
+
+  const trackDirectChannel = (channel: 'email' | 'whatsapp', placement: 'directory' | 'result' | 'error') => {
+    trackPortfolioEvent({ name: 'contact_direct_channel', channel, placement })
   }
 
   const onSubmit = async (data: ContactFormData) => {
@@ -71,6 +82,8 @@ export function Contact() {
       showResult('accepted', data)
     } catch (reason) {
       setDraft(data)
+      const timedOut = !(reason instanceof Error) || reason.name === 'AbortError'
+      trackPortfolioEvent({ name: 'contact_unavailable', outcome: timedOut ? 'timeout' : 'error' })
       setError(reason instanceof Error && reason.name !== 'AbortError' ? reason.message : 'The request timed out or was interrupted. Your draft is preserved; use email or WhatsApp below.')
     } finally {
       window.clearTimeout(timeout)
@@ -85,10 +98,16 @@ export function Contact() {
       <div className="container">
         <SectionHeader
           label="Start a conversation"
-          meta={SITE_CONFIG.responseTime}
+          meta={SITE_CONFIG.contactMode}
           title={['Bring the context.', <span key="2" className="text-ink-3">Especially the constraint.</span>]}
           lead={SITE_CONFIG.availability.detail}
         />
+
+        <dl className="contact-brief mt-12 grid border-y border-line sm:grid-cols-3">
+          <div><dt>System context</dt><dd>What platform, workflow or decision is already operating?</dd></div>
+          <div><dt>Constraint</dt><dd>Which failure mode, data boundary or operating limit matters?</dd></div>
+          <div><dt>Decision needed</dt><dd>What should the architecture review or evaluation enable next?</dd></div>
+        </dl>
 
         <div className="mt-14 grid gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-5">
@@ -96,7 +115,7 @@ export function Contact() {
               <ul className="border-t border-line">
                 {CHANNELS.map(channel => (
                   <li key={channel.label} className="border-b border-line">
-                    <a href={channel.href} target={channel.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer" className="group grid grid-cols-[5rem_1fr_auto] items-center gap-3 py-5">
+                    <a href={channel.href} target={channel.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer" onClick={channel.label === 'Email' || channel.label === 'WhatsApp' ? () => trackDirectChannel(channel.label === 'Email' ? 'email' : 'whatsapp', 'directory') : undefined} className="group grid grid-cols-[5rem_1fr_auto] items-center gap-3 py-5">
                       <span className="t-meta">{channel.label}</span><span className="truncate text-sm text-ink-2 group-hover:text-ink">{channel.value}</span><ArrowUpRight size={15} className="text-ink-3 group-hover:text-signal" aria-hidden />
                     </a>
                   </li>
@@ -105,13 +124,13 @@ export function Contact() {
             </Reveal>
             <Reveal delay={80} className="panel corner-mark mt-8 p-6">
               <p className="flex items-center gap-3 text-sm font-semibold text-signal"><span className="status-dot" aria-hidden />{SITE_CONFIG.availability.status}</p>
-              <p className="mt-4 text-sm text-ink-2">Based in {SITE_CONFIG.location} ({SITE_CONFIG.timezone}), working across Asia-Pacific and US timezones. {SITE_CONFIG.responseTime}.</p>
+              <p className="mt-4 text-sm text-ink-2">Based in {SITE_CONFIG.location} ({SITE_CONFIG.timezone}), working across Asia-Pacific and US timezones. {SITE_CONFIG.contactMode}.</p>
               <div className="mt-5 flex gap-2">
                 <a href={SITE_CONFIG.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="icon-btn"><GithubIcon size={16} aria-hidden /></a>
                 <a href={SITE_CONFIG.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="icon-btn"><LinkedinIcon size={16} aria-hidden /></a>
               </div>
             </Reveal>
-            <p className="mt-6 text-xs leading-relaxed text-ink-3">Contact submissions are sent to configured Resend and/or Fonnte delivery channels. There is no application database. Direct email is available if delivery is not configured or fails.</p>
+            <p className="mt-6 text-xs leading-relaxed text-ink-3">Contact submissions are sent to configured Resend and/or Fonnte delivery channels. There is no application database. Direct email is available if delivery is not configured or fails. Vercel Analytics counts bounded interaction events and excludes form values.</p>
           </div>
 
           <div className="lg:col-span-7">
@@ -121,8 +140,8 @@ export function Contact() {
                 <h3 id="contact-result-title" tabIndex={-1} className="t-h3 mt-7">{result === 'accepted' ? 'Message accepted for delivery.' : 'Your message is ready to hand off.'}</h3>
                 <p className="t-body mt-4">{result === 'accepted' ? 'A configured provider accepted the message. Provider acceptance is not a guarantee of inbox receipt.' : 'Server delivery is not configured or is unavailable. Your draft has been preserved; choose a direct channel below.'}</p>
                 <div className="mt-7 flex flex-wrap gap-3">
-                  <a href={mail} className="btn btn-primary">Open email draft <ArrowUpRight size={17} aria-hidden /></a>
-                  <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">Open WhatsApp <ArrowUpRight size={17} aria-hidden /></a>
+                  <a href={mail} onClick={() => trackDirectChannel('email', 'result')} className="btn btn-primary">Open email draft <ArrowUpRight size={17} aria-hidden /></a>
+                  <a href={whatsapp} target="_blank" rel="noopener noreferrer" onClick={() => trackDirectChannel('whatsapp', 'result')} className="btn btn-ghost">Open WhatsApp <ArrowUpRight size={17} aria-hidden /></a>
                   <button type="button" className="btn btn-ghost" onClick={() => { setResult(null); setError(''); setDraft(null) }}>Write another message</button>
                 </div>
               </div>
@@ -152,7 +171,7 @@ export function Contact() {
                 </div>
                 <div className="sr-only" aria-hidden="true"><label htmlFor="contact-company-site">Leave this field empty</label><input id="contact-company-site" type="text" tabIndex={-1} autoComplete="off" {...register('honeypot')} /></div>
 
-                {error ? <div className="mt-5 border-l-2 border-threat bg-surface p-4" role="alert"><p className="text-sm text-ink">{error}</p><div className="mt-3 flex flex-wrap gap-4"><a href={mail} className="text-link text-sm">Use preserved email draft</a><a href={whatsapp} target="_blank" rel="noopener noreferrer" className="text-link text-sm">Use WhatsApp</a></div></div> : null}
+                {error ? <div className="mt-5 border-l-2 border-threat bg-surface p-4" role="alert"><p className="text-sm text-ink">{error}</p><div className="mt-3 flex flex-wrap gap-4"><a href={mail} onClick={() => trackDirectChannel('email', 'error')} className="text-link text-sm">Use preserved email draft</a><a href={whatsapp} target="_blank" rel="noopener noreferrer" onClick={() => trackDirectChannel('whatsapp', 'error')} className="text-link text-sm">Use WhatsApp</a></div></div> : null}
                 <div className="mt-7 flex flex-wrap items-center gap-4">
                   <button type="submit" className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" size={17} aria-hidden /> : <Send size={17} aria-hidden />}{isSubmitting ? 'Submitting' : 'Send message'}</button>
                   <p className="text-xs text-ink-3">No newsletter, tracking pixel or sales sequence.</p>

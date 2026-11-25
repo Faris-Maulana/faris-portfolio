@@ -10,9 +10,13 @@
 !.yarn/releases
 !.yarn/versions
 
+# local PDF tooling
+/.venv-pdf/
+
 # testing
 /coverage
 /test-results
+/eval-results
 /playwright-report
 /.playwright-browsers
 

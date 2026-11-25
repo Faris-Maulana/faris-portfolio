@@ -20,13 +20,15 @@ describe('assistant transcript utilities', () => {
     expect(getFollowUpQuestions(question)).not.toContain(question)
   })
 
-  it('exports timestamped turns as Markdown and excludes the unsent introduction', () => {
-    const artifact = formatTranscriptMarkdown([INTRO, USER, ASSISTANT], new Date('2026-11-24T04:00:00.000Z'))
+  it('exports timestamped turns, evidence links and excludes the unsent introduction', () => {
+    const withSources: ChatMessage = { ...ASSISTANT, sources: [{ title: 'Text2SQL record', href: '/work/text2sql' }] }
+    const artifact = formatTranscriptMarkdown([INTRO, USER, withSources], new Date('2026-11-24T04:00:00.000Z'))
 
     expect(artifact).toContain('# ARIA portfolio conversation')
     expect(artifact).toContain('Exported: 2026-11-24T04:00:00.000Z')
     expect(artifact).toContain('## You\n\nHow is SQL validated?')
     expect(artifact).toContain('## ARIA\n\nThrough deterministic checks.')
+    expect(artifact).toContain('[Text2SQL record](/work/text2sql)')
     expect(artifact).not.toContain('Local introduction')
     expect(artifact).not.toContain('undefined')
   })

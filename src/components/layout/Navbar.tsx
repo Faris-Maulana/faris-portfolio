@@ -7,17 +7,33 @@ import { ArrowUpRight, Download, Menu, X } from 'lucide-react'
 import { NAV_LINKS, SITE_CONFIG } from '@/lib/constants'
 import { useActiveSection } from '@/hooks/useActiveSection'
 import { cn } from '@/lib/utils'
+import { trackPortfolioEvent } from '@/lib/analytics'
 
 export function Navbar() {
   const pathname = usePathname()
   const active = useActiveSection()
   const dialog = useRef<HTMLDialogElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
+  const desktopNav = useRef<HTMLElement>(null)
+  const wasOpen = useRef(false)
   const [open, setOpen] = useState(false)
-  const href = (anchor: string) => pathname === '/' ? anchor : `/${anchor}`
+  const href = (path: string) => path.startsWith('#') && pathname !== '/' ? `/${path}` : path
+  const current = (path: string) => path.startsWith('#')
+    ? active === path.slice(1) ? 'location' as const : undefined
+    : pathname === path ? 'page' as const : undefined
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      if (!wasOpen.current) return
+      wasOpen.current = false
+      // The previous effect cleanup restores scrolling before focus is restored.
+      const target = trigger.current?.getClientRects().length
+        ? trigger.current
+        : desktopNav.current?.querySelector('a')
+      target?.focus()
+      return
+    }
+    wasOpen.current = true
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = previous }
@@ -38,12 +54,12 @@ export function Navbar() {
           <span className="sr-only">Home</span>
         </Link>
 
-        <nav className="ml-auto hidden items-center gap-6 lg:flex" aria-label="Primary navigation">
+        <nav ref={desktopNav} className="ml-auto hidden items-center gap-6 lg:flex" aria-label="Primary navigation">
           {NAV_LINKS.map(link => (
-            <Link key={link.href} href={href(link.href)} aria-current={active === link.href.slice(1) ? 'location' : undefined} className={cn('link-draw py-3 text-sm font-semibold transition-colors', active === link.href.slice(1) ? 'text-signal' : 'text-ink-2 hover:text-ink')}>{link.label}</Link>
+            <Link key={link.href} href={href(link.href)} aria-current={current(link.href)} className={cn('link-draw py-3 text-sm font-semibold transition-colors', current(link.href) ? 'text-signal' : 'text-ink-2 hover:text-ink')}>{link.label}</Link>
           ))}
         </nav>
-        <div className="hidden xl:block"><a href={SITE_CONFIG.cvPath} download className="btn btn-ghost min-h-10 px-3 text-xs"><Download size={14} aria-hidden /> CV</a></div>
+        <div className="hidden lg:block"><a href={SITE_CONFIG.cvPath} download onClick={() => trackPortfolioEvent({ name: 'cv_download', document: 'executive', placement: 'navbar' })} className="btn btn-ghost min-h-10 px-3 text-xs"><Download size={14} aria-hidden /> CV</a></div>
         <div className="ml-auto lg:hidden">
           <button ref={trigger} type="button" className="icon-btn" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="site-navigation" onClick={open ? closeMenu : openMenu}>
             {open ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
@@ -55,8 +71,8 @@ export function Navbar() {
         ref={dialog}
         id="site-navigation"
         aria-label="Site navigation"
-        className="atlas-dialog m-0 h-[100dvh] max-h-none w-[min(24rem,100vw)] max-w-none rounded-none border-y-0 border-l p-0 lg:hidden"
-        onClose={() => { setOpen(false); trigger.current?.focus() }}
+        className="atlas-dialog m-0 h-[100dvh] max-h-none w-[min(24rem,100vw)] max-w-none rounded-none border-y-0 border-l p-0"
+        onClose={() => setOpen(false)}
         onClick={event => { if (event.target === event.currentTarget) closeMenu() }}
       >
         <div className="safe-top safe-x flex items-center justify-between border-b border-line">
@@ -73,7 +89,7 @@ export function Navbar() {
               </li>
             ))}
           </ol>
-          <a href={SITE_CONFIG.cvPath} download onClick={closeMenu} className="btn btn-primary mt-8 w-full"><Download size={17} aria-hidden /> Download executive CV</a>
+          <a href={SITE_CONFIG.cvPath} download onClick={() => { trackPortfolioEvent({ name: 'cv_download', document: 'executive', placement: 'mobile_menu' }); closeMenu() }} className="btn btn-primary mt-8 w-full"><Download size={17} aria-hidden /> Download executive CV</a>
           <p className="t-meta mt-8 leading-relaxed">{SITE_CONFIG.location}<br />{SITE_CONFIG.email}</p>
         </nav>
       </dialog>

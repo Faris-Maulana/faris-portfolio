@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "scripts/**",
+    // Downloaded browser binaries contain their own inspector JavaScript.
+    ".playwright-browsers/**",
   ]),
 ]);
 

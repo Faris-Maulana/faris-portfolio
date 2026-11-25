@@ -13,4 +13,4 @@ export function getSiteUrl(value = process.env.NEXT_PUBLIC_SITE_URL): string {
 }
 
 export const SITE_URL = getSiteUrl()
-export const LAST_CONTENT_UPDATE = '2026-11-23'
+export const LAST_CONTENT_UPDATE = '2026-11-25'

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import snapshot from '../data/github-repos.json'
+import { PUBLIC_REPOSITORY_MANIFEST } from './evidence-content'
+import type { PublicRepositoryName } from './evidence'
 
 export interface Repo {
   name: string
@@ -50,12 +52,9 @@ export const LANGUAGE_COLOR: Record<string, string> = {
 const GITHUB_USER = 'Faris-Maulana'
 const GITHUB_TIMEOUT_MS = 8_000
 
-export const CURATED_REPOS = [
-  'rag-system',
-  'faris-portfolio',
-  'wealth-advisor-agents',
-  'ottodot-trial-booking',
-] as const
+export const CURATED_REPOS: readonly PublicRepositoryName[] = PUBLIC_REPOSITORY_MANIFEST.map(repo => repo.name)
+
+const EDITORIAL_REPOS = new Map(PUBLIC_REPOSITORY_MANIFEST.map(repo => [repo.name.toLowerCase(), repo] as const))
 
 const githubDate = z
   .string()
@@ -108,14 +107,15 @@ export function curateRepos(raw: unknown): Repo[] {
     if (index < 0) continue
 
     const name = CURATED_REPOS[index]
+    const editorial = EDITORIAL_REPOS.get(name.toLowerCase())
     const key = name.toLowerCase()
-    if (selected.has(key)) continue
+    if (!editorial || selected.has(key)) continue
 
     selected.set(key, {
       name,
-      description: repo.description?.trim() || null,
+      description: editorial.description,
       html_url: `https://github.com/${GITHUB_USER}/${name}`,
-      homepage: publicHomepage(repo.homepage),
+      homepage: publicHomepage(editorial.demoUrl ?? editorial.homepageUrl ?? null) ?? publicHomepage(repo.homepage),
       language: repo.language,
       topics: repo.topics,
       stargazers_count: repo.stargazers_count,
@@ -151,7 +151,9 @@ export async function getRepos(): Promise<Repo[]> {
 
     const data: unknown = await res.json()
     const repos = curateRepos(data)
-    return repos.length > 0 ? repos : REPO_SNAPSHOT
+    if (repos.length === 0) return REPO_SNAPSHOT
+    const available = new Map(repos.map(repo => [repo.name, repo]))
+    return REPO_SNAPSHOT.map(fallback => available.get(fallback.name) ?? fallback)
   } catch {
     return REPO_SNAPSHOT
   }

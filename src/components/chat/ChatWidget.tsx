@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import {
   ArrowDown, ArrowRight, ArrowUp, ArrowUpRight, Bot, Braces, Check, Copy, Database,
   Download, FlaskConical, Maximize2, Minimize2, ShieldCheck, Square, Trash2, User, X,
@@ -9,6 +10,7 @@ import { useChatSession } from '@/hooks/useChatSession'
 import { formatTranscriptMarkdown, getFollowUpQuestions } from '@/lib/chat-transcript'
 import { keepDialogFocus } from '@/lib/dialog-focus'
 import { scrollContainerToBottom } from '@/lib/scroll'
+import { trackPortfolioEvent } from '@/lib/analytics'
 
 const STARTERS = [
   { Icon: Database, label: 'Query controls', question: 'How is generated SQL validated before execution?' },
@@ -248,6 +250,22 @@ export function ChatWidget() {
                     <div className={`chat-message ${message.role === 'user' ? 'chat-message-user' : ''}`}>
                       <span className="sr-only">{message.role === 'user' ? 'You: ' : 'ARIA: '}</span>{message.content}
                     </div>
+                    {message.role === 'assistant' && message.sources?.length ? (
+                      <nav className="chat-sources" aria-label="Related public records">
+                        <span>Inspect the public record</span>
+                        <ul>
+                          {message.sources.map(source => (
+                            <li key={source.href}>
+                              {source.href.startsWith('/') ? (
+                                <Link href={source.href}>{source.title}<ArrowUpRight size={12} aria-hidden /></Link>
+                              ) : (
+                                <a href={source.href} target="_blank" rel="noopener noreferrer">{source.title}<span className="sr-only"> (opens in a new tab)</span><ArrowUpRight size={12} aria-hidden /></a>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </nav>
+                    ) : null}
                     {message.role === 'assistant' ? (
                       <div className="chat-message-actions">
                         <button type="button" onClick={() => void copyResponse(message.content, message.ts)} aria-label={`Copy response from ${TIME_FORMAT.format(new Date(message.ts))}`}>
@@ -307,11 +325,11 @@ export function ChatWidget() {
             </div>
             <div className="chat-footer-row">
               <p>AI-generated. Verify important details.</p>
-              <a href="#contact" onClick={() => dialog.current?.close()} data-chat-link className="chat-direct-link">Talk to Faris<ArrowUpRight size={13} aria-hidden /></a>
+              <a href="#contact" onClick={() => { trackPortfolioEvent({ name: 'chat_contact_handoff', placement: 'footer' }); dialog.current?.close() }} data-chat-link className="chat-direct-link">Talk to Faris<ArrowUpRight size={13} aria-hidden /></a>
             </div>
             <details className="chat-privacy">
               <summary>Privacy and retention</summary>
-              <p>OpenRouter generates replies from recent messages. This browser keeps a copy for up to 30 days. If you include an email, that message and recent context may be forwarded to Faris. Clear removes only this browser copy.</p>
+              <p>OpenRouter generates replies from recent messages. This browser keeps a copy for up to 30 days, filtered per message. If you include an email, that latest message may be forwarded to Faris. Clear removes this browser copy and its per-tab correlation ID; it does not request deletion of provider-side records. Interaction counts exclude message text and form values.</p>
             </details>
             <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{isLoading ? 'ARIA is preparing a response.' : replyAnnouncement}</p>
             <p className="sr-only" role="status" aria-live="polite">{notice}</p>

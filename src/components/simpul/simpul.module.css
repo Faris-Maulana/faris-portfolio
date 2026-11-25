@@ -1,0 +1,1449 @@
+.shell {
+  width: 100%;
+  max-width: 112rem;
+  margin-inline: auto;
+  padding: clamp(6.5rem, 8vw, 8rem) var(--gutter) clamp(5rem, 8vw, 8rem);
+  background: var(--simpul-canvas);
+  color: var(--simpul-ink);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.shell :focus-visible {
+  outline-color: var(--simpul-focus);
+}
+
+.shell button,
+.shell input,
+.shell select {
+  font: inherit;
+}
+
+.shell button,
+.shell select,
+.shell input[type='range'] {
+  cursor: pointer;
+}
+
+.shell button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
+  gap: clamp(2rem, 6vw, 7rem);
+  align-items: end;
+  padding-bottom: clamp(2rem, 4vw, 3.75rem);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  gap: 0.5rem;
+  color: var(--simpul-ink-muted);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--simpul-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.overline,
+.eyebrow,
+.instrumentLabel,
+.phaseLabel,
+.referenceLabel,
+.artifactNotice {
+  display: block;
+  color: var(--simpul-ink-quiet);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.overline {
+  margin: 1.25rem 0 0.75rem;
+  color: var(--simpul-action-bright);
+}
+
+.hero h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3.25rem, 8vw, 7rem);
+  font-stretch: 122%;
+  font-weight: 780;
+  letter-spacing: -0.055em;
+  line-height: 0.86;
+  text-transform: uppercase;
+}
+
+.heroLead {
+  max-width: 43rem;
+  margin: 1.25rem 0 0;
+  color: var(--simpul-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-stretch: 108%;
+  font-weight: 570;
+  letter-spacing: -0.018em;
+  line-height: 1.25;
+}
+
+.heroBrief {
+  padding-left: 1.25rem;
+  border-left: 1px solid var(--simpul-line-strong);
+}
+
+.heroBrief > p {
+  margin: 0.75rem 0 0;
+  color: var(--simpul-ink-muted);
+}
+
+.instrumentLabel {
+  color: var(--simpul-ink);
+}
+
+.scopeNotice {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--simpul-line);
+}
+
+.scopeNotice svg {
+  flex: none;
+  margin-top: 0.2rem;
+  color: var(--simpul-action-bright);
+}
+
+.runBar {
+  display: grid;
+  grid-template-columns: minmax(15rem, 1fr) minmax(8rem, 0.22fr) auto;
+  gap: 1rem;
+  align-items: end;
+  padding: 1.25rem;
+  border: 1px solid var(--simpul-line-strong);
+  background: var(--simpul-surface);
+}
+
+.runBar label > span,
+.approvalControl > label {
+  display: block;
+  margin-bottom: 0.375rem;
+  color: var(--simpul-ink-muted);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.runBar select,
+.runBar input,
+.approvalControl select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--simpul-line);
+  border-radius: 0;
+  background: var(--simpul-canvas);
+  color: var(--simpul-ink);
+}
+
+.runBar input {
+  font-variant-numeric: tabular-nums;
+}
+
+.runBar select:hover,
+.runBar input:hover,
+.approvalControl select:hover {
+  border-color: var(--simpul-line-strong);
+}
+
+.runBarNote {
+  grid-column: 1 / -1;
+  margin: -0.25rem 0 0;
+  color: var(--simpul-ink-quiet);
+  font-size: 0.8125rem;
+}
+
+.button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--simpul-line-strong);
+  border-radius: 0;
+  font-weight: 680;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.actionButton {
+  border-color: var(--simpul-action);
+  background: var(--simpul-action);
+  color: var(--simpul-on-action);
+}
+
+.actionButton:hover {
+  border-color: var(--simpul-action-bright);
+  background: var(--simpul-action-bright);
+}
+
+.secondaryButton {
+  background: var(--simpul-surface-raised);
+  color: var(--simpul-ink);
+}
+
+.secondaryButton:hover {
+  border-color: var(--simpul-selection);
+  background: var(--simpul-surface-active);
+}
+
+.textButton {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: var(--simpul-clear);
+  color: var(--simpul-ink);
+  font-weight: 650;
+}
+
+.textButton:hover {
+  color: var(--simpul-selection);
+}
+
+.formError {
+  margin: 0;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid var(--simpul-fault);
+  border-top: 0;
+  background: var(--simpul-fault-surface);
+  color: var(--simpul-fault);
+}
+
+.recorder {
+  margin-top: 1.5rem;
+  border: 1px solid var(--simpul-line-strong);
+  background: var(--simpul-surface);
+}
+
+.recorderHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.38fr);
+  gap: 2rem;
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.recorderHeader h2,
+.panelHeader h2,
+.transportHead h2 {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-display);
+  font-stretch: 106%;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.recorderHeader h2 {
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+}
+
+.recorderHeader p {
+  max-width: 58rem;
+  margin: 0.625rem 0 0;
+  color: var(--simpul-ink-muted);
+}
+
+.recorderHeader .objective {
+  max-width: 50rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--simpul-action);
+  color: var(--simpul-ink);
+}
+
+.objective strong {
+  color: var(--simpul-action-bright);
+}
+
+.recorderNav {
+  display: flex;
+  overflow-x: auto;
+  border-top: 1px solid var(--simpul-line-strong);
+  scrollbar-width: thin;
+}
+
+.recorderNav a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  flex: none;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-right: 1px solid var(--simpul-line);
+  color: var(--simpul-ink-muted);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.recorderNav a:hover {
+  background: var(--simpul-surface-raised);
+  color: var(--simpul-action-bright);
+}
+
+.reviewPanel,
+.networkPanel,
+.evidenceRail,
+.decisionPanel {
+  scroll-margin-top: 6rem;
+}
+
+.reviewPanel {
+  border-top: 1px solid var(--simpul-line);
+}
+
+.reviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--simpul-line);
+}
+
+.reviewHeader h2 {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-stretch: 106%;
+  letter-spacing: -0.02rem;
+}
+
+.reviewActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem 1.25rem;
+}
+
+.reviewActions .textButton {
+  color: var(--simpul-ink-muted);
+  font-size: 0.8125rem;
+}
+
+.reviewActions .textButton:hover:not(:disabled) {
+  color: var(--simpul-action-bright);
+}
+
+.reviewBody {
+  display: grid;
+  grid-template-columns: minmax(11rem, 0.32fr) minmax(0, 1.68fr);
+}
+
+.reviewStages {
+  margin: 0;
+  padding: 0;
+  border-right: 1px solid var(--simpul-line);
+  list-style: none;
+}
+
+.reviewStages li {
+  border-bottom: 1px solid var(--simpul-line);
+}
+
+.reviewStages li:last-child {
+  border-bottom: 0;
+}
+
+.reviewStages button {
+  display: flex;
+  width: 100%;
+  min-height: 2.875rem;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 1rem;
+  border: 0;
+  background: var(--simpul-clear);
+  color: var(--simpul-ink-muted);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  text-align: left;
+}
+
+.reviewStages button:hover:not(:disabled),
+.reviewStages button[aria-current='step'] {
+  background: var(--simpul-action-wash);
+  color: var(--simpul-action-bright);
+}
+
+.reviewStageDot {
+  width: 0.375rem;
+  height: 0.375rem;
+  flex: none;
+  background: var(--simpul-line-strong);
+}
+
+.reviewStages button[aria-current='step'] .reviewStageDot {
+  background: var(--simpul-action);
+}
+
+.currentEventSummary {
+  padding: clamp(1rem, 2vw, 1.5rem);
+  background: var(--simpul-canvas);
+}
+
+.currentEventSummary h3 {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  font-stretch: 106%;
+  letter-spacing: -0.02rem;
+  line-height: 1.15;
+}
+
+.eventFacts {
+  margin-top: 0;
+}
+
+.runIdentity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.375rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--simpul-line);
+  color: var(--simpul-ink-quiet);
+  font-size: 0.8125rem;
+}
+
+.runIdentity code {
+  max-width: 100%;
+  color: var(--simpul-ink);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.referenceLabel {
+  color: var(--simpul-selection);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(18rem, 0.7fr);
+  border-top: 1px solid var(--simpul-line-strong);
+}
+
+.primaryColumn {
+  border-right: 1px solid var(--simpul-line-strong);
+}
+
+.networkPanel {
+  margin: 0;
+  background: var(--simpul-map-fill);
+}
+
+.panelHeader,
+.transportHead {
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--simpul-line);
+}
+
+.panelHeader h2,
+.transportHead h2 {
+  font-size: 1.125rem;
+}
+
+.phaseLabel,
+.countLabel {
+  flex: none;
+  color: var(--simpul-ink-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.scrollHint {
+  display: none;
+  margin: 0;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--simpul-line);
+  color: var(--simpul-action-bright);
+  font-size: 0.75rem;
+}
+
+.networkViewport {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  background: var(--simpul-map-fill);
+}
+
+.networkSvg {
+  display: block;
+  width: 100%;
+  min-width: 40rem;
+  height: auto;
+  user-select: none;
+}
+
+.mapBackground {
+  fill: var(--simpul-map-fill);
+}
+
+.mapGridLine {
+  fill: none;
+  stroke: var(--simpul-grid);
+  stroke-width: 1;
+}
+
+.mapCoordinate {
+  fill: var(--simpul-ink-quiet);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 1.5px;
+}
+
+.linkGroup,
+.nodeGroup,
+.serviceGroup {
+  cursor: pointer;
+}
+
+.linkHitArea {
+  stroke: var(--simpul-clear);
+  stroke-width: 25;
+  pointer-events: stroke;
+}
+
+.linkLine {
+  stroke: var(--simpul-line-strong);
+  stroke-width: 3;
+  pointer-events: none;
+  transition: stroke 180ms ease-out;
+}
+
+.linkLine.affected {
+  stroke: var(--simpul-fault);
+  stroke-width: 4;
+}
+
+.linkLine.unknown {
+  stroke: var(--simpul-ink-quiet);
+  stroke-dasharray: 9 7;
+}
+
+.linkLine.rerouted {
+  stroke: var(--simpul-selection);
+}
+
+.linkLabel {
+  fill: var(--simpul-ink-muted);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.nodeBody {
+  fill: var(--simpul-map-node);
+  stroke: var(--simpul-line-strong);
+  stroke-width: 1.5;
+  transition: fill 180ms ease-out, stroke 180ms ease-out;
+}
+
+.nodeBody.affected {
+  fill: var(--simpul-fault-surface);
+  stroke: var(--simpul-fault);
+}
+
+.nodeBody.unknown {
+  fill: var(--simpul-surface-raised);
+  stroke: var(--simpul-ink-quiet);
+  stroke-dasharray: 4 3;
+}
+
+.nodeLabel,
+.nodeStatus,
+.serviceLabel,
+.servicePath,
+.serviceStatus {
+  font-family: var(--font-body);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.nodeLabel {
+  fill: var(--simpul-ink);
+  font-size: 13px;
+  font-weight: 760;
+  letter-spacing: 0.8px;
+}
+
+.nodeStatus {
+  fill: var(--simpul-ink-muted);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.serviceBody {
+  fill: var(--simpul-map-service);
+  stroke: var(--simpul-line);
+  stroke-width: 1;
+  transition: fill 180ms ease-out, stroke 180ms ease-out;
+}
+
+.serviceBody.affected {
+  fill: var(--simpul-fault-wash);
+  stroke: var(--simpul-fault);
+}
+
+.serviceBody.unknown {
+  fill: var(--simpul-surface-raised);
+  stroke: var(--simpul-ink-quiet);
+  stroke-dasharray: 5 4;
+}
+
+.serviceBody.rerouted {
+  fill: var(--simpul-surface-active);
+  stroke: var(--simpul-selection);
+}
+
+.serviceLabel,
+.servicePath,
+.serviceStatus {
+  font-size: 10px;
+}
+
+.serviceLabel {
+  fill: var(--simpul-ink);
+  font-weight: 680;
+  text-anchor: start;
+}
+
+.servicePath {
+  fill: var(--simpul-ink-quiet);
+  text-anchor: start;
+}
+
+.serviceStatus {
+  fill: var(--simpul-ink-muted);
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.selected .linkLine,
+.linkGroup:focus-visible .linkLine {
+  stroke: var(--simpul-focus);
+  stroke-width: 5;
+}
+
+.selected .nodeBody,
+.nodeGroup:focus-visible .nodeBody,
+.selected .serviceBody,
+.serviceGroup:focus-visible .serviceBody {
+  stroke: var(--simpul-focus);
+  stroke-width: 3;
+}
+
+.linkGroup:focus-visible,
+.nodeGroup:focus-visible,
+.serviceGroup:focus-visible {
+  outline: none;
+}
+
+.selectionInspector {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.5fr) auto minmax(0, 1.5fr);
+  gap: 1rem;
+  align-items: start;
+  padding: 1rem;
+  border-top: 1px solid var(--simpul-line);
+  background: var(--simpul-surface);
+}
+
+.selectionInspector h3 {
+  margin: 0.25rem 0 0;
+  font-size: 1rem;
+}
+
+.statusText {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.statusText.nominal,
+.statusText.rerouted {
+  color: var(--simpul-selection);
+}
+
+.statusText.affected {
+  color: var(--simpul-fault);
+}
+
+.statusText.unknown {
+  color: var(--simpul-ink-muted);
+}
+
+.inspectorFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+
+.inspectorFacts > div {
+  min-width: 7rem;
+}
+
+.inspectorFacts dt,
+.inspectorFacts dd {
+  margin: 0;
+}
+
+.inspectorFacts dt {
+  color: var(--simpul-ink-quiet);
+  font-size: 0.75rem;
+}
+
+.inspectorFacts dd {
+  color: var(--simpul-ink);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.transport {
+  border-top: 1px solid var(--simpul-line-strong);
+  background: var(--simpul-surface);
+}
+
+.cursorOutput,
+.tickReadout {
+  color: var(--simpul-ink-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.transportControls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--simpul-line);
+}
+
+.transportButtons {
+  display: flex;
+  flex: none;
+  gap: 0.25rem;
+}
+
+.iconButton {
+  display: grid;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  place-items: center;
+  border: 1px solid var(--simpul-line);
+  border-radius: 0;
+  background: var(--simpul-surface-raised);
+  color: var(--simpul-ink);
+}
+
+.iconButton:hover:not(:disabled) {
+  border-color: var(--simpul-selection);
+  background: var(--simpul-surface-active);
+}
+
+.playButton {
+  border-color: var(--simpul-action);
+  color: var(--simpul-action-bright);
+}
+
+.scrubberLabel {
+  display: flex;
+  min-width: 5rem;
+  flex: 1;
+  align-items: center;
+}
+
+.scrubber {
+  width: 100%;
+  min-height: 2.75rem;
+  accent-color: var(--simpul-action);
+}
+
+.tickReadout {
+  flex: none;
+  min-width: 3.5rem;
+  text-align: right;
+}
+
+.eventTrack {
+  max-height: 19rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-gutter: stable;
+}
+
+.eventTrack li {
+  border-bottom: 1px solid var(--simpul-line);
+  transition: background 180ms ease-out, box-shadow 180ms ease-out;
+}
+
+.eventTrack li:last-child {
+  border-bottom: 0;
+}
+
+.eventTrack li.currentEvent {
+  background: var(--simpul-action-wash);
+  box-shadow: inset 3px 0 0 var(--simpul-action);
+}
+
+.eventTrack button {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.625rem 1rem;
+  border: 0;
+  background: var(--simpul-clear);
+  color: var(--simpul-ink-muted);
+  text-align: left;
+}
+
+.eventTrack button:hover {
+  background: var(--simpul-surface-active);
+  color: var(--simpul-ink);
+}
+
+.eventTrack button strong {
+  display: block;
+  color: var(--simpul-ink);
+  font-size: 0.875rem;
+}
+
+.eventIndex,
+.eventKind,
+.eventTick {
+  color: var(--simpul-ink-quiet);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.eventKind {
+  display: block;
+  margin-top: 0.125rem;
+}
+
+.eventTick {
+  color: var(--simpul-ink-muted);
+}
+
+.evidenceRail {
+  min-width: 0;
+  background: var(--simpul-canvas);
+}
+
+.emptyState {
+  padding: 2rem 1.25rem;
+  color: var(--simpul-ink-muted);
+}
+
+.emptyState svg {
+  color: var(--simpul-ink-quiet);
+}
+
+.emptyState h3 {
+  margin: 0.75rem 0 0;
+  color: var(--simpul-ink);
+  font-size: 1rem;
+}
+
+.emptyState p {
+  margin: 0.5rem 0 0;
+}
+
+.evidenceList {
+  max-height: 27rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-gutter: stable;
+}
+
+.evidenceList li {
+  border-bottom: 1px solid var(--simpul-line);
+}
+
+.evidenceRow {
+  display: flex;
+  width: 100%;
+  min-height: 5.5rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.375rem;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-left: 3px solid var(--simpul-clear);
+  background: var(--simpul-clear);
+  color: var(--simpul-ink-muted);
+  font-size: 0.8125rem;
+  text-align: left;
+}
+
+.evidenceRow:hover {
+  background: var(--simpul-surface-raised);
+}
+
+.evidenceSelected {
+  border-left-color: var(--simpul-selection);
+  background: var(--simpul-surface-raised);
+}
+
+.evidenceRowTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--simpul-ink-quiet);
+  font-size: 0.75rem;
+}
+
+.evidenceRowTop strong {
+  color: var(--simpul-ink-muted);
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.qualityLabel {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.qualityCurrent {
+  color: var(--simpul-selection);
+}
+
+.qualityQuarantined {
+  color: var(--simpul-fault);
+}
+
+.evidenceDetail {
+  padding: 1rem;
+  border-top: 1px solid var(--simpul-line-strong);
+  background: var(--simpul-surface);
+}
+
+.evidenceDetailHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--simpul-ink-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.evidenceDetail h3 {
+  margin: 0.625rem 0 0;
+  font-size: 1rem;
+}
+
+.untrustedNotice {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin: 0.75rem 0 0;
+  padding: 0.625rem;
+  border-left: 2px solid var(--simpul-fault);
+  background: var(--simpul-fault-wash);
+  color: var(--simpul-fault);
+  font-size: 0.8125rem;
+}
+
+.untrustedNotice svg {
+  flex: none;
+  margin-top: 0.125rem;
+}
+
+.artifactText,
+.schemaDetails pre {
+  max-width: 100%;
+  margin: 0.75rem 0 0;
+  overflow: auto;
+  color: var(--simpul-ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.facts {
+  margin: 1rem 0 0;
+}
+
+.facts > div {
+  display: grid;
+  grid-template-columns: minmax(6rem, 0.4fr) minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--simpul-line);
+}
+
+.facts dt,
+.facts dd {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.facts dt {
+  color: var(--simpul-ink-quiet);
+}
+
+.facts dd {
+  color: var(--simpul-ink-muted);
+  text-align: right;
+}
+
+.breakable {
+  overflow-wrap: anywhere;
+}
+
+.readings {
+  margin-top: 1rem;
+}
+
+.readings h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.readingRow {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.625rem 0;
+  border-top: 1px solid var(--simpul-line);
+  color: var(--simpul-ink-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.readingRow strong {
+  color: var(--simpul-ink);
+}
+
+.lowerGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  border-top: 1px solid var(--simpul-line-strong);
+}
+
+.eventInspector {
+  border-right: 1px solid var(--simpul-line-strong);
+  background: var(--simpul-canvas);
+}
+
+.eventInspectorBody,
+.decisionBody {
+  padding: 1rem;
+}
+
+.eventType {
+  color: var(--simpul-action-bright);
+  font-size: 0.75rem;
+  font-weight: 680;
+  letter-spacing: 0.05em;
+}
+
+.eventInspectorBody h3 {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-stretch: 106%;
+  font-weight: 670;
+  letter-spacing: -0.015em;
+}
+
+.eventDetail {
+  margin: 0.625rem 0 0;
+  color: var(--simpul-ink-muted);
+}
+
+.schemaDetails {
+  margin-top: 1rem;
+  border-top: 1px solid var(--simpul-line);
+}
+
+.schemaDetails summary {
+  min-height: 2.75rem;
+  padding: 0.75rem 0;
+  color: var(--simpul-ink-muted);
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.schemaDetails summary:hover {
+  color: var(--simpul-ink);
+}
+
+.schemaDetails pre {
+  max-height: 24rem;
+  padding: 0.75rem;
+  border: 1px solid var(--simpul-line);
+  background: var(--simpul-map-fill);
+  white-space: pre;
+}
+
+.decisionPanel {
+  background: var(--simpul-surface);
+}
+
+.policyState {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.policyAllowed {
+  color: var(--simpul-action-bright);
+}
+
+.policyDenied {
+  color: var(--simpul-fault);
+}
+
+.proposalBlock {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--simpul-line-strong);
+}
+
+.proposalBlock h3 {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-stretch: 106%;
+  line-height: 1.2;
+}
+
+.proposalBlock h3 span {
+  color: var(--simpul-action-bright);
+}
+
+.proposalBlock > p {
+  margin: 0.625rem 0 0;
+  color: var(--simpul-ink-muted);
+}
+
+.approvalControl {
+  margin-top: 1rem;
+}
+
+.approvalEnvelope {
+  margin-top: 0.75rem;
+  padding: 0 0.875rem 0.875rem;
+  border: 1px solid var(--simpul-line);
+  background: var(--simpul-canvas);
+}
+
+.artifactNotice {
+  margin: 0.875rem 0 0;
+  color: var(--simpul-ink-quiet);
+}
+
+.policyReason {
+  margin: 1rem 0 0;
+  padding: 0.75rem;
+  border-left: 2px solid currentColor;
+  background: var(--simpul-surface-raised);
+}
+
+.branchActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-top: 1rem;
+}
+
+.branchNote {
+  margin: 0.75rem 0;
+  color: var(--simpul-ink-quiet);
+  font-size: 0.8125rem;
+}
+
+.recorderFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1rem;
+  border-top: 1px solid var(--simpul-line-strong);
+  background: var(--simpul-canvas);
+}
+
+.recorderFooter p {
+  max-width: 60rem;
+  margin: 0.375rem 0 0;
+  color: var(--simpul-ink-muted);
+}
+
+.recorderFooter .button {
+  flex: none;
+}
+
+.methodNote {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.2fr) minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--simpul-line);
+  color: var(--simpul-ink-muted);
+}
+
+.methodNote p {
+  max-width: 75rem;
+  margin: 0;
+}
+
+@media (max-width: 68rem) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.7fr);
+    gap: 2rem;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 1.5fr) minmax(17rem, 0.75fr);
+  }
+
+  .selectionInspector {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .inspectorFacts {
+    grid-column: 1 / -1;
+  }
+
+  .servicePath {
+    display: none;
+  }
+}
+
+@media (max-width: 56rem) {
+  .hero,
+  .recorderHeader,
+  .reviewBody,
+  .workspace,
+  .lowerGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroBrief {
+    max-width: 42rem;
+  }
+
+  .runBar {
+    grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.35fr);
+  }
+
+  .runBar .button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .runIdentity {
+    padding: 0.75rem 0 0;
+    border-top: 1px solid var(--simpul-line);
+    border-left: 0;
+  }
+
+  .reviewStages {
+    display: flex;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--simpul-line);
+    scrollbar-width: thin;
+  }
+
+  .reviewStages li {
+    flex: none;
+    border-right: 1px solid var(--simpul-line);
+    border-bottom: 0;
+  }
+
+  .reviewStages button {
+    width: auto;
+    min-width: 7rem;
+  }
+
+  .primaryColumn,
+  .eventInspector {
+    border-right: 0;
+  }
+
+  .evidenceRail,
+  .decisionPanel {
+    border-top: 1px solid var(--simpul-line-strong);
+  }
+
+  .evidenceList {
+    max-height: 22rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  .shell {
+    padding-top: 6rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(3rem, 18vw, 5rem);
+  }
+
+  .hero {
+    gap: 1.5rem;
+  }
+
+  .runBar {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .runBar .button {
+    width: 100%;
+  }
+
+  .panelHeader,
+  .transportHead {
+    align-items: flex-start;
+  }
+
+  .reviewHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .reviewActions {
+    justify-content: flex-start;
+  }
+
+  .scrollHint {
+    display: block;
+  }
+
+  .phaseLabel {
+    max-width: 7rem;
+    text-align: right;
+  }
+
+  .networkSvg {
+    min-width: 36rem;
+  }
+
+  .transportControls {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .transportButtons {
+    width: 100%;
+  }
+
+  .transportButtons .playButton {
+    flex: 1;
+  }
+
+  .scrubberLabel {
+    min-width: 0;
+  }
+
+  .selectionInspector {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .inspectorFacts {
+    grid-column: auto;
+  }
+
+  .facts > div {
+    grid-template-columns: minmax(5rem, 0.35fr) minmax(0, 1fr);
+  }
+
+  .branchActions .button,
+  .recorderFooter .button {
+    width: 100%;
+  }
+
+  .recorderFooter,
+  .methodNote {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .recorderFooter {
+    display: flex;
+  }
+
+  .methodNote {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell *,
+  .shell *::before,
+  .shell *::after {
+    scroll-behavior: auto;
+  }
+
+  .shell .linkLine,
+  .shell .nodeBody,
+  .shell .serviceBody,
+  .shell .eventTrack li {
+    transition: none;
+  }
+}

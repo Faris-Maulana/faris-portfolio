@@ -13,8 +13,8 @@ import { getRepos } from '@/lib/github'
  * on the server puts the actual content in the HTML for crawlers and slow
  * connections.
  *
- * Order follows what a hiring manager needs, in the order they need it: the
- * claim, what is owned and how it is run, the evidence, then the history.
+ * Order follows what a technical reviewer needs: the claim, inspectable work,
+ * then the operating model and history that support it.
  */
 export const revalidate = 3600
 
@@ -24,8 +24,8 @@ export default async function Home() {
   return (
     <>
       <Hero />
-      <Leadership />
       <Work repos={repos} />
+      <Leadership />
       <Experience />
       <QuantPortfolio />
       <Capabilities />

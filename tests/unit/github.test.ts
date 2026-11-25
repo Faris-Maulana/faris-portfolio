@@ -52,8 +52,14 @@ describe('curateRepos', () => {
     ])
 
     expect(repos).toHaveLength(1)
-    expect(repos[0]).toMatchObject({ name: 'faris-portfolio', homepage: null })
+    expect(repos[0]).toMatchObject({ name: 'faris-portfolio', homepage: 'https://faris-portfolio-red.vercel.app/' })
     expect(curateRepos({ not: 'an array' })).toEqual([])
+  })
+
+  it('keeps trusted editorial descriptions instead of live repository prose', () => {
+    const [repo] = curateRepos([fixture('rag-system', { description: 'Production-grade and flawless', homepage: 'javascript:alert(1)' })])
+    expect(repo?.description).toBe('Readable RAG reference covering dense retrieval, reranking and retrieval-only evaluation over public Wikipedia material.')
+    expect(repo?.homepage).toBeNull()
   })
 
   it('retains all supported allowlist entries when GitHub supplies them', () => {
@@ -67,7 +73,9 @@ describe('getRepos', () => {
     fetchMock.mockImplementation(async () => Response.json([fixture('rag-system')]))
     const repos = await getRepos()
 
-    expect(repos.map(repo => repo.name)).toEqual(['rag-system'])
+    expect(repos.map(repo => repo.name)).toEqual(CURATED_REPOS)
+    expect(repos.find(repo => repo.name === 'rag-system')?.pushed_at).toBe('2024-01-01')
+    expect(repos.find(repo => repo.name === 'wealth-advisor-agents')?.description).toContain('Synthetic-data multi-agent')
     const [url, init] = fetchMock.mock.calls[0]!
     expect(String(url)).toContain('/users/Faris-Maulana/repos')
     expect(init).toMatchObject({ next: { revalidate: 3600 } })
@@ -80,6 +88,6 @@ describe('getRepos', () => {
 
     fetchMock.mockImplementation(async () => Response.json([fixture('unlisted')]))
     expect(await getRepos()).toEqual(REPO_SNAPSHOT)
-    expect(REPO_SNAPSHOT.map(repo => repo.name)).toEqual(['rag-system', 'faris-portfolio'])
+    expect(REPO_SNAPSHOT.map(repo => repo.name)).toEqual(CURATED_REPOS)
   })
 })

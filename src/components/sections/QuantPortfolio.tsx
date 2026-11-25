@@ -1,7 +1,8 @@
-import { ArrowUpRight, FileSearch, ShieldAlert } from 'lucide-react'
+import { ArrowUpRight, Download, FileSearch, ShieldAlert } from 'lucide-react'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { Reveal } from '@/components/ui/Reveal'
 import { QUANT_CASE_STUDIES, SITE_CONFIG } from '@/lib/constants'
+import { TrackedLink } from '@/components/analytics/TrackedLink'
 
 export function QuantPortfolio() {
   return (
@@ -19,6 +20,7 @@ export function QuantPortfolio() {
           <div>
             <h3 className="font-display font-semibold text-ink">Evidence boundary</h3>
             <p className="mt-2 text-sm text-ink-2">Private ERP, patient and enterprise records are not published. Conceptual system diagrams are labelled as diagrams; no invented series is rendered as an observed chart.</p>
+            <TrackedLink href={SITE_CONFIG.quantPath} download event={{ name: 'cv_download', document: 'quantitative', placement: 'methods' }} className="link-draw mt-4 inline-flex items-center gap-2 text-sm font-semibold"><Download size={15} aria-hidden /> Download quantitative methods and evidence boundaries</TrackedLink>
           </div>
         </div>
 
@@ -61,7 +63,8 @@ export function QuantPortfolio() {
                 <li key={step} className="flex gap-3 text-sm text-ink-2"><span className="t-meta text-threat">0{index + 1}</span>{step}</li>
               ))}
             </ol>
-            <a href={SITE_CONFIG.github} target="_blank" rel="noopener noreferrer" className="link-draw mt-6 inline-flex items-center gap-2 text-sm font-semibold">Public research code <ArrowUpRight size={15} aria-hidden /></a>
+            <p className="mt-6 border-t border-line pt-5 text-sm text-ink-2"><strong className="text-ink">Audit outcome ledger:</strong> no individual accepted, duplicate or rejected finding is claimed here. Publication requires a dated report, immutable PoC source, mitigation test and explicit resolution status.</p>
+            <a href={SITE_CONFIG.github} target="_blank" rel="noopener noreferrer" className="link-draw mt-6 inline-flex items-center gap-2 text-sm font-semibold">Inspect public research repositories <ArrowUpRight size={15} aria-hidden /></a>
           </div>
         </div>
       </div>

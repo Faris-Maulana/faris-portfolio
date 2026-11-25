@@ -1,14 +1,27 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+type AxeResults = Awaited<ReturnType<AxeBuilder['analyze']>>
+
+function violationDetails(violations: AxeResults['violations']) {
+  return violations.map(violation => ({
+    id: violation.id,
+    impact: violation.impact,
+    help: violation.help,
+    targets: violation.nodes.map(node => ({ target: node.target, summary: node.failureSummary })),
+  }))
+}
+
 const targets = [
   { name: 'homepage', url: '/', include: undefined },
   { name: 'contact section', url: '/#contact', include: '#contact' },
-  { name: 'case study', url: '/work/text2sql', include: undefined },
+  { name: 'prose-bounded case study', url: '/work/text2sql', include: undefined },
+  { name: 'artifact-backed case study', url: '/work/rag-eval', include: undefined },
+  { name: 'SIMPUL proving ground', url: '/simpul', include: undefined },
 ] as const
 
 for (const target of targets) {
-  test(`${target.name} has no serious or critical accessibility violations`, async ({ page }) => {
+  test(`${target.name} has no tagged WCAG accessibility violations`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto(target.url)
     await expect(page.locator('#main')).toBeVisible()
@@ -16,19 +29,11 @@ for (const target of targets) {
     let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     if (target.include) builder = builder.include(target.include)
     const { violations } = await builder.analyze()
-    const seriousViolations = violations
-      .filter(violation => violation.impact === 'serious' || violation.impact === 'critical')
-      .map(violation => ({
-        id: violation.id,
-        impact: violation.impact,
-        targets: violation.nodes.map(node => node.target),
-      }))
-
-    expect(seriousViolations).toEqual([])
+    expect(violationDetails(violations)).toEqual([])
   })
 }
 
-test('expanded atlas has no serious or critical accessibility violations', async ({ page }) => {
+test('expanded atlas has no tagged WCAG accessibility violations', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
   await page.getByRole('button', { name: 'Expand infrastructure map', exact: true }).click()
@@ -38,18 +43,20 @@ test('expanded atlas has no serious or critical accessibility violations', async
     .include('.atlas-explorer-dialog')
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze()
-  const seriousViolations = violations
-    .filter(violation => violation.impact === 'serious' || violation.impact === 'critical')
-    .map(violation => ({ id: violation.id, targets: violation.nodes.map(node => node.target) }))
-  expect(seriousViolations).toEqual([])
+  expect(violationDetails(violations)).toEqual([])
 })
 
-test('populated assistant dialog has no serious or critical accessibility violations', async ({ page }) => {
+test('populated assistant dialog has no tagged WCAG accessibility violations', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.addInitScript(() => {
     localStorage.setItem('aria_chat_messages_v2', JSON.stringify([
       { role: 'user', content: 'How is generated SQL validated before execution?', ts: new Date(Date.now() - 60_000).toISOString() },
-      { role: 'assistant', content: 'Syntax, permission and query-scope checks run before execution.', ts: new Date().toISOString() },
+      {
+        role: 'assistant',
+        content: 'Syntax, permission and query-scope checks run before execution.',
+        ts: new Date().toISOString(),
+        sources: [{ title: 'Text2SQL architecture and current maturity', href: '/work/text2sql' }],
+      },
     ]))
   })
   await page.goto('/')
@@ -61,13 +68,10 @@ test('populated assistant dialog has no serious or critical accessibility violat
     .include('#portfolio-assistant')
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze()
-  const seriousViolations = violations
-    .filter(violation => violation.impact === 'serious' || violation.impact === 'critical')
-    .map(violation => ({ id: violation.id, targets: violation.nodes.map(node => node.target) }))
-  expect(seriousViolations).toEqual([])
+  expect(violationDetails(violations)).toEqual([])
 })
 
-test('assistant dialog has no serious or critical accessibility violations', async ({ page }) => {
+test('assistant dialog has no tagged WCAG accessibility violations', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
   await page.getByRole('button', { name: /open portfolio assistant/i }).click()
@@ -77,8 +81,5 @@ test('assistant dialog has no serious or critical accessibility violations', asy
     .include('#portfolio-assistant')
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze()
-  const seriousViolations = violations
-    .filter(violation => violation.impact === 'serious' || violation.impact === 'critical')
-    .map(violation => ({ id: violation.id, targets: violation.nodes.map(node => node.target) }))
-  expect(seriousViolations).toEqual([])
+  expect(violationDetails(violations)).toEqual([])
 })
