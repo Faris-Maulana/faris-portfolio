@@ -21,7 +21,7 @@ export function Footer() {
             <p className="t-body mt-5 max-w-xl text-base">{SITE_CONFIG.availability.detail}. Direct email is always available if the form or assistant is not.</p>
           </div>
           <div className="grid gap-8 text-sm lg:col-span-5 lg:grid-cols-2">
-            <nav aria-label="Footer navigation"><p className="t-meta mb-4">Index</p><ul className="space-y-2">{NAV_LINKS.map(link => <li key={link.href}><a href={`/${link.href}`} className="text-ink-2 hover:text-signal">{link.label}</a></li>)}</ul></nav>
+            <nav aria-label="Footer navigation"><p className="t-meta mb-4">Index</p><ul className="space-y-2">{NAV_LINKS.map(link => <li key={link.href}><a href={link.href.startsWith('#') ? `/${link.href}` : link.href} className="text-ink-2 hover:text-signal">{link.label}</a></li>)}</ul></nav>
             <div><p className="t-meta mb-4">Elsewhere</p><ul className="space-y-3">{SOCIALS.map(({ Icon, href, label }) => <li key={label}><a href={href} target={href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer" className="inline-flex items-center gap-2 text-ink-2 hover:text-signal"><Icon size={15} aria-hidden />{label}</a></li>)}</ul></div>
           </div>
         </div>

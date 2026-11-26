@@ -1,24 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
 import { chatRequestSchema, type ChatRequestMessage } from '../../../lib/chat-schema'
-import { notifyOwner } from '../../../lib/notify'
+import { NOTIFICATION_TIMEOUT_MS, notifyOwner } from '../../../lib/notify'
 import { clientKey, rateLimit } from '../../../lib/rate-limit'
 import { readJsonBody } from '../../../lib/request-body'
 import { detectIntent, extractEmail } from '../../../lib/utils'
 import { SITE_URL } from '../../../lib/site'
-
-const SYSTEM_PROMPT = `You are ARIA, an AI portfolio assistant for Faris Maulana.
-Answer questions about Faris using only the facts below. Be concise, accurate, and technical when the question calls for it. If a fact is not included here, say that you do not have that information and suggest the site's contact form. Never invent experience, metrics, credentials, availability, response times, or guarantees. Do not solicit a visitor's name, email, employer, or other personal details.
-
-Faris is Manager of AI Engineering at PT Trans Indonesia Superkoridor in Indonesia. He builds production AI systems, including Text2SQL multi-agent workflows, RAG pipelines, LangGraph orchestration, evaluation harnesses, and data platforms using ClickHouse, PostgreSQL, dbt, Airflow, and Airbyte. His background includes AI and data roles at iMerit, Berlian Laju Tanker, Toyota Research Institute, and Telkom Indonesia. He also researches smart contract security.
-
-Selected work includes an enterprise Text2SQL platform currently in development, a RAG pipeline with retrieval evaluation, a NOC monitoring agent proof of concept, and maritime fleet analytics. Do not describe work in progress or proofs of concept as completed production deployments.
-
-Critical architecture rule: a model may propose or generate a query, but deterministic validation checks syntax, permissions and query scope before execution. Schema discovery, planning, SQL generation, validation, execution and synthesis are separate stages. Validation is the hard boundary before consequential execution. Never infer guarantees, scaling behavior, monitoring or other implementation details from a tool name.
-
-Faris earned an S.T. in Informatics Engineering from Universitas Pancasila, with yudisium in February 2024 and GPA 3.78/4.00. Only credentials listed on the website are on record.
-
-For hiring, consulting, or collaboration questions, explain the relevant experience and offer the public contact options. Public email: maulanafaris016@gmail.com. Keep replies under 120 words unless the visitor explicitly requests a deep dive. Never use em dashes or en dashes.`
+import { getChatSources } from '../../../lib/chat-sources'
+import { buildSystemPrompt } from '../../../lib/chat-context'
+import { controlledPortfolioReply } from '../../../lib/chat-guard'
 
 const DEFAULT_MODELS = [
   'mistralai/mistral-nemo',
@@ -27,11 +17,13 @@ const DEFAULT_MODELS = [
 ]
 const MAX_MODEL_ATTEMPTS = 3
 const OPENROUTER_TIMEOUT_MS = 10_000
+export const CHAT_REQUEST_TIMEOUT_MS = 30_000
 const MAX_BODY_BYTES = 128 * 1024
 const CHAT_LIMIT = 20
 const CHAT_WINDOW_MS = 5 * 60 * 1000
 
 const completionSchema = z.object({
+  model: z.string().max(200).optional(),
   choices: z
     .array(
       z.object({
@@ -45,7 +37,7 @@ const completionSchema = z.object({
 })
 
 type CompletionResult =
-  | { availability: 'ok'; reply: string }
+  | { availability: 'ok'; reply: string; model: string | null; mode: 'model' | 'deterministic' }
   | { availability: 'unavailable' }
   | { availability: 'rate_limited'; retryAfter?: number }
 
@@ -66,9 +58,13 @@ function sanitiseReply(raw: string): string {
   if (leak) text = text.slice(leak[0].length).trim()
 
   return text
+    .replace(/\[([^\]\n]+)\]\([^\)\n]*\)/g, '$1')
+    .replace(/<(?:https?:\/\/|\/)[^>\n]+>/gi, '')
+    .replace(/\bhttps?:\/\/[^\s)\]]+/gi, '')
     .replace(/\s*[\u2014\u2013]\s*/g, ', ')
     .replace(/\s+,/g, ',')
     .replace(/,\s*,/g, ',')
+    .replace(/[ \t]{2,}/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
@@ -90,9 +86,14 @@ function parseRetryAfter(value: string | null): number | undefined {
  */
 async function completeChat(
   messages: ChatRequestMessage[],
-  apiKey: string
+  apiKey: string,
+  requestSignal: AbortSignal,
+  deadline: number
 ): Promise<CompletionResult> {
+  const systemPrompt = buildSystemPrompt(messages)
   for (const model of models()) {
+    const remainingMs = deadline - Date.now()
+    if (requestSignal.aborted || remainingMs <= 0) break
     let response: Response
     try {
       response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -106,13 +107,14 @@ async function completeChat(
         body: JSON.stringify({
           model,
           max_tokens: 450,
-          temperature: 0.4,
-          messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+          temperature: 0,
+          messages: [{ role: 'system', content: systemPrompt }, ...messages],
         }),
-        signal: AbortSignal.timeout(OPENROUTER_TIMEOUT_MS),
+        signal: AbortSignal.any([requestSignal, AbortSignal.timeout(Math.min(OPENROUTER_TIMEOUT_MS, remainingMs))]),
         cache: 'no-store',
       })
     } catch {
+      if (requestSignal.aborted || Date.now() >= deadline) break
       continue
     }
 
@@ -151,7 +153,9 @@ async function completeChat(
     if (!parsed.success) continue
 
     const reply = sanitiseReply(parsed.data.choices[0].message.content)
-    if (reply) return { availability: 'ok', reply }
+    if (reply) {
+      return { availability: 'ok', reply, model: parsed.data.model ?? model, mode: 'model' }
+    }
   }
 
   return { availability: 'unavailable' }
@@ -231,8 +235,13 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const deadline = Date.now() + CHAT_REQUEST_TIMEOUT_MS
+
   try {
-    const completion = await completeChat(messages, apiKey)
+    const controlledReply = controlledPortfolioReply(messages)
+    const completion: CompletionResult = controlledReply
+      ? { availability: 'ok', reply: controlledReply, model: null, mode: 'deterministic' }
+      : await completeChat(messages, apiKey, req.signal, deadline)
     if (completion.availability === 'rate_limited') {
       return NextResponse.json(
         {
@@ -260,7 +269,8 @@ export async function POST(req: NextRequest) {
 
     // A chat is forwarded only when the latest user message explicitly contains
     // an email. Earlier addresses and anonymous turn counts never trigger one.
-    if (latestEmail) {
+    const notificationBudgetMs = deadline - Date.now()
+    if (latestEmail && notificationBudgetMs > 0 && !req.signal.aborted) {
       await notifyOwner({
         name: name || 'Portfolio visitor',
         email: latestEmail,
@@ -273,12 +283,18 @@ export async function POST(req: NextRequest) {
           Company: visitorCompany(messages),
           Messages: messages.filter(message => message.role === 'user').length,
         },
+      }, {
+        signal: req.signal,
+        timeoutMs: Math.min(NOTIFICATION_TIMEOUT_MS, notificationBudgetMs),
       })
     }
 
     return NextResponse.json({
       reply: completion.reply,
       availability: 'ok',
+      model: completion.model,
+      mode: completion.mode,
+      sources: getChatSources(messages),
       visitorName: name,
       visitorEmail: latestEmail ? '***' : undefined,
     })

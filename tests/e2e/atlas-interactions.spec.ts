@@ -22,6 +22,9 @@ for (const width of [320, 375, 1440]) {
     for (const button of await controls.getByRole('button').all()) {
       expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44)
     }
+    const expandBox = await atlas.getByRole('button', { name: 'Expand infrastructure map', exact: true }).boundingBox()
+    expect(expandBox?.width).toBeGreaterThanOrEqual(44)
+    expect(expandBox?.height).toBeGreaterThanOrEqual(44)
   })
 }
 
@@ -68,7 +71,7 @@ test('atlas keyboard navigation and buttons preserve pan and zoom boundaries', a
   await expect(zoomOut).toBeDisabled()
 })
 
-test('expanded atlas is modal, keyboard accessible, and restores launcher focus', async ({ page }) => {
+test('expanded atlas is modal, keyboard accessible, and restores launcher focus', async ({ page, browserName }) => {
   await page.goto('/')
   const launcher = page.getByRole('button', { name: 'Expand infrastructure map', exact: true })
   await launcher.click()
@@ -81,12 +84,13 @@ test('expanded atlas is modal, keyboard accessible, and restores launcher focus'
   await map.focus()
   await page.keyboard.press('=')
   await expect(dialog.locator('.atlas-zoom-level')).toHaveText('150%')
+  const tabKey = browserName === 'webkit' ? 'Alt+Tab' : 'Tab'
   for (let index = 0; index < 10; index += 1) {
-    await page.keyboard.press('Tab')
+    await page.keyboard.press(tabKey)
     await expect.poll(() => page.evaluate(() => document.querySelector('.atlas-explorer-dialog')?.contains(document.activeElement))).toBe(true)
   }
   await map.focus()
-  await page.keyboard.press('Shift+Tab')
+  await page.keyboard.press(browserName === 'webkit' ? 'Alt+Shift+Tab' : 'Shift+Tab')
   await expect(dialog.getByRole('button', { name: 'Close expanded map', exact: true })).toBeFocused()
 
   await page.keyboard.press('Escape')
@@ -116,9 +120,13 @@ test('touch gestures support pinch zoom, one-finger pan, and control reset', asy
 
   await page.getByRole('button', { name: 'Reset map view', exact: true }).click()
   await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+  await expect(zoom).toHaveText('150%')
+  const panBox = await map.boundingBox()
+  const panX = panBox!.x + panBox!.width / 2
+  const panY = panBox!.y + panBox!.height / 2
   const beforePan = await transform.getAttribute('transform')
-  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] })
-  await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + 40, y: y + 20, id: 1 }] })
+  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: panX, y: panY, id: 1 }] })
+  await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: panX + 40, y: panY + 20, id: 1 }] })
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
   await expect(transform).not.toHaveAttribute('transform', beforePan ?? '')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)

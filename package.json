@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "evaluate:chat": "node scripts/evaluate-chat.mjs",
+    "generate:cv": "node scripts/generate-cv.mjs",
     "check:uicopy": "node scripts/check-ui.mjs src",
     "verify": "npm run typecheck && eslint . --max-warnings 0 && npm run test && npm run check:uicopy && npm run build"
   },

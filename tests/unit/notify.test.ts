@@ -49,6 +49,24 @@ describe('notifyOwner', () => {
     expect(result).toMatchObject({ whatsapp: false, notified: false })
   })
 
+  it('composes caller cancellation with the remaining notification budget', async () => {
+    const controller = new AbortController()
+    const timeout = vi.spyOn(AbortSignal, 'timeout')
+    let providerSignal: AbortSignal | null | undefined
+    fetchMock.mockImplementation(async (_input, init) => {
+      providerSignal = init?.signal
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('Cancelled', 'AbortError')), { once: true })
+      })
+    })
+
+    const pending = notifyOwner(message, { signal: controller.signal, timeoutMs: 2_500 })
+    expect(timeout).toHaveBeenCalledWith(2_500)
+    controller.abort()
+    await expect(pending).resolves.toMatchObject({ email: false, notified: false })
+    expect(providerSignal?.aborted).toBe(true)
+  })
+
   it('times out a stuck channel and returns a failed delivery result', async () => {
     const controller = new AbortController()
     const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal)

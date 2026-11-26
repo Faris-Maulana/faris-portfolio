@@ -16,8 +16,8 @@ export function SectionRail() {
           return (
             <li key={id}>
               <a href={link.href} aria-label={link.label} aria-current={active === id ? 'location' : undefined} className="group flex items-center justify-end gap-3 py-1">
-                <span className="t-meta translate-x-2 bg-canvas px-2 py-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">{link.label}</span>
-                <span className={`block h-px transition-all ${active === id ? 'w-8 bg-signal' : 'w-4 bg-line-3 group-hover:w-6 group-hover:bg-ink-2'}`} aria-hidden />
+                <span className="t-meta translate-x-2 bg-canvas px-2 py-1 opacity-0 transition-[transform,opacity] group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">{link.label}</span>
+                <span className={`block h-px w-8 origin-right transition-transform ${active === id ? 'scale-x-100 bg-signal' : 'scale-x-50 bg-line-3 group-hover:scale-x-75 group-hover:bg-ink-2'}`} aria-hidden />
               </a>
             </li>
           )

@@ -1,0 +1,27 @@
+.simpul-scope {
+  --simpul-canvas: var(--bg-canvas);
+  --simpul-surface: var(--bg-surface-1);
+  --simpul-surface-raised: var(--bg-surface-2);
+  --simpul-surface-active: var(--bg-surface-3);
+  --simpul-ink: var(--text-primary);
+  --simpul-ink-muted: var(--text-secondary);
+  --simpul-ink-quiet: var(--text-tertiary);
+  --simpul-line: var(--border-subtle);
+  --simpul-line-strong: var(--border-strong);
+  --simpul-grid: var(--bg-grid);
+  --simpul-focus: var(--accent-primary);
+  --simpul-action: var(--accent-primary);
+  --simpul-action-bright: var(--accent-primary-bright);
+  --simpul-action-surface: var(--accent-primary-soft);
+  --simpul-on-action: var(--text-on-accent);
+  --simpul-fault: var(--accent-threat);
+  --simpul-fault-surface: var(--accent-threat-soft);
+  --simpul-fault-wash: var(--accent-threat-wash);
+  --simpul-map-fill: var(--bg-canvas-raised);
+  --simpul-map-node: var(--bg-surface-2);
+  --simpul-map-service: var(--bg-surface-1);
+  --simpul-selection: var(--accent-secondary);
+  --simpul-backdrop: var(--bg-overlay);
+  --simpul-action-wash: var(--accent-primary-wash);
+  --simpul-clear: var(--color-clear);
+}

@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
 
-const navItems = ['Leadership', 'Work', 'Experience', 'Research', 'Credentials', 'Contact']
-const caseStudies = ['text2sql', 'rag-eval'] as const
+const navItems = ['Work', 'SIMPUL', 'Leadership', 'Experience', 'Research', 'Credentials', 'Contact']
+const caseStudies = ['simpul', 'wealth-advisor', 'ottodot', 'rag-eval', 'text2sql', 'noc-agent', 'appraisal'] as const
 
-test('homepage exposes the expected landmarks, navigation, and project links', async ({ page }) => {
+test('homepage exposes the expected landmarks, navigation, and project links', async ({ page, browserName }) => {
   await page.goto('/')
 
   const main = page.locator('#main')
@@ -12,7 +12,8 @@ test('homepage exposes the expected landmarks, navigation, and project links', a
 
   const skipLink = page.getByRole('link', { name: 'Skip to content', exact: true })
   await expect(skipLink).toHaveAttribute('href', '#main')
-  await page.keyboard.press('Tab')
+  // Safari's complete keyboard traversal uses Option+Tab by default.
+  await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab')
   await expect(skipLink).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/#main$/)
@@ -25,6 +26,7 @@ test('homepage exposes the expected landmarks, navigation, and project links', a
   for (const name of navItems) {
     await expect(nav.getByRole('link', { name, exact: true })).toBeVisible()
   }
+  await expect(page.getByRole('navigation', { name: 'Footer navigation' }).getByRole('link', { name: 'SIMPUL', exact: true })).toHaveAttribute('href', '/simpul')
 
   for (const slug of caseStudies) {
     await expect(main.locator(`a[href="/work/${slug}"]`).first()).toBeVisible()
@@ -32,7 +34,7 @@ test('homepage exposes the expected landmarks, navigation, and project links', a
   await expect(page.getByRole('button', { name: /^(?:Open|Close) menu$/ })).toBeHidden()
 })
 
-test('mobile menu closes with Escape and restores focus to its launcher', async ({ page }) => {
+test('mobile menu closes with Escape and restores focus across responsive changes', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/')
 
@@ -48,6 +50,14 @@ test('mobile menu closes with Escape and restores focus to its launcher', async 
   await expect(dialog).toBeHidden()
   await expect(menuButton).toHaveAccessibleName('Open menu')
   await expect(menuButton).toBeFocused()
+
+  await page.keyboard.press('Enter')
+  await expect(dialog).toBeVisible()
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await expect(dialog).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+  await expect(page.getByRole('navigation', { name: 'Primary navigation', exact: true }).getByRole('link', { name: 'Work', exact: true })).toBeFocused()
 })
 
 for (const slug of caseStudies) {
@@ -57,6 +67,7 @@ for (const slug of caseStudies) {
 
     await expect(page).toHaveURL(new RegExp(`/work/${slug}/?$`))
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Inspect the artifact/i })).toBeVisible()
     const backLink = page.getByRole('link', { name: /^Back\b/i }).first()
     await expect(backLink).toBeVisible()
     await backLink.click()

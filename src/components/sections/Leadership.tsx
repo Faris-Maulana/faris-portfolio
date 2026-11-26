@@ -14,9 +14,9 @@ export function Leadership() {
           lead="AI leadership means connecting technical choices to the organisation that has to fund, govern and operate them. My scope spans the function, the data platform, the agent layer and the operating boundary."
         />
 
-        <div className="mt-16 grid border-y border-line md:grid-cols-2 xl:grid-cols-4">
+        <div className="leadership-ownership bento-grid">
           {OWNERSHIP.map((item, index) => (
-            <Reveal key={item.area} delay={index * 55} className="relative border-b border-line p-6 last:border-b-0 md:odd:border-r xl:border-b-0 xl:border-r xl:last:border-r-0 lg:p-8">
+            <Reveal key={item.area} delay={index * 55} className={`ownership-card ownership-${index} signal-card panel-interactive`}>
               <span className="t-meta text-signal">{item.index} / {item.area}</span>
               <p className="t-body mt-5">{item.body}</p>
             </Reveal>

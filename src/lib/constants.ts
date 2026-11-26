@@ -17,14 +17,15 @@ export const SITE_CONFIG = {
     status: 'Selected advisory and leadership conversations',
     detail: 'AI engineering leadership, applied architecture and technical diligence',
   },
-  responseTime: 'Replies within 24 hours',
+  contactMode: 'Direct, asynchronous technical review',
   cvPath: '/cv/Faris_Maulana_CV.pdf',
   quantPath: '/cv/Faris_Maulana_Quantitative_Portfolio.pdf',
 } as const
 
 export const NAV_LINKS = [
-  { label: 'Leadership', href: '#leadership' },
   { label: 'Work', href: '#work' },
+  { label: 'SIMPUL', href: '/simpul' },
+  { label: 'Leadership', href: '#leadership' },
   { label: 'Experience', href: '#experience' },
   { label: 'Research', href: '#research' },
   { label: 'Credentials', href: '#credentials' },
@@ -229,35 +230,56 @@ export const DECISIONS = [
   { id: 'ADR-003', title: 'Separate reasoning stages', context: 'A single Text2SQL prompt obscures table, join and execution failures.', decision: 'Split discovery, planning, generation, validation, execution and synthesis into graph stages.', tradeoff: 'More orchestration and latency, with independently testable failure modes.' },
 ] as const
 
-export type CaseStatus = 'In development' | 'Proof of concept' | 'Shipped'
+export type CaseStatus = 'In development' | 'Proof of concept' | 'Public reference' | 'Internally deployed'
 
 export const CASE_STUDIES = [
+  {
+    id: 'simpul', title: 'SIMPUL incident proving ground', org: 'Independent infrastructure lab', year: '2026', status: 'Public reference' as CaseStatus, accent: 'signal',
+    problem: 'An operational agent can sound competent while hiding why it acted, whether it was authorised, or what a different decision would have changed.',
+    approach: 'A deterministic event-sourced simulator for synthetic fiber incidents, with replayable evidence, counterfactual branches and an execution-time policy gate.',
+    outcome: 'An interactive public reference run. It demonstrates simulation and authorization boundaries, not live model quality or production network control.',
+    stack: ['TypeScript', 'Next.js', 'Event sourcing', 'SVG', 'Policy engine'],
+  },
+  {
+    id: 'wealth-advisor', title: 'Wealth Advisor agent workflow', org: 'Independent build', year: '2026', status: 'Public reference' as CaseStatus, accent: 'agent',
+    problem: 'Advisory automation needs explicit review before uncertain findings become recommendations, plus graceful degradation when upstream data fails.',
+    approach: 'A deterministic multi-agent state machine with least-privilege tools, anomaly detectors, checkpoints, reviewer decisions and a browser-executable Python package.',
+    outcome: 'A public implementation with synthetic scenarios, committed outputs and an interactive browser demo. Detector calibration and production tenancy remain open.',
+    stack: ['Python', 'FastAPI', 'Pyodide', 'SQLite', 'Human review'],
+  },
+  {
+    id: 'ottodot', title: 'Ottodot booking consistency', org: 'Backend engineering exercise', year: '2026', status: 'Public reference' as CaseStatus, accent: 'data',
+    problem: 'Two parents can attempt to pay for the same final trial-class seat. Capacity and payment correctness must survive concurrency, retries and partial failure.',
+    approach: 'Authorize, allocate and capture as separate steps, guarded by a class transaction, compensating actions, idempotency and database constraints.',
+    outcome: 'A public implementation focused on race tests, invariant checks and payment-state correctness rather than frontend polish.',
+    stack: ['TypeScript', 'Node.js', 'PostgreSQL', 'SQL constraints', 'Concurrency tests'],
+  },
+  {
+    id: 'rag-eval', title: 'RAG evaluation framework', org: 'Independent build', year: '2026', status: 'Public reference' as CaseStatus, accent: 'agent',
+    problem: 'A RAG demo can sound coherent while retrieval or grounding fails. Quality needs to be decomposed into observable failure modes.',
+    approach: 'Bi-encoder retrieval, cross-encoder reranking and cited generation are paired with retrieval, generation and corpus-level evaluation.',
+    outcome: 'A public reference implementation with raw retrieval results and explicit unpublished evaluation areas. Generation and fine-tuning scores are not claimed.',
+    stack: ['LangChain', 'ChromaDB', 'sentence-transformers', 'Cross-encoder', 'Gradio'],
+  },
   {
     id: 'text2sql', title: 'Enterprise Text-to-SQL platform', org: 'PT Trans Indonesia Superkoridor', year: '2026', status: 'In development' as CaseStatus, accent: 'agent',
     problem: 'Operations staff need answers about a fiber network without learning its schemas. The system must choose approved sources, enforce access and expose what was executed.',
     approach: 'A governed medallion warehouse feeds a LangGraph pipeline with explicit discovery, planning, generation, validation and synthesis stages, deployed inside an on-premise inference boundary.',
-    outcome: 'In development. The immediate milestone is a controlled, evaluated path from operational questions to traceable decision support.',
+    outcome: 'In development. Release metrics remain unpublished until a representative golden evaluation harness has run.',
     stack: ['LangGraph', 'ClickHouse', 'PostgreSQL', 'dbt-core', 'OpenMetadata', 'vLLM'],
   },
   {
     id: 'noc-agent', title: 'NOC monitoring agent', org: 'Telco infrastructure', year: '2026', status: 'Proof of concept' as CaseStatus, accent: 'signal',
     problem: 'NOC engineers need incident and telemetry answers without first locating the right table or constructing the right query.',
-    approach: 'FastAPI and LangChain over ClickHouse, with a separate WhatsApp alert path for proactive monitoring.',
+    approach: 'FastAPI and LangChain over ClickHouse, with a separate WhatsApp alert path for proactive monitoring. SIMPUL now carries the public simulation track.',
     outcome: 'Validated the interaction model. Production requires stronger authorisation, alert policy, observability and integration coverage.',
     stack: ['FastAPI', 'LangChain', 'ClickHouse', 'WhatsApp API'],
   },
   {
-    id: 'rag-eval', title: 'RAG evaluation framework', org: 'Independent build', year: '2025', status: 'Shipped' as CaseStatus, accent: 'agent',
-    problem: 'A RAG demo can sound coherent while retrieval or grounding fails. Quality needs to be decomposed into observable failure modes.',
-    approach: 'Bi-encoder retrieval, cross-encoder reranking and generation are paired with faithfulness, relevance and retrieval-diversity evaluation.',
-    outcome: 'A modular reference implementation for making retrieval and generation tradeoffs visible during client architecture work.',
-    stack: ['LangChain', 'ChromaDB', 'sentence-transformers', 'Cross-encoder', 'Gradio'],
-  },
-  {
-    id: 'appraisal', title: 'Maritime performance appraisal', org: 'PT Berlian Laju Tanker', year: '2025', status: 'Shipped' as CaseStatus, accent: 'data',
+    id: 'appraisal', title: 'Maritime performance appraisal', org: 'PT Berlian Laju Tanker', year: '2025', status: 'Internally deployed' as CaseStatus, accent: 'data',
     problem: 'A multi-role appraisal encoded as a sequential process allowed one delayed review to block independent peers.',
     approach: 'Role-based access, a parallel state machine, weighted scoring, audit logs and Playwright end-to-end coverage.',
-    outcome: 'A traceable workflow with explicit permissions, stage progress and scoring across the appraisal cycle.',
+    outcome: 'An internally deployed workflow with explicit permissions and scoring. Confidential implementation and personnel records are not public evidence.',
     stack: ['React', 'Node.js', 'MySQL', 'Playwright'],
   },
 ] as const

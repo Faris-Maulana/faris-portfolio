@@ -14,7 +14,7 @@ export function Experience() {
           lead="Make an unfamiliar system legible, establish reliable decisions around it and leave an operating structure behind. Expand any role for delivery detail and technical context."
         />
 
-        <div className="mt-16 border-t border-line">
+        <div className="experience-ledger panel">
           {EXPERIENCES.map((item, index) => (
             <Reveal key={`${item.company}-${item.period}`} delay={Math.min(index * 40, 160)}>
               <details className="group border-b border-line" name="career-roles">

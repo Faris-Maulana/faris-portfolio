@@ -23,6 +23,7 @@ async function fillValidContact(contact: Locator) {
 }
 
 const CHAT_STORAGE_KEY = 'aria_chat_messages_v2'
+const CHAT_SESSION_KEY = 'faris_portfolio_sid'
 
 async function seedTranscript(page: Page, total = 20) {
   await page.addInitScript(
@@ -131,6 +132,42 @@ test('contact reports provider acceptance without promising inbox receipt', asyn
   await expect(contact.getByText(/Provider acceptance is not a guarantee of inbox receipt/)).toBeVisible()
 })
 
+test('assistant removes expired and malformed transcript entries before storage and outbound requests', async ({ page }) => {
+  let outbound = ''
+  await page.addInitScript(key => {
+    localStorage.setItem(key, JSON.stringify([
+      { role: 'user', content: 'EXPIRED_PRIVATE_CONTEXT', ts: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString() },
+      { role: 'assistant', content: 'MALFORMED_PRIVATE_CONTEXT', ts: 'not-a-date' },
+      { role: 'assistant', content: 'Fresh public architecture summary.', ts: new Date().toISOString() },
+    ]))
+    localStorage.setItem('faris_portfolio_sid', 'legacy-persistent-session')
+  }, CHAT_STORAGE_KEY)
+  await page.route('**/api/chat', async route => {
+    outbound = route.request().postData() ?? ''
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ reply: 'Current answer.', availability: 'ok' }) })
+  })
+  await page.goto('/')
+  const { dialog } = await openAssistant(page)
+
+  await expect(dialog.locator('.chat-message').filter({ hasText: 'Fresh public architecture summary.' })).toBeVisible()
+  await expect(dialog.locator('.chat-messages')).not.toContainText('EXPIRED_PRIVATE_CONTEXT')
+  await expect(dialog.locator('.chat-messages')).not.toContainText('MALFORMED_PRIVATE_CONTEXT')
+  const stored = await page.evaluate(key => localStorage.getItem(key), CHAT_STORAGE_KEY)
+  expect(stored).toContain('Fresh public architecture summary.')
+  expect(stored).not.toContain('EXPIRED_PRIVATE_CONTEXT')
+  expect(stored).not.toContain('MALFORMED_PRIVATE_CONTEXT')
+
+  await dialog.getByRole('textbox').fill('A current technical question.')
+  await dialog.getByRole('button', { name: /^Send\b/i }).click()
+  await expect.poll(() => outbound).not.toBe('')
+  expect(outbound).not.toContain('EXPIRED_PRIVATE_CONTEXT')
+  expect(outbound).not.toContain('MALFORMED_PRIVATE_CONTEXT')
+  expect(outbound).not.toContain('legacy-persistent-session')
+  expect(outbound).toContain('A current technical question.')
+  expect(await page.evaluate(key => localStorage.getItem(key), CHAT_SESSION_KEY)).toBeNull()
+  expect(await page.evaluate(key => sessionStorage.getItem(key), CHAT_SESSION_KEY)).toMatch(/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/)
+})
+
 test('assistant opens at the newest line of a saved transcript', async ({ page }) => {
   await seedTranscript(page)
   await page.goto('/')
@@ -156,7 +193,11 @@ test('assistant welcome stays at the top and starter questions send a real reque
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ reply: 'Syntax, permission and query-scope checks run before execution.', availability: 'ok' }),
+      body: JSON.stringify({
+        reply: 'Syntax, permission and query-scope checks run before execution.',
+        availability: 'ok',
+        sources: [{ title: 'Text2SQL architecture and current maturity', href: '/work/text2sql' }],
+      }),
     })
   })
   await page.goto('/')
@@ -175,6 +216,7 @@ test('assistant welcome stays at the top and starter questions send a real reque
   await dialog.getByRole('button', { name: /How is generated SQL validated before execution/ }).click()
   await expect(log.locator('.chat-message', { hasText: 'Syntax, permission and query-scope checks run before execution.' })).toBeVisible()
   await expect(dialog.getByTestId('chat-loading')).toHaveCount(0)
+  await expect(dialog.getByRole('link', { name: 'Text2SQL architecture and current maturity' })).toHaveAttribute('href', '/work/text2sql')
 })
 
 test('a late reply does not pull the transcript away from earlier messages', async ({ page }) => {
@@ -226,7 +268,8 @@ test('assistant compact and expanded views stay contained across responsive chan
   await page.keyboard.press('Escape')
   await page.setViewportSize({ width: 390, height: 844 })
   const mobile = await openAssistant(page)
-  await expect(mobile.dialog).toHaveCSS('width', '390px')
+  const mobileViewport = await page.evaluate(() => document.documentElement.clientWidth)
+  await expect(mobile.dialog).toHaveCSS('width', `${mobileViewport}px`)
   await expect(mobile.dialog.locator('.chat-welcome')).toHaveCSS('display', 'block')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
   for (const name of ['Export conversation as Markdown', 'Clear conversation history']) {
@@ -234,6 +277,45 @@ test('assistant compact and expanded views stay contained across responsive chan
   }
   await expect(mobile.dialog.getByRole('textbox', { name: 'Message', exact: true })).toBeVisible()
   await expect(mobile.dialog.getByRole('button', { name: 'Close portfolio assistant', exact: true })).toBeVisible()
+})
+
+test.describe('360px coarse-pointer assistant', () => {
+  test.use({ hasTouch: true, viewport: { width: 360, height: 800 } })
+
+  test('all actionable controls retain a 44px target, including confirmation and disclosures', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.addInitScript(key => {
+      localStorage.setItem(key, JSON.stringify([
+        { role: 'user', content: 'How is generated SQL validated before execution?', ts: new Date(Date.now() - 60_000).toISOString() },
+        {
+          role: 'assistant',
+          content: 'Syntax, permission and query-scope checks run before execution.',
+          ts: new Date().toISOString(),
+          sources: [{ title: 'Text2SQL architecture and current maturity', href: '/work/text2sql' }],
+        },
+      ]))
+    }, CHAT_STORAGE_KEY)
+    await page.goto('/')
+    const { dialog } = await openAssistant(page)
+
+    const inspectTargets = () => dialog.evaluate(root => [...root.querySelectorAll<HTMLElement>('button, a[href], input, textarea, summary, [tabindex="0"]')]
+      .filter(node => {
+        const rect = node.getBoundingClientRect()
+        return rect.width > 0 && rect.height > 0 && getComputedStyle(node).visibility !== 'hidden' && (rect.width < 44 || rect.height < 44)
+      })
+      .map(node => {
+        const rect = node.getBoundingClientRect()
+        return `${node.tagName}.${node.className}: ${rect.width}x${rect.height} / ${node.getAttribute('aria-label') ?? node.textContent?.trim()}`
+      }))
+    await expect.poll(inspectTargets).toEqual([])
+
+    await dialog.getByRole('button', { name: 'Clear conversation history', exact: true }).click()
+    await expect(dialog.locator('.chat-confirm')).toBeVisible()
+    await expect.poll(inspectTargets).toEqual([])
+    await dialog.locator('.chat-confirm').getByRole('button', { name: 'Keep', exact: true }).click()
+    await expect(dialog.locator('.chat-confirm')).toHaveCount(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+  })
 })
 
 test('assistant ignores malformed saved timestamps without crashing', async ({ page }) => {
@@ -275,7 +357,7 @@ test('assistant stopping a pending response restores the draft without accepting
   await expect(composer).toBeFocused()
   await expect(dialog.getByTestId('chat-loading')).toHaveCount(0)
   await expect(dialog.locator('.chat-message')).toHaveCount(0)
-  expect(await page.evaluate(key => localStorage.getItem(key), CHAT_STORAGE_KEY)).toBe('[]')
+  expect(await page.evaluate(key => localStorage.getItem(key), CHAT_STORAGE_KEY)).toBeNull()
   await page.evaluate(() => (window as unknown as Window & { chatTest: { releaseFirstReply: () => void } }).chatTest.releaseFirstReply())
   await composer.press('Enter')
   await expect(dialog.locator('.chat-message', { hasText: 'Retried response marker.' })).toBeVisible()
@@ -321,8 +403,9 @@ test('assistant marks a late failed reply as unread while closed', async ({ page
   await expect(page.getByRole('button', { name: /open portfolio assistant/i })).toHaveAccessibleName(/unread reply/)
 })
 
-test('assistant copies responses, exports Markdown, follows up, and confirms destructive clearing', async ({ page, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+test('assistant copies responses, exports Markdown, follows up, and confirms destructive clearing', async ({ page, context, browserName }) => {
+  // WebKit rejects Chromium's clipboard-write permission; the real click supplies user activation.
+  if (browserName === 'chromium') await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   let questionNumber = 0
   await page.route('**/api/chat', async route => {
     questionNumber += 1
@@ -336,7 +419,17 @@ test('assistant copies responses, exports Markdown, follows up, and confirms des
 
   await dialog.getByRole('button', { name: /Copy response from/ }).click()
   await expect(dialog.getByRole('button', { name: /Copy response from/ })).toHaveText('Copied')
-  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('Deterministic response 1.')
+  if (browserName === 'webkit') {
+    // WebKit permits the user-initiated write but denies scripted clipboard reads; verify through real paste.
+    const composer = dialog.getByRole('textbox', { name: 'Message', exact: true })
+    await composer.fill('')
+    await composer.focus()
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+v' : 'Control+v')
+    await expect(composer).toHaveValue('Deterministic response 1.')
+    await composer.fill('')
+  } else {
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('Deterministic response 1.')
+  }
   await expect(dialog.getByRole('status').filter({ hasText: 'Response copied to clipboard.' })).toBeAttached()
 
   const downloadEvent = page.waitForEvent('download')
@@ -366,6 +459,8 @@ test('assistant copies responses, exports Markdown, follows up, and confirms des
   await expect(dialog.locator('.chat-message')).toHaveCount(0)
   await expect(dialog.locator('.chat-welcome-title')).toBeVisible()
   expect(await page.evaluate(key => localStorage.getItem(key), CHAT_STORAGE_KEY)).toBeNull()
+  expect(await page.evaluate(key => sessionStorage.getItem(key), CHAT_SESSION_KEY)).toBeNull()
+  expect(await page.evaluate(key => localStorage.getItem(key), CHAT_SESSION_KEY)).toBeNull()
 })
 
 test('assistant protects IME composition and ordinary Enter submission', async ({ page }) => {
@@ -392,6 +487,25 @@ test('assistant protects IME composition and ordinary Enter submission', async (
   await composer.press('Enter')
   await expect(dialog.locator('.chat-message', { hasText: 'Evaluation uses explicit quality gates.' })).toBeVisible()
   expect(requests).toBe(1)
+})
+
+test('assistant contact handoff reaches the homepage form from a case study', async ({ page }) => {
+  await page.addInitScript(() => {
+    const analyticsWindow = window as unknown as Window & { __contactHandoffs: number }
+    analyticsWindow.__contactHandoffs = 0
+    window.va = (type, payload) => {
+      if (type === 'event' && (payload as { name?: string }).name === 'chat_contact_handoff') analyticsWindow.__contactHandoffs += 1
+    }
+  })
+  await page.goto('/work/rag-eval')
+  const { dialog } = await openAssistant(page)
+  await dialog.getByRole('link', { name: 'Talk to Faris', exact: true }).click()
+  await expect(page).toHaveURL(/\/#contact$/)
+  await expect(page.getByRole('dialog', { name: 'Portfolio assistant' })).toHaveCount(0)
+  const contact = page.locator('#contact')
+  await expect(contact).toBeVisible()
+  await expect(contact.getByRole('button', { name: 'Send message', exact: true })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => (window as unknown as Window & { __contactHandoffs: number }).__contactHandoffs)).toBe(1)
 })
 
 test('assistant closes with Escape and restores focus to its launcher', async ({ page }) => {

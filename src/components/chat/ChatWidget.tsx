@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import {
   ArrowDown, ArrowRight, ArrowUp, ArrowUpRight, Bot, Braces, Check, Copy, Database,
   Download, FlaskConical, Maximize2, Minimize2, ShieldCheck, Square, Trash2, User, X,
@@ -9,6 +10,7 @@ import { useChatSession } from '@/hooks/useChatSession'
 import { formatTranscriptMarkdown, getFollowUpQuestions } from '@/lib/chat-transcript'
 import { keepDialogFocus } from '@/lib/dialog-focus'
 import { scrollContainerToBottom } from '@/lib/scroll'
+import { trackPortfolioEvent } from '@/lib/analytics'
 
 const STARTERS = [
   { Icon: Database, label: 'Query controls', question: 'How is generated SQL validated before execution?' },
@@ -21,10 +23,12 @@ const TIME_FORMAT = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: 
 
 export function ChatWidget() {
   const {
-    isOpen, openChat, closeChat, messages, input, setInput, isLoading, sendMessage,
+    isOpen, openChat, beginClose, closeChat, messages, input, setInput, isLoading, sendMessage,
     hasNewReply, availability, clearHistory, cancelRequest,
   } = useChatSession()
   const dialog = useRef<HTMLDialogElement>(null)
+  const closeButton = useRef<HTMLButtonElement>(null)
+  const closeTimer = useRef(0)
   const log = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const launcher = useRef<HTMLButtonElement>(null)
@@ -37,6 +41,22 @@ export function ChatWidget() {
   const [copiedMessage, setCopiedMessage] = useState('')
   const [replyAnnouncement, setReplyAnnouncement] = useState('')
   const observedMessages = useRef(messages)
+
+  const requestClose = useCallback(() => {
+    const node = dialog.current
+    if (!node || node.dataset.closing === 'true') return
+    beginClose()
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      node.close()
+      return
+    }
+    node.dataset.closing = 'true'
+    launcher.current?.focus()
+    if (closeButton.current) closeButton.current.disabled = true
+    closeTimer.current = window.setTimeout(() => node.close(), 180)
+  }, [beginClose])
+
+  useEffect(() => () => window.clearTimeout(closeTimer.current), [])
 
   const trackScroll = useCallback(() => {
     const node = log.current
@@ -147,6 +167,13 @@ export function ChatWidget() {
     setNotice('Markdown download started.')
   }
 
+  const openAssistant = useCallback(() => {
+    window.clearTimeout(closeTimer.current)
+    if (dialog.current) delete dialog.current.dataset.closing
+    if (closeButton.current) closeButton.current.disabled = false
+    openChat()
+  }, [openChat])
+
   const stopResponse = () => {
     cancelRequest()
     setNotice('Response stopped. Your question is ready to edit or send again.')
@@ -158,7 +185,7 @@ export function ChatWidget() {
       <button
         ref={launcher}
         type="button"
-        onClick={openChat}
+        onClick={openAssistant}
         className="chat-launcher fixed z-40"
         aria-expanded={isOpen}
         aria-controls="portfolio-assistant"
@@ -182,14 +209,16 @@ export function ChatWidget() {
           className={`atlas-dialog chat-dialog ${isExpanded ? 'chat-dialog-expanded' : ''}`}
           data-lenis-prevent
           onKeyDown={keepDialogFocus}
+          onCancel={event => { event.preventDefault(); requestClose() }}
           onClose={() => {
             if (dialog.current?.open) return
+            delete dialog.current?.dataset.closing
             closeChat()
             setExpanded(false)
             setConfirmClear(false)
             launcher.current?.focus()
           }}
-          onClick={event => { if (event.target === event.currentTarget) dialog.current?.close() }}
+          onClick={event => { if (event.target === event.currentTarget) requestClose() }}
         >
           <header className="chat-header">
             <span className="chat-brand-mark" aria-hidden><Bot size={19} /></span>
@@ -202,7 +231,7 @@ export function ChatWidget() {
               <button ref={clearTrigger} type="button" className="chat-header-btn chat-clear-trigger" onClick={() => setConfirmClear(true)} disabled={!hasConversation || confirmClear} aria-label="Clear conversation history" title="Clear conversation"><Trash2 size={16} aria-hidden /></button>
               <span className="chat-header-divider" aria-hidden />
               <button type="button" className="chat-header-btn chat-expand-trigger" onClick={() => setExpanded(current => !current)} aria-label={isExpanded ? 'Restore compact assistant' : 'Expand assistant'} title={isExpanded ? 'Compact view' : 'Expand view'}>{isExpanded ? <Minimize2 size={16} aria-hidden /> : <Maximize2 size={16} aria-hidden />}</button>
-              <button type="button" className="chat-header-btn" onClick={() => dialog.current?.close()} aria-label="Close portfolio assistant" title="Close"><X size={18} aria-hidden /></button>
+              <button ref={closeButton} type="button" className="chat-header-btn" onClick={requestClose} aria-label="Close portfolio assistant" title="Close"><X size={18} aria-hidden /></button>
             </div>
           </header>
 
@@ -248,6 +277,22 @@ export function ChatWidget() {
                     <div className={`chat-message ${message.role === 'user' ? 'chat-message-user' : ''}`}>
                       <span className="sr-only">{message.role === 'user' ? 'You: ' : 'ARIA: '}</span>{message.content}
                     </div>
+                    {message.role === 'assistant' && message.sources?.length ? (
+                      <nav className="chat-sources" aria-label="Related public records">
+                        <span>Inspect the public record</span>
+                        <ul>
+                          {message.sources.map(source => (
+                            <li key={source.href}>
+                              {source.href.startsWith('/') ? (
+                                <Link href={source.href}>{source.title}<ArrowUpRight size={12} aria-hidden /></Link>
+                              ) : (
+                                <a href={source.href} target="_blank" rel="noopener noreferrer">{source.title}<span className="sr-only"> (opens in a new tab)</span><ArrowUpRight size={12} aria-hidden /></a>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </nav>
+                    ) : null}
                     {message.role === 'assistant' ? (
                       <div className="chat-message-actions">
                         <button type="button" onClick={() => void copyResponse(message.content, message.ts)} aria-label={`Copy response from ${TIME_FORMAT.format(new Date(message.ts))}`}>
@@ -307,11 +352,11 @@ export function ChatWidget() {
             </div>
             <div className="chat-footer-row">
               <p>AI-generated. Verify important details.</p>
-              <a href="#contact" onClick={() => dialog.current?.close()} data-chat-link className="chat-direct-link">Talk to Faris<ArrowUpRight size={13} aria-hidden /></a>
+              <Link href="/#contact" onClick={() => { trackPortfolioEvent({ name: 'chat_contact_handoff', placement: 'footer' }); requestClose() }} data-chat-link className="chat-direct-link">Talk to Faris<ArrowUpRight size={13} aria-hidden /></Link>
             </div>
             <details className="chat-privacy">
               <summary>Privacy and retention</summary>
-              <p>OpenRouter generates replies from recent messages. This browser keeps a copy for up to 30 days. If you include an email, that message and recent context may be forwarded to Faris. Clear removes only this browser copy.</p>
+              <p>OpenRouter generates replies from recent messages. This browser keeps a copy for up to 30 days, filtered per message. If you include an email, that latest message may be forwarded to Faris. Clear removes this browser copy and its per-tab correlation ID; it does not request deletion of provider-side records. Interaction counts exclude message text and form values.</p>
             </details>
             <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{isLoading ? 'ARIA is preparing a response.' : replyAnnouncement}</p>
             <p className="sr-only" role="status" aria-live="polite">{notice}</p>
