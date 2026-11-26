@@ -4,6 +4,12 @@ export const MAX_CHAT_MESSAGES = 30
 export const MAX_CHAT_MESSAGE_CHARS = 4000
 export const MAX_CHAT_TOTAL_CHARS = 24_000
 export const MAX_CHAT_SESSION_ID_CHARS = 100
+export const MAX_CHAT_INPUT_CHARS = 800
+
+const activeRouteSchema = z.string().trim().max(120).regex(
+  /^\/(?:work\/[a-z0-9-]+|simpul)?\/?$/,
+  'Active route is not a public chat context',
+)
 
 const messageSchema = z
   .object({
@@ -31,6 +37,8 @@ export const chatRequestSchema = z
       .array(messageSchema)
       .min(1, 'At least one message is required')
       .max(MAX_CHAT_MESSAGES, 'Too many messages'),
+    stream: z.boolean().optional().default(false),
+    route: activeRouteSchema.optional().default('/'),
   })
   .strict()
   .superRefine((body, ctx) => {

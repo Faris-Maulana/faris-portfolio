@@ -62,7 +62,15 @@ for (const theme of ['light', 'dark'] as const) {
         {
           role: 'assistant',
           content: 'Syntax, permission and query-scope checks run before execution.',
+          ts: new Date(Date.now() - 50_000).toISOString(),
+          sources: [{ title: 'Text2SQL architecture and current maturity', href: '/work/text2sql' }],
+        },
+        { role: 'user', content: 'Show a bounded SQL example.', ts: new Date(Date.now() - 40_000).toISOString() },
+        {
+          role: 'assistant',
+          content: '**Validation boundary**\n\n- **Scope**: read-only\n\n```sql\nSELECT *\nFROM incidents\nLIMIT 20;\n```\n\n> Synthetic example.',
           ts: new Date().toISOString(),
+          reasoning: 'Provider summary: compare the public validation rules.',
           sources: [{ title: 'Text2SQL architecture and current maturity', href: '/work/text2sql' }],
         },
       ]))
@@ -71,6 +79,9 @@ for (const theme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: /open portfolio assistant/i }).click()
     const dialog = page.getByRole('dialog', { name: 'Portfolio assistant', exact: true })
     await expect(dialog.getByText('Syntax, permission and query-scope checks run before execution.', { exact: false })).toBeVisible()
+    await expect(dialog.locator('.chat-code-block')).toBeVisible()
+    await dialog.getByText('Reasoning trace', { exact: true }).click()
+    await expect(dialog.locator('.chat-reasoning-body')).toBeVisible()
 
     const { violations } = await new AxeBuilder({ page })
       .include('#portfolio-assistant')
