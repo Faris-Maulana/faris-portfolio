@@ -1,6 +1,10 @@
 'use client'
 
-import { useSyncExternalStore } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
+import { usePathname } from 'next/navigation'
+import { NAV_LINKS } from '@/lib/constants'
+
+const SECTION_IDS = NAV_LINKS.flatMap(link => link.href.startsWith('#') ? [link.href.slice(1)] : [])
 
 let active = ''
 const listeners = new Set<() => void>()
@@ -10,9 +14,26 @@ let listening = false
 function read() {
   frame = 0
   let next = ''
-  for (const section of document.querySelectorAll<HTMLElement>('main section[id]')) {
-    if (section.getBoundingClientRect().top <= Math.min(180, window.innerHeight * 0.35)) next = section.id
+
+  if (window.location.pathname === '/') {
+    const sections = SECTION_IDS.flatMap(id => {
+      const element = document.getElementById(id)
+      return element ? [{ id, element }] : []
+    })
+
+    if (sections.length) {
+      const rootStyle = window.getComputedStyle(document.documentElement)
+      const targetStyle = window.getComputedStyle(sections[0].element)
+      const activationLine = (Number.parseFloat(rootStyle.scrollPaddingTop) || 0)
+        + (Number.parseFloat(targetStyle.scrollMarginTop) || 0)
+        + 1
+
+      for (const { id, element } of sections) {
+        if (element.getBoundingClientRect().top <= activationLine) next = id
+      }
+    }
   }
+
   if (next === active) return
   active = next
   listeners.forEach(listener => listener())
@@ -47,5 +68,11 @@ function subscribe(listener: () => void) {
 }
 
 export function useActiveSection() {
-  return useSyncExternalStore(subscribe, () => active, () => '')
+  const pathname = usePathname()
+
+  useEffect(() => {
+    schedule()
+  }, [pathname])
+
+  return useSyncExternalStore(subscribe, () => pathname === '/' ? active : '', () => '')
 }

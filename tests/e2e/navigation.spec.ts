@@ -34,6 +34,43 @@ test('homepage exposes the expected landmarks, navigation, and project links', a
   await expect(page.getByRole('button', { name: /^(?:Open|Close) menu$/ })).toBeHidden()
 })
 
+test('desktop navigation follows section links and scrolling with one current item', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+
+  const nav = page.getByRole('navigation', { name: 'Primary navigation', exact: true })
+  const current = nav.locator('a[aria-current]')
+  const pill = page.locator('.nav-active-pill')
+  const expectCurrent = async (name: string) => {
+    await expect(current).toHaveCount(1)
+    await expect(nav.getByRole('link', { name, exact: true })).toHaveAttribute('aria-current', 'location')
+    await expect(pill).toHaveAttribute('data-visible', 'true')
+  }
+
+  for (const name of ['Work', 'Leadership', 'Experience', 'Research', 'Credentials', 'Contact']) {
+    await nav.getByRole('link', { name, exact: true }).click()
+    await expectCurrent(name)
+  }
+
+  await page.locator('#capabilities').evaluate(section => section.scrollIntoView({ behavior: 'instant', block: 'start' }))
+  await expectCurrent('Research')
+  await page.locator('#credentials').evaluate(section => section.scrollIntoView({ behavior: 'instant', block: 'start' }))
+  await expectCurrent('Credentials')
+
+  await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }))
+  await expect(current).toHaveCount(0)
+  await expect(pill).toHaveAttribute('data-visible', 'false')
+
+  await nav.getByRole('link', { name: 'Work', exact: true }).click()
+  await expectCurrent('Work')
+  await nav.getByRole('link', { name: 'SIMPUL', exact: true }).click()
+  await expect(page).toHaveURL(/\/simpul\/?$/)
+  await expect(current).toHaveCount(1)
+  await expect(nav.getByRole('link', { name: 'SIMPUL', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(nav.locator('a[aria-current="location"]')).toHaveCount(0)
+})
+
 test('mobile menu closes with Escape and restores focus across responsive changes', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/')
