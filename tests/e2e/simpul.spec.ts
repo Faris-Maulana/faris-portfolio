@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 
 async function createScenario(page: import('@playwright/test').Page, scenarioId: string, seed?: number) {
@@ -7,6 +7,46 @@ async function createScenario(page: import('@playwright/test').Page, scenarioId:
   await scenario.selectOption(scenarioId)
   if (seed !== undefined) await page.getByRole('spinbutton', { name: 'Seed', exact: true }).fill(String(seed))
   await page.getByRole('button', { name: 'Create deterministic run', exact: true }).click()
+}
+
+async function inspectSimpulControls(page: Page) {
+  return page.locator('[data-simpul]').evaluate(root => {
+    const controls = [...root.querySelectorAll<HTMLElement>('button, input, select, summary, a[href]')]
+      .filter(node => {
+        const rect = node.getBoundingClientRect()
+        const style = getComputedStyle(node)
+        if (rect.width <= 0 || rect.height <= 0 || style.visibility === 'hidden' || style.display === 'none') return false
+        let ancestor = node.parentElement
+        while (ancestor) {
+          const ancestorStyle = getComputedStyle(ancestor)
+          const clipsX = ['hidden', 'auto', 'scroll', 'clip'].includes(ancestorStyle.overflowX)
+          const clipsY = ['hidden', 'auto', 'scroll', 'clip'].includes(ancestorStyle.overflowY)
+          if (clipsX || clipsY) {
+            const clip = ancestor.getBoundingClientRect()
+            if ((clipsX && (rect.right <= clip.left || rect.left >= clip.right)) ||
+                (clipsY && (rect.bottom <= clip.top || rect.top >= clip.bottom))) return false
+          }
+          ancestor = ancestor.parentElement
+        }
+        return true
+      })
+    const boxes = controls.map(node => ({
+      name: node.getAttribute('aria-label') ?? node.textContent?.trim() ?? node.tagName,
+      ...node.getBoundingClientRect().toJSON(),
+    }))
+    const undersized = boxes.filter(box => box.width < 44 || box.height < 44)
+    const overlaps: string[] = []
+    for (let first = 0; first < boxes.length; first += 1) {
+      for (let second = first + 1; second < boxes.length; second += 1) {
+        const a = boxes[first]
+        const b = boxes[second]
+        const overlapX = Math.min(a.right, b.right) - Math.max(a.left, b.left)
+        const overlapY = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)
+        if (overlapX > 1 && overlapY > 1) overlaps.push(`${a.name} / ${b.name}`)
+      }
+    }
+    return { boxes, overlaps, undersized }
+  })
 }
 
 test('creates a deterministic run from the primary scenario and seed controls', async ({ page }) => {
@@ -22,6 +62,30 @@ test('creates a deterministic run from the primary scenario and seed controls', 
   expect(await page.getByLabel('Evidence available at this cursor').getByRole('button').count()).toBeGreaterThanOrEqual(5)
   await page.getByRole('button', { name: 'Restart replay', exact: true }).click()
   await expect(page.getByText('No evidence at this cursor', { exact: true })).toBeVisible()
+})
+
+test('scenario presets, native seed validation and public-data boundaries stay visible', async ({ page }) => {
+  await page.goto('/simpul')
+  await expect(page.getByText(/No live model, production telemetry, production control, sign up or API key/)).toBeVisible()
+  await expect(page.getByText(/No external simulator or service, model provider, production telemetry or production-control request is connected/)).toBeVisible()
+  await expect(page.getByText(/Run and replay-export analytics record only scenario identifiers; shared navigation and assistant controls emit separate, privacy-bounded interaction counts/)).toBeVisible()
+  await expect(page.getByLabel('Method and evaluation scope', { exact: true })).toContainText('Baseline comparisons and model quality scores are excluded')
+
+  await createScenario(page, 'progressive-degradation', 71)
+  await expect(page.getByRole('heading', { name: 'Progressive attenuation and OSNR degradation', exact: true })).toBeVisible()
+  await createScenario(page, 'prompt-injection', 72)
+  await expect(page.getByRole('heading', { name: 'Indirect prompt injection in a ticket and runbook', exact: true })).toBeVisible()
+  await expect(page.getByText('Untrusted data. Display only, never instructions or authority.', { exact: true })).toBeVisible()
+
+  const seed = page.getByRole('spinbutton', { name: 'Seed', exact: true })
+  await seed.fill('0')
+  await page.getByRole('button', { name: 'Create deterministic run', exact: true }).click()
+  expect(await seed.evaluate(node => (node as HTMLInputElement).validity.rangeUnderflow)).toBe(true)
+  await expect(page.getByRole('heading', { name: 'Indirect prompt injection in a ticket and runbook', exact: true })).toBeVisible()
+  await seed.fill('1.5')
+  await page.getByRole('button', { name: 'Create deterministic run', exact: true }).click()
+  expect(await seed.evaluate(node => (node as HTMLInputElement).validity.stepMismatch)).toBe(true)
+  await expect(page.locator('[data-simpul]').getByRole('alert')).toHaveCount(0)
 })
 
 test('transport supports restart, previous, next, slider and playback pause', async ({ page }) => {
@@ -51,10 +115,23 @@ test('transport supports restart, previous, next, slider and playback pause', as
   await page.waitForTimeout(950)
   await expect(cursor).toHaveText(pausedAt!)
 
+  await page.getByRole('list', { name: 'Recorded events', exact: true }).getByRole('button').nth(2).click()
+  await expect(cursor).toHaveText('Event 3 of 8')
   await slider.focus()
   await page.keyboard.press('End')
   await expect(cursor).toHaveText('Event 8 of 8')
   await expect(next).toBeDisabled()
+
+  await page.getByRole('button', { name: 'Play replay', exact: true }).click()
+  await expect(cursor).toHaveText('Event 1 of 8')
+  await page.getByRole('button', { name: 'Pause replay', exact: true }).click()
+  await slider.focus()
+  await page.keyboard.press('End')
+  await page.keyboard.press('ArrowLeft')
+  await expect(cursor).toHaveText('Event 7 of 8')
+  await page.getByRole('button', { name: 'Play replay', exact: true }).click()
+  await expect(cursor).toHaveText('Event 8 of 8', { timeout: 1500 })
+  await expect(page.getByRole('button', { name: 'Play replay', exact: true })).toBeVisible()
 })
 
 test('guided review exposes the scenario objective and jumps through real recorded events', async ({ page }) => {
@@ -75,6 +152,12 @@ test('guided review exposes the scenario objective and jumps through real record
   await expect(review).toContainText('decision.proposed')
   await expect(review.getByRole('button', { name: 'Jump to proposal', exact: true })).toBeDisabled()
 
+  await review.getByRole('button', { name: 'Seek Evidence review stage', exact: true }).click()
+  await expect(review).toContainText('assessment.recorded')
+  await review.getByRole('button', { name: 'Seek Policy review stage', exact: true }).click()
+  await expect(review).toContainText('policy.evaluated')
+  await review.getByRole('button', { name: 'Seek Incident review stage', exact: true }).click()
+  await expect(review).toContainText('incident.detected')
   await review.getByRole('button', { name: 'Seek Outcome review stage', exact: true }).click()
   await expect(cursor).toHaveText('Event 8 of 8')
   await expect(review).toContainText('run.completed')
@@ -99,6 +182,51 @@ test('counterfactual approval and rejection branches preserve the parent run', a
   await page.getByRole('button', { name: 'Reject and branch', exact: true }).click()
   await expect(page.getByText('operator-rejected', { exact: true })).toBeVisible()
   await expect(page.getByText('No synthetic action was applied in this operator-rejected branch.', { exact: true })).toBeVisible()
+
+  for (const [artifact, code] of [['maint-wrong-target', 'approval-target-mismatch'], ['maint-wrong-action', 'approval-action-mismatch']] as const) {
+    await page.getByRole('button', { name: 'Return to parent run', exact: true }).click()
+    await page.getByRole('combobox', { name: 'Approval artifact', exact: true }).selectOption(artifact)
+    await page.getByRole('button', { name: 'Approve and branch', exact: true }).click()
+    await expect(page.getByText(code, { exact: true })).toBeVisible()
+  }
+
+  await page.getByRole('button', { name: 'Return to parent run', exact: true }).click()
+  await page.getByRole('combobox', { name: 'Approval artifact', exact: true }).selectOption('maint-valid')
+  await page.getByRole('button', { name: 'Approve and branch', exact: true }).click()
+  await expect(page.getByText('Bounded synthetic action applied', { exact: true })).toBeVisible()
+  const branchDownload = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Export replay JSON', exact: true }).click()
+  const download = await branchDownload
+  const path = await download.path()
+  const replay = JSON.parse(await readFile(path!, 'utf8')) as { run: { parent?: { runId: string } } }
+  expect(replay.run.parent?.runId).toBe(originalId)
+})
+
+test('evidence records and both immutable schema disclosures are inspectable', async ({ page }) => {
+  await page.goto('/simpul')
+  await createScenario(page, 'prompt-injection', 72)
+  const evidence = page.getByLabel('Evidence available at this cursor', { exact: true }).getByRole('button')
+  expect(await evidence.count()).toBeGreaterThan(1)
+  const initialDetail = await page.locator('[aria-label^="Evidence detail:"]').getAttribute('aria-label')
+  await evidence.first().click()
+  await expect(evidence.first()).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('[aria-label^="Evidence detail:"]')).not.toHaveAttribute('aria-label', initialDetail!)
+  await expect(page.getByText('Untrusted data. Display only, never instructions or authority.', { exact: true })).toBeVisible()
+  await evidence.last().click()
+  await expect(evidence.last()).toHaveAttribute('aria-pressed', 'true')
+
+  for (const name of ['Inspect immutable event payload', 'Inspect tool input schema'] as const) {
+    const summary = page.getByText(name, { exact: true })
+    await summary.click()
+    const details = summary.locator('..')
+    await expect(details).toHaveAttribute('open', '')
+    await expect(details.locator('pre')).toBeVisible()
+    await expect(details.locator('pre')).not.toBeEmpty()
+  }
+
+  await page.getByRole('button', { name: 'Restart replay', exact: true }).click()
+  await expect(page.getByText('No decision at this cursor', { exact: true })).toBeVisible()
+  await expect(page.getByText('No evidence at this cursor', { exact: true })).toBeVisible()
 })
 
 test('exports the active trace as a self-contained replay JSON download', async ({ page }) => {
@@ -154,17 +282,68 @@ test('responsive recorder keeps review anchors reachable and labels its internal
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `page overflow at ${width}px`).toBe(true)
     await expect(page.getByRole('navigation', { name: 'Recorder sections', exact: true })).toBeVisible()
     const scrollHint = page.getByText('Wide map: scroll horizontally to inspect every synthetic node, link and service.', { exact: true })
-    if (width <= 640) {
-      await expect(scrollHint).toBeVisible()
-      await expect(page.getByRole('region', { name: 'Scrollable synthetic network topology', exact: true })).toBeVisible()
-    } else {
-      await expect(scrollHint).toBeHidden()
-    }
+    const scroller = page.getByRole('region', { name: 'Scrollable synthetic network topology', exact: true })
+    await expect(scrollHint).toBeVisible()
+    await expect(scroller).toBeVisible()
+    expect(await scroller.evaluate(node => node.scrollWidth > node.clientWidth), `map scroller is reachable at ${width}px`).toBe(true)
   }
 
-  await page.getByRole('navigation', { name: 'Recorder sections', exact: true }).getByRole('link', { name: 'Policy gate', exact: true }).click()
-  await expect(page).toHaveURL(/#policy-gate$/)
-  await expect(page.getByRole('heading', { name: 'Policy gate', exact: true })).toBeVisible()
+  const sections = page.getByRole('navigation', { name: 'Recorder sections', exact: true })
+  for (const [name, id] of [['Current event', 'current-event'], ['Topology', 'network-topology'], ['Evidence', 'evidence-rail'], ['Policy gate', 'policy-gate']] as const) {
+    await sections.getByRole('link', { name, exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`#${id}$`))
+    await expect(page.locator(`#${id}`)).toBeVisible()
+  }
+  await page.getByRole('link', { name: 'Portfolio', exact: true }).click()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.locator('#main')).toBeVisible()
+})
+
+test.describe('360px touch layout', () => {
+  test.use({ hasTouch: true, viewport: { width: 360, height: 800 } })
+
+  test('controls stay separated, touch-sized and reachable inside intentional scrollers', async ({ page }) => {
+    await page.goto('/simpul')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+    const geometry = await inspectSimpulControls(page)
+    expect(geometry.boxes.length).toBeGreaterThan(25)
+    expect(geometry.undersized).toEqual([])
+    expect(geometry.overlaps).toEqual([])
+
+    const reviewStages = page.getByRole('list', { name: 'Incident review stages', exact: true }).getByRole('button')
+    await reviewStages.first().tap()
+    await expect(reviewStages.first()).toHaveAttribute('aria-current', 'step')
+    await reviewStages.last().tap()
+    await expect(reviewStages.last()).toHaveAttribute('aria-current', 'step')
+
+    const topology = page.getByRole('region', { name: 'Scrollable synthetic network topology', exact: true })
+    await topology.evaluate(node => { node.scrollLeft = 0 })
+    expect(await topology.evaluate(node => node.scrollLeft)).toBe(0)
+    await topology.evaluate(node => { node.scrollLeft = node.scrollWidth })
+    expect(await topology.evaluate(node => Math.ceil(node.scrollLeft + node.clientWidth))).toBeGreaterThanOrEqual(await topology.evaluate(node => node.scrollWidth))
+  })
+})
+
+test('ultrawide controls keep 44px targets, separation and untransformed hit size', async ({ page }) => {
+  await page.setViewportSize({ width: 3440, height: 1200 })
+  await page.goto('/simpul')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+
+  const geometry = await inspectSimpulControls(page)
+  expect(geometry.boxes.length).toBeGreaterThan(25)
+  expect(geometry.undersized).toEqual([])
+  expect(geometry.overlaps).toEqual([])
+
+  const restart = page.getByRole('button', { name: 'Restart replay', exact: true })
+  const resting = await restart.boundingBox()
+  await restart.hover()
+  await page.mouse.down()
+  const pressed = await restart.boundingBox()
+  await page.mouse.up()
+  expect(pressed?.width).toBe(resting?.width)
+  expect(pressed?.height).toBe(resting?.height)
+  expect(pressed?.width).toBeGreaterThanOrEqual(44)
+  expect(pressed?.height).toBeGreaterThanOrEqual(44)
 })
 
 test('reduced motion suppresses replay-state transitions', async ({ page }) => {

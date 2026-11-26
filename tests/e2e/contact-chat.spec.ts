@@ -268,7 +268,8 @@ test('assistant compact and expanded views stay contained across responsive chan
   await page.keyboard.press('Escape')
   await page.setViewportSize({ width: 390, height: 844 })
   const mobile = await openAssistant(page)
-  await expect(mobile.dialog).toHaveCSS('width', '390px')
+  const mobileViewport = await page.evaluate(() => document.documentElement.clientWidth)
+  await expect(mobile.dialog).toHaveCSS('width', `${mobileViewport}px`)
   await expect(mobile.dialog.locator('.chat-welcome')).toHaveCSS('display', 'block')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
   for (const name of ['Export conversation as Markdown', 'Clear conversation history']) {
@@ -276,6 +277,45 @@ test('assistant compact and expanded views stay contained across responsive chan
   }
   await expect(mobile.dialog.getByRole('textbox', { name: 'Message', exact: true })).toBeVisible()
   await expect(mobile.dialog.getByRole('button', { name: 'Close portfolio assistant', exact: true })).toBeVisible()
+})
+
+test.describe('360px coarse-pointer assistant', () => {
+  test.use({ hasTouch: true, viewport: { width: 360, height: 800 } })
+
+  test('all actionable controls retain a 44px target, including confirmation and disclosures', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.addInitScript(key => {
+      localStorage.setItem(key, JSON.stringify([
+        { role: 'user', content: 'How is generated SQL validated before execution?', ts: new Date(Date.now() - 60_000).toISOString() },
+        {
+          role: 'assistant',
+          content: 'Syntax, permission and query-scope checks run before execution.',
+          ts: new Date().toISOString(),
+          sources: [{ title: 'Text2SQL architecture and current maturity', href: '/work/text2sql' }],
+        },
+      ]))
+    }, CHAT_STORAGE_KEY)
+    await page.goto('/')
+    const { dialog } = await openAssistant(page)
+
+    const inspectTargets = () => dialog.evaluate(root => [...root.querySelectorAll<HTMLElement>('button, a[href], input, textarea, summary, [tabindex="0"]')]
+      .filter(node => {
+        const rect = node.getBoundingClientRect()
+        return rect.width > 0 && rect.height > 0 && getComputedStyle(node).visibility !== 'hidden' && (rect.width < 44 || rect.height < 44)
+      })
+      .map(node => {
+        const rect = node.getBoundingClientRect()
+        return `${node.tagName}.${node.className}: ${rect.width}x${rect.height} / ${node.getAttribute('aria-label') ?? node.textContent?.trim()}`
+      }))
+    await expect.poll(inspectTargets).toEqual([])
+
+    await dialog.getByRole('button', { name: 'Clear conversation history', exact: true }).click()
+    await expect(dialog.locator('.chat-confirm')).toBeVisible()
+    await expect.poll(inspectTargets).toEqual([])
+    await dialog.locator('.chat-confirm').getByRole('button', { name: 'Keep', exact: true }).click()
+    await expect(dialog.locator('.chat-confirm')).toHaveCount(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+  })
 })
 
 test('assistant ignores malformed saved timestamps without crashing', async ({ page }) => {
@@ -447,6 +487,25 @@ test('assistant protects IME composition and ordinary Enter submission', async (
   await composer.press('Enter')
   await expect(dialog.locator('.chat-message', { hasText: 'Evaluation uses explicit quality gates.' })).toBeVisible()
   expect(requests).toBe(1)
+})
+
+test('assistant contact handoff reaches the homepage form from a case study', async ({ page }) => {
+  await page.addInitScript(() => {
+    const analyticsWindow = window as unknown as Window & { __contactHandoffs: number }
+    analyticsWindow.__contactHandoffs = 0
+    window.va = (type, payload) => {
+      if (type === 'event' && (payload as { name?: string }).name === 'chat_contact_handoff') analyticsWindow.__contactHandoffs += 1
+    }
+  })
+  await page.goto('/work/rag-eval')
+  const { dialog } = await openAssistant(page)
+  await dialog.getByRole('link', { name: 'Talk to Faris', exact: true }).click()
+  await expect(page).toHaveURL(/\/#contact$/)
+  await expect(page.getByRole('dialog', { name: 'Portfolio assistant' })).toHaveCount(0)
+  const contact = page.locator('#contact')
+  await expect(contact).toBeVisible()
+  await expect(contact.getByRole('button', { name: 'Send message', exact: true })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => (window as unknown as Window & { __contactHandoffs: number }).__contactHandoffs)).toBe(1)
 })
 
 test('assistant closes with Escape and restores focus to its launcher', async ({ page }) => {

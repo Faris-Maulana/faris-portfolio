@@ -11,6 +11,7 @@ import {
   type EvidenceFilter,
   type ProjectEvidence,
 } from '@/lib/evidence'
+import { TiltCard } from '@/components/ui/TiltCard'
 
 type CaseStudy = (typeof CASE_STUDIES)[number]
 
@@ -40,21 +41,17 @@ export function CaseStudyExplorer({ studies, evidence }: {
   const visible = records.filter(({ record }) => matchesEvidenceFilter(record, filter))
 
   return (
-    <div className="case-index mt-14">
-      <div className="grid gap-6 border-y border-line py-6 lg:grid-cols-12 lg:items-end">
-        <div className="lg:col-span-4">
-          <h3 className="font-display text-2xl font-semibold text-ink">Evidence index</h3>
+    <div className="case-index">
+      <div className="case-index-controls">
+        <div>
+          <p className="t-meta text-agent">Supporting systems / browse by proof</p>
+          <h3>Evidence index</h3>
           <p className="mt-2 max-w-sm text-sm text-ink-2">Choose what you need to verify. Maturity and data exposure remain explicit.</p>
         </div>
-        <div className="lg:col-span-8">
+        <div>
           <div className="seg w-full lg:justify-end" role="group" aria-label="Filter supporting case studies by evidence type">
             {FILTERS.map(option => (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={filter === option.id}
-                onClick={() => setFilter(option.id)}
-              >
+              <button key={option.id} type="button" aria-pressed={filter === option.id} onClick={() => setFilter(option.id)}>
                 {option.label}
                 <span className="seg-count" aria-hidden>{records.filter(({ record }) => matchesEvidenceFilter(record, option.id)).length}</span>
               </button>
@@ -66,28 +63,33 @@ export function CaseStudyExplorer({ studies, evidence }: {
         </div>
       </div>
 
-      {visible.length > 0 ? visible.map(({ study, record }) => {
-        const StatusIcon = STATUS[study.status].icon
-        return (
-          <article key={study.id} className="case-index-row group grid gap-6 border-b border-line py-8 lg:grid-cols-12 lg:items-center lg:py-10" id={study.id}>
-            <div className="flex flex-wrap items-center gap-3 lg:col-span-3 lg:block">
-              <span className="t-meta text-ink-3 lg:block">{study.year} / supporting system</span>
-              <span className={`inline-flex items-center gap-2 border px-2 py-1 font-body text-xs lg:mt-4 ${STATUS[study.status].className}`}><StatusIcon size={12} aria-hidden />{study.status}</span>
-              <span className="t-meta mt-0 block w-full lg:mt-4">{EVIDENCE_LEVEL_LABELS[record.evidenceLevel]} / {record.artifacts.length} recorded {record.artifacts.length === 1 ? 'artifact' : 'artifacts'}</span>
-              <span className="mt-1 block w-full text-xs text-ink-3 lg:mt-2">Data exposure: {DATA_EXPOSURE_LABELS[record.dataExposure]}</span>
-            </div>
-            <div className="lg:col-span-6">
-              <p className="t-meta mb-2">{study.org}</p>
-              <h4 className="t-h3">{study.title}</h4>
-              <p className="t-body mt-3 max-w-2xl text-base">{study.problem}</p>
-            </div>
-            <div className="lg:col-span-3 lg:text-right">
-              <Link href={`/work/${study.id}`} className="link-draw inline-flex items-center gap-2 text-sm font-semibold">Inspect evidence and limits <ArrowUpRight size={16} aria-hidden /></Link>
-            </div>
-          </article>
-        )
-      }) : (
-        <div className="border-b border-line py-10">
+      {visible.length > 0 ? (
+        <div className="case-index-results bento-grid">
+          {visible.map(({ study, record }, index) => {
+            const StatusIcon = STATUS[study.status].icon
+            return (
+              <TiltCard key={study.id} className={`case-index-row case-card case-card-${index % 4}`} max={1.7}>
+                <article id={study.id} className="case-card-inner scroll-mt-28" data-accent={study.accent}>
+                  <div className="case-card-head">
+                    <span className="t-meta">{study.year} / {study.org}</span>
+                    <span className={`status-badge ${STATUS[study.status].className}`}><StatusIcon size={12} aria-hidden />{study.status}</span>
+                  </div>
+                  <p className="case-card-coordinate t-meta" aria-hidden>CS / {String(studies.findIndex(item => item.id === study.id) + 2).padStart(2, '0')}</p>
+                  <h4>{study.title}</h4>
+                  <p className="case-card-problem">{study.problem}</p>
+                  <div className="case-card-proof">
+                    <span>{EVIDENCE_LEVEL_LABELS[record.evidenceLevel]}</span>
+                    <span>{record.artifacts.length} recorded {record.artifacts.length === 1 ? 'artifact' : 'artifacts'}</span>
+                    <span>Data: {DATA_EXPOSURE_LABELS[record.dataExposure]}</span>
+                  </div>
+                  <Link href={`/work/${study.id}`} className="case-card-link">Inspect evidence and limits <ArrowUpRight size={16} aria-hidden /></Link>
+                </article>
+              </TiltCard>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="border-y border-line py-10">
           <p className="text-ink-2">No supporting case matches this evidence view.</p>
           <button type="button" className="btn btn-ghost mt-5" onClick={() => setFilter('all')}>Show all cases</button>
         </div>

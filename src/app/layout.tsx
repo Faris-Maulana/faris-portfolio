@@ -10,7 +10,8 @@ import { ChatWidget } from '@/components/chat/ChatWidget'
 import { fontVariables } from '@/lib/fonts'
 import { SITE_CONFIG } from '@/lib/constants'
 import { SITE_URL } from '@/lib/site'
-import { PALETTE } from '@/lib/design-tokens'
+import { PALETTE, LIGHT_PALETTE } from '@/lib/design-tokens'
+import { THEME_INIT_SCRIPT } from '@/lib/theme'
 import './globals.css'
 
 const DESCRIPTION = 'Faris Maulana is an AI Engineering Manager building governed data platforms, evaluated LLM systems and multi-agent architecture for critical infrastructure in Indonesia.'
@@ -31,8 +32,11 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: PALETTE.canvas,
-  colorScheme: 'dark',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: LIGHT_PALETTE.canvas },
+    { media: '(prefers-color-scheme: dark)', color: PALETTE.canvas },
+  ],
+  colorScheme: 'light dark',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -57,7 +61,8 @@ const personJsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={fontVariables}>
+    <html lang="en" className={fontVariables} data-theme="dark" data-theme-mode="system" suppressHydrationWarning>
+      <head><script id="theme-init" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} /></head>
       <body className="flex min-h-dvh flex-col bg-canvas antialiased">
         <a href="#main" className="skip-link">Skip to content</a>
         <ScrollProgress />

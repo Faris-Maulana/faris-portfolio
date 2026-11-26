@@ -31,10 +31,11 @@ for (const width of [1024, 1280]) {
         const cvLink = page.getByRole('link', { name: 'Download executive CV', exact: true })
         await expect(cvLink).toBeVisible()
         await expect(cvLink).toHaveAttribute('href', '/cv/Faris_Maulana_CV.pdf')
-        const cvBox = await cvLink.boundingBox()
-        expect(cvBox).not.toBeNull()
-        expect(cvBox!.x).toBeGreaterThanOrEqual(0)
-        expect(cvBox!.x + cvBox!.width).toBeLessThanOrEqual(width)
+        await expect.poll(async () => (await cvLink.boundingBox())?.x ?? -1).toBeGreaterThanOrEqual(0)
+        await expect.poll(async () => {
+          const box = await cvLink.boundingBox()
+          return box ? box.x + box.width : Number.POSITIVE_INFINITY
+        }).toBeLessThanOrEqual(await page.evaluate(() => document.documentElement.clientWidth))
         await page.keyboard.press('Escape')
         await expect(page.getByRole('dialog', { name: 'Site navigation', exact: true })).toBeHidden()
         await expect(menuButton).toBeFocused()

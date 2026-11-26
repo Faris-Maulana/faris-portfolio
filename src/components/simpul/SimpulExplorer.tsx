@@ -220,7 +220,7 @@ export function SimpulExplorer({ initialRun }: { readonly initialRun: Simulation
         <footer className={styles.recorderFooter}>
           <div>
             <span className={styles.eyebrow}>Trace boundary</span>
-            <p>Actions update synthetic replay state only. No model inference, FastAPI service, external request or network element is connected.</p>
+            <p>Actions update synthetic replay state only. No external simulator or service, model provider, production telemetry or production-control request is connected. Run and replay-export analytics record only scenario identifiers; shared navigation and assistant controls emit separate, privacy-bounded interaction counts.</p>
           </div>
           <button type="button" className={`${styles.button} ${styles.secondaryButton}`} onClick={exportReplay}><Download size={16} aria-hidden />Export replay JSON</button>
         </footer>

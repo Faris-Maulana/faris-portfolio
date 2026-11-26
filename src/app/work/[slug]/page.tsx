@@ -9,6 +9,8 @@ import { DATA_EXPOSURE_LABELS, EVIDENCE_LEVEL_LABELS } from '@/lib/evidence'
 import { SITE_URL } from '@/lib/site'
 import { EvidenceLedger } from '@/components/work/EvidenceLedger'
 import { TrackedLink } from '@/components/analytics/TrackedLink'
+import { AmbientField } from '@/components/ui/AmbientField'
+import { Reveal } from '@/components/ui/Reveal'
 
 export function generateStaticParams() {
   return CASE_STUDIES.map(study => ({ slug: study.id }))
@@ -61,18 +63,20 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
   }
 
   return (
-    <article className="atlas-grid pb-24 pt-32 sm:pt-40">
-      <div className="container">
+    <article className="case-page atlas-grid relative overflow-x-clip pb-24 pt-32 sm:pt-40">
+      <AmbientField />
+      <div className="container relative">
         <Link href="/#work" className="link-draw inline-flex items-center gap-2 text-sm font-semibold"><ArrowLeft size={16} aria-hidden /> Back to selected work</Link>
 
-        <header className="grid gap-10 border-b border-line pb-14 pt-12 lg:grid-cols-12">
-          <div className="lg:col-span-8">
+        <header className="case-hero bento-grid pt-12">
+          <Reveal className="case-title-panel signal-card">
             <div className="flex flex-wrap gap-4"><span className="t-meta text-signal">Public case study</span><span className="t-meta">{study.status} / {study.year}</span></div>
             <h1 className="mt-6 max-w-4xl font-display text-[clamp(2.25rem,12vw,3rem)] font-semibold leading-none tracking-tight text-ink sm:text-7xl wide">{study.title}</h1>
             <p className="t-lead mt-8 max-w-3xl">{study.problem}</p>
-          </div>
-          <div className="border-l border-line pl-6 lg:col-span-4 lg:mt-16">
-            <dl className="space-y-5">
+          </Reveal>
+          <Reveal className="case-facts-panel signal-card" delay={90}>
+            <p className="case-code t-meta">CASE FILE / {String(index + 1).padStart(2, '0')}</p>
+            <dl>
               <div><dt className="t-meta mb-2">Organisation</dt><dd className="text-ink">{study.org}</dd></div>
               <div><dt className="t-meta mb-2">My role</dt><dd className="text-sm text-ink-2">{detail.role}</dd></div>
               <div><dt className="t-meta mb-2">Current maturity</dt><dd className="text-signal">{study.status}</dd></div>
@@ -80,7 +84,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
               <div><dt className="t-meta mb-2">Data exposure</dt><dd className="text-sm text-ink-2">{DATA_EXPOSURE_LABELS[evidence.dataExposure]}</dd></div>
             </dl>
             <a href="#evidence" className="link-draw mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-signal">Inspect the public evidence</a>
-          </div>
+          </Reveal>
         </header>
 
         <nav className="case-study-section-nav" aria-label="On this page">
@@ -90,7 +94,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
           <a href="#evidence">Evidence ledger</a>
         </nav>
 
-        <section className="grid scroll-mt-36 gap-10 border-b border-line py-14 lg:grid-cols-12" aria-labelledby="architecture-title">
+        <Reveal as="section" className="case-architecture grid scroll-mt-36 gap-10 border-b border-line py-14 lg:grid-cols-12" aria-labelledby="architecture-title">
           <div className="lg:col-span-4"><p className="kicker">System boundary</p><h2 id="architecture-title" className="t-h3 mt-5">Architecture as a sequence of controls.</h2></div>
           <ol className="lg:col-span-8">
             {detail.architecture.map((step, stepIndex) => (
@@ -100,17 +104,17 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
               </li>
             ))}
           </ol>
-        </section>
+        </Reveal>
 
-        <div className="grid gap-12 py-14 lg:grid-cols-2 lg:gap-16">
-          <section aria-labelledby="evaluation-title" className="scroll-mt-36">
+        <div className="case-review-grid bento-grid">
+          <section aria-labelledby="evaluation-title" className="case-review-panel signal-card scroll-mt-36" data-reveal>
             <p className="kicker">Evaluation</p>
             <h2 id="evaluation-title" className="t-h3 mt-5">Define how the system fails.</h2>
             <ul className="mt-7 space-y-5">
               {detail.evaluation.map(item => <li key={item} className="flex gap-3 text-ink-2"><Check className="mt-1 shrink-0 text-data" size={18} aria-hidden /><span>{item}</span></li>)}
             </ul>
           </section>
-          <section aria-labelledby="limitations-title" className="scroll-mt-36">
+          <section aria-labelledby="limitations-title" className="case-review-panel signal-card scroll-mt-36" data-reveal>
             <p className="kicker text-threat">Limits</p>
             <h2 id="limitations-title" className="t-h3 mt-5">What this case does not prove.</h2>
             <ul className="mt-7 space-y-5">

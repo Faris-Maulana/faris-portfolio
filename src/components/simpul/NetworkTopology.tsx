@@ -163,7 +163,7 @@ export function NetworkTopology({ snapshot, selection, onSelect }: NetworkTopolo
           <text x="28" y="348" className={styles.mapCoordinate}>SERVICE IMPACT / CURRENT CURSOR</text>
           <g aria-label="Services">
             {services.map((service, index) => {
-              const y = 365 + index * 36
+              const y = 365 + index * 40
               const isSelected = selection.kind === 'service' && selection.id === service.id
               return (
                 <g
@@ -175,6 +175,7 @@ export function NetworkTopology({ snapshot, selection, onSelect }: NetworkTopolo
                   onClick={() => onSelect({ kind: 'service', id: service.id })}
                   onKeyDown={event => activate(event, () => onSelect({ kind: 'service', id: service.id }))}
                 >
+                  <rect x="28" y={y - 5} width="804" height="39" className={styles.serviceHitArea} />
                   <rect x="28" y={y} width="804" height="29" className={`${styles.serviceBody} ${healthClass(service.status)}`} />
                   <text x="44" y={y + 19} className={styles.serviceLabel}>{service.label}</text>{' '}
                   <text x="370" y={y + 19} className={styles.servicePath}>{service.path.join(' > ')}</text>{' '}

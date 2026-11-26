@@ -74,6 +74,19 @@ export function StaticAtlas({ className = '' }: { className?: string }) {
     setDragging(false)
     setView(INITIAL_ATLAS_VIEW)
   }, [])
+  const cancelDrag = useCallback(() => {
+    const svg = svgRef.current
+    for (const pointerId of pointers.current.keys()) {
+      if (svg?.hasPointerCapture(pointerId)) svg.releasePointerCapture(pointerId)
+    }
+    pointers.current.clear()
+    setDragging(false)
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('blur', cancelDrag)
+    return () => window.removeEventListener('blur', cancelDrag)
+  }, [cancelDrag])
 
   useEffect(() => {
     if (!isExpanded || !dialogRef.current) return
@@ -198,6 +211,8 @@ export function StaticAtlas({ className = '' }: { className?: string }) {
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
           onLostPointerCapture={endDrag}
+          onTouchEnd={event => { if (event.touches.length === 0) cancelDrag() }}
+          onTouchCancel={cancelDrag}
           onDoubleClick={event => zoom(1.75, pointFromClient(event.clientX, event.clientY))}
           onKeyDown={navigateWithKeyboard}
         >

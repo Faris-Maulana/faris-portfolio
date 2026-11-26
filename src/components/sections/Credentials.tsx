@@ -41,9 +41,9 @@ export function Credentials() {
           lead="Every entry links to an issuer verification page or the document itself. Expiry is shown plainly, including lapsed credentials."
         />
 
-        <div className="mt-14 grid border-y border-line lg:grid-cols-12">
+        <div className="credential-featured bento-grid">
           {FEATURED.map((credential, index) => (
-            <Reveal key={credential.title} delay={index * 60} className="flex flex-col border-b border-line p-6 last:border-b-0 lg:col-span-4 lg:border-b-0 lg:border-r lg:p-8 lg:last:border-r-0">
+            <Reveal key={credential.title} delay={index * 60} className="credential-feature signal-card panel-interactive">
               <div className="flex items-center justify-between gap-3"><span className="t-meta text-signal">{credential.kind}</span><span className="t-meta">{credential.issued}</span></div>
               <h3 className="mt-5 font-display text-xl font-semibold leading-snug text-ink">{credential.title}</h3>
               <p className="mt-2 text-sm text-ink-2">{credential.issuer}</p>
@@ -65,7 +65,7 @@ export function Credentials() {
           <p className="t-meta" role="status" aria-live="polite">Showing {results.length} additional records</p>
         </div>
 
-        <ul id="credential-results" className="mt-6 grid gap-x-8 md:grid-cols-2">
+        <ul id="credential-results" className="credential-ledger panel">
           {results.map(credential => (
             <li key={credential.title} className="flex flex-col gap-2 border-t border-line py-5 sm:flex-row sm:items-center sm:gap-5">
               <span className="min-w-0 flex-1"><span className="block font-semibold text-ink">{credential.title}</span><span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-3"><span>{credential.issuer}</span><span className="t-meta">{credential.kind}, {credential.issued}</span><Validity credential={credential} /></span></span>

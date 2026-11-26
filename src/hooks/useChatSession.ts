@@ -119,6 +119,10 @@ export function useChatSession() {
     setHasNewReply(false)
     setOpen(true)
   }, [])
+  const beginClose = useCallback(() => {
+    // The exit animation is visual; late replies are already unread to the reader.
+    openRef.current = false
+  }, [])
   const closeChat = useCallback(() => {
     openRef.current = false
     setOpen(false)
@@ -221,7 +225,7 @@ export function useChatSession() {
   }, [])
 
   return {
-    isOpen, openChat, closeChat,
+    isOpen, openChat, beginClose, closeChat,
     messages, input, setInput, isLoading, sendMessage,
     hasNewReply, availability, clearHistory, cancelRequest,
   }

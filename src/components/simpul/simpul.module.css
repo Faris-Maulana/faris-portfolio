@@ -160,6 +160,7 @@
 .runBar input,
 .approvalControl select {
   width: 100%;
+  height: 2.75rem;
   min-height: 2.75rem;
   padding: 0.625rem 0.75rem;
   border: 1px solid var(--simpul-line);
@@ -493,7 +494,7 @@
 }
 
 .scrollHint {
-  display: none;
+  display: block;
   margin: 0;
   padding: 0.625rem 1rem;
   border-bottom: 1px solid var(--simpul-line);
@@ -510,7 +511,7 @@
 .networkSvg {
   display: block;
   width: 100%;
-  min-width: 40rem;
+  min-width: 61rem;
   height: auto;
   user-select: none;
 }
@@ -541,7 +542,7 @@
 
 .linkHitArea {
   stroke: var(--simpul-clear);
-  stroke-width: 25;
+  stroke-width: 40;
   pointer-events: stroke;
 }
 
@@ -549,7 +550,7 @@
   stroke: var(--simpul-line-strong);
   stroke-width: 3;
   pointer-events: none;
-  transition: stroke 180ms ease-out;
+  transition: none;
 }
 
 .linkLine.affected {
@@ -579,7 +580,7 @@
   fill: var(--simpul-map-node);
   stroke: var(--simpul-line-strong);
   stroke-width: 1.5;
-  transition: fill 180ms ease-out, stroke 180ms ease-out;
+  transition: none;
 }
 
 .nodeBody.affected {
@@ -617,11 +618,15 @@
   text-transform: uppercase;
 }
 
+.serviceHitArea {
+  fill: var(--simpul-clear);
+}
+
 .serviceBody {
   fill: var(--simpul-map-service);
   stroke: var(--simpul-line);
   stroke-width: 1;
-  transition: fill 180ms ease-out, stroke 180ms ease-out;
+  transition: none;
 }
 
 .serviceBody.affected {
@@ -821,7 +826,7 @@
 
 .eventTrack li {
   border-bottom: 1px solid var(--simpul-line);
-  transition: background 180ms ease-out, box-shadow 180ms ease-out;
+  transition: none;
 }
 
 .eventTrack li:last-child {
@@ -1369,17 +1374,13 @@
     justify-content: flex-start;
   }
 
-  .scrollHint {
-    display: block;
-  }
-
   .phaseLabel {
     max-width: 7rem;
     text-align: right;
   }
 
   .networkSvg {
-    min-width: 36rem;
+    min-width: 62rem;
   }
 
   .transportControls {
@@ -1431,6 +1432,100 @@
   .methodNote {
     display: flex;
   }
+}
+
+/* Signal Cartography calibration: instrument panels share the site theme. */
+.overline,
+.eyebrow,
+.instrumentLabel,
+.phaseLabel,
+.referenceLabel,
+.artifactNotice,
+.countLabel,
+.cursorOutput,
+.tickReadout,
+.eventIndex,
+.eventKind,
+.eventTick {
+  font-family: var(--font-mono);
+  letter-spacing: 0.055em;
+}
+
+.hero h1 {
+  letter-spacing: -0.042em;
+}
+
+.heroBrief {
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+  border: 1px solid var(--simpul-line);
+  border-radius: var(--radius-surface);
+  background: var(--simpul-surface);
+  box-shadow: var(--shadow-surface);
+}
+
+.runBar {
+  border-color: var(--simpul-line);
+  border-radius: var(--radius-surface);
+  box-shadow: var(--shadow-surface), inset 0 1px 0 var(--inner-highlight);
+}
+
+.runBar select,
+.runBar input,
+.approvalControl select,
+.button,
+.iconButton {
+  border-radius: var(--radius-control);
+}
+
+.button,
+.iconButton {
+  transform: translate3d(0, 0, 0);
+  transition: transform 220ms var(--ease-spring);
+}
+
+.button:active:not(:disabled),
+.iconButton:active:not(:disabled) {
+  transform: translate3d(0, 1px, 0);
+}
+
+.actionButton {
+  box-shadow: 0 0.5rem 1.5rem var(--accent-glow);
+}
+
+.recorder {
+  overflow: clip;
+  border-color: var(--simpul-line);
+  border-radius: var(--radius-surface);
+  box-shadow: var(--shadow-ambient), inset 0 1px 0 var(--inner-highlight);
+}
+
+.reviewPanel,
+.networkPanel,
+.evidenceRail,
+.eventInspector,
+.decisionPanel {
+  background: var(--simpul-surface);
+}
+
+.reviewStages button[aria-current='step'] {
+  box-shadow: inset 2px 0 0 var(--simpul-action);
+}
+
+.evidenceRow,
+.eventTrack button,
+.reviewStages button,
+.recorderNav a {
+  transition: transform 220ms var(--ease-spring);
+}
+
+.evidenceRow:active,
+.eventTrack button:active,
+.reviewStages button:active {
+  transform: translate3d(0, 1px, 0);
+}
+
+.schemaDetails pre {
+  border-radius: var(--radius-control);
 }
 
 @media (prefers-reduced-motion: reduce) {

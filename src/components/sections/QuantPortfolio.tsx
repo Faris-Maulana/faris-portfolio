@@ -24,7 +24,7 @@ export function QuantPortfolio() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-line">
+        <div className="research-ledger panel">
           {QUANT_CASE_STUDIES.map((study, index) => (
             <Reveal key={study.title} delay={index * 45}>
               <details className="group border-b border-line" name="research-studies">

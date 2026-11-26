@@ -74,9 +74,27 @@ test('every case study preserves narrow-screen reachability and wide-screen layo
   }
 
   await page.setViewportSize({ width: 1920, height: 1080 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/work/rag-eval')
-  await expect(page.getByRole('navigation', { name: 'On this page', exact: true })).toBeVisible()
+  const stickyNavigation = page.getByRole('navigation', { name: 'On this page', exact: true })
+  await expect(stickyNavigation).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), 'case overflow at 1920px').toBe(true)
+  const stickyContract = await stickyNavigation.evaluate(node => {
+    const ancestors = []
+    let ancestor = node.parentElement
+    while (ancestor) {
+      const style = getComputedStyle(ancestor)
+      if (['hidden', 'auto', 'scroll'].includes(style.overflowX) || ['hidden', 'auto', 'scroll'].includes(style.overflowY)) {
+        ancestors.push(`${ancestor.tagName}.${ancestor.className}`)
+      }
+      ancestor = ancestor.parentElement
+    }
+    return { ancestors, position: getComputedStyle(node).position }
+  })
+  expect(stickyContract.position).toBe('sticky')
+  expect(stickyContract.ancestors).toEqual([])
+  await page.evaluate(() => window.scrollTo({ top: 1000, behavior: 'instant' }))
+  await expect.poll(() => stickyNavigation.evaluate(node => Math.round(node.getBoundingClientRect().top))).toBe(92)
 })
 
 test('contact prompts frame context, constraints and the decision without changing the form contract', async ({ page }) => {

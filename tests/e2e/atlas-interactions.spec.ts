@@ -22,6 +22,9 @@ for (const width of [320, 375, 1440]) {
     for (const button of await controls.getByRole('button').all()) {
       expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44)
     }
+    const expandBox = await atlas.getByRole('button', { name: 'Expand infrastructure map', exact: true }).boundingBox()
+    expect(expandBox?.width).toBeGreaterThanOrEqual(44)
+    expect(expandBox?.height).toBeGreaterThanOrEqual(44)
   })
 }
 
