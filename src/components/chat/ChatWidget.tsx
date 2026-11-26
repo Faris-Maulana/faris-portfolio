@@ -2,30 +2,51 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   ArrowDown, ArrowRight, ArrowUp, ArrowUpRight, Bot, Braces, Check, Copy, Database,
-  Download, FlaskConical, Maximize2, Minimize2, ShieldCheck, Square, Trash2, User, X,
+  Download, FlaskConical, Maximize2, Minimize2, RotateCcw, ShieldCheck, Square, Trash2, User, X,
 } from 'lucide-react'
+import { ChatMarkdown } from '@/components/chat/ChatMarkdown'
 import { useChatSession } from '@/hooks/useChatSession'
-import { formatTranscriptMarkdown, getFollowUpQuestions } from '@/lib/chat-transcript'
+import { MAX_CHAT_INPUT_CHARS } from '@/lib/chat-schema'
+import { getStarterQuestions, type ChatStarterIcon } from '@/lib/chat-prompts'
+import { formatTranscriptMarkdown, getFollowUpQuestions, stripGeneratedRolePrefix } from '@/lib/chat-transcript'
 import { keepDialogFocus } from '@/lib/dialog-focus'
 import { scrollContainerToBottom } from '@/lib/scroll'
 import { trackPortfolioEvent } from '@/lib/analytics'
 
-const STARTERS = [
-  { Icon: Database, label: 'Query controls', question: 'How is generated SQL validated before execution?' },
-  { Icon: Braces, label: 'System maturity', question: 'Which projects are still in development?' },
-  { Icon: FlaskConical, label: 'Evaluation', question: 'How is RAG quality evaluated?' },
-  { Icon: ShieldCheck, label: 'Leadership', question: 'What does Faris own as an AI engineering lead?' },
-] as const
-
+const STARTER_ICONS: Record<ChatStarterIcon, typeof Database> = {
+  architecture: Braces,
+  controls: Database,
+  evaluation: FlaskConical,
+  leadership: ShieldCheck,
+  maturity: ShieldCheck,
+}
 const TIME_FORMAT = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
+const THINKING_COPY = {
+  idle: 'Reading public project context',
+  searching: 'Searching public portfolio records…',
+  verifying: 'Verifying evidence boundaries…',
+  composing: 'Composing response…',
+  streaming: 'Receiving response…',
+} as const
+
+function sourceKind(href: string): string {
+  if (href.startsWith('/work/')) return 'CASE STUDY / PUBLIC RECORD'
+  if (href === '/simpul') return 'INTERACTIVE / SYNTHESIZED'
+  if (href.startsWith('/#')) return 'PORTFOLIO / PUBLIC RECORD'
+  if (href.includes('github.com')) return 'REPOSITORY / INSPECTABLE'
+  return 'PUBLIC DEMO / ARTIFACT'
+}
 
 export function ChatWidget() {
+  const pathname = usePathname()
   const {
     isOpen, openChat, beginClose, closeChat, messages, input, setInput, isLoading, sendMessage,
-    hasNewReply, availability, clearHistory, cancelRequest,
-  } = useChatSession()
+    hasNewReply, availability, clearHistory, cancelRequest, thinkingPhase, failedQuestion,
+    retryMessage, recallLastPrompt,
+  } = useChatSession(pathname)
   const dialog = useRef<HTMLDialogElement>(null)
   const closeButton = useRef<HTMLButtonElement>(null)
   const closeTimer = useRef(0)
@@ -34,13 +55,13 @@ export function ChatWidget() {
   const launcher = useRef<HTMLButtonElement>(null)
   const clearTrigger = useRef<HTMLButtonElement>(null)
   const pinnedToBottom = useRef(true)
+  const wasLoading = useRef(false)
   const [awayFromBottom, setAwayFromBottom] = useState(false)
   const [isExpanded, setExpanded] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
   const [notice, setNotice] = useState('')
   const [copiedMessage, setCopiedMessage] = useState('')
   const [replyAnnouncement, setReplyAnnouncement] = useState('')
-  const observedMessages = useRef(messages)
 
   const requestClose = useCallback(() => {
     const node = dialog.current
@@ -72,6 +93,30 @@ export function ChatWidget() {
     scrollContainerToBottom(log.current)
   }, [])
 
+  const openAssistant = useCallback(() => {
+    window.clearTimeout(closeTimer.current)
+    if (dialog.current) delete dialog.current.dataset.closing
+    if (closeButton.current) closeButton.current.disabled = false
+    openChat()
+  }, [openChat])
+
+  useEffect(() => {
+    const onShortcut = (event: KeyboardEvent) => {
+      const target = event.target
+      const editing = target instanceof HTMLElement && (
+        target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+      )
+      const commandK = (event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLocaleLowerCase() === 'k'
+      const slash = event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey && !editing
+      if (!commandK && !slash) return
+      event.preventDefault()
+      if (isOpen) inputRef.current?.focus()
+      else openAssistant()
+    }
+    document.addEventListener('keydown', onShortcut)
+    return () => document.removeEventListener('keydown', onShortcut)
+  }, [isOpen, openAssistant])
+
   useEffect(() => {
     const node = dialog.current
     if (!isOpen || !node) return
@@ -99,6 +144,19 @@ export function ChatWidget() {
   }, [isOpen])
 
   useEffect(() => {
+    const node = inputRef.current
+    if (!node || !isOpen) return
+    const computed = window.getComputedStyle(node)
+    const lineHeight = Number.parseFloat(computed.lineHeight) || 24
+    const verticalPadding = Number.parseFloat(computed.paddingTop) + Number.parseFloat(computed.paddingBottom)
+    const maxHeight = lineHeight * 5 + verticalPadding
+    node.style.height = 'auto'
+    const nextHeight = Math.min(Math.max(node.scrollHeight, lineHeight + verticalPadding), maxHeight)
+    node.style.height = `${nextHeight}px`
+    node.style.overflowY = node.scrollHeight > maxHeight ? 'auto' : 'hidden'
+  }, [input, isOpen])
+
+  useEffect(() => {
     if (!isOpen) return
     const latestMessage = messages.at(-1)
     if (!latestMessage?.ts) {
@@ -106,18 +164,17 @@ export function ChatWidget() {
       return () => cancelAnimationFrame(frame)
     }
     // Always reveal the reader's own message. Follow replies only at the live edge.
-    if (latestMessage.role === 'user') {
-      pinnedToBottom.current = true
-    } else if (!pinnedToBottom.current) {
-      const frame = requestAnimationFrame(() => setAwayFromBottom(true))
-      return () => cancelAnimationFrame(frame)
-    }
+    if (latestMessage.role === 'user') pinnedToBottom.current = true
     const frame = requestAnimationFrame(() => {
+      if (latestMessage.role === 'assistant' && !pinnedToBottom.current) {
+        setAwayFromBottom(true)
+        return
+      }
       setAwayFromBottom(false)
       scrollContainerToBottom(log.current)
     })
     return () => cancelAnimationFrame(frame)
-  }, [messages, isOpen])
+  }, [messages, isLoading, isOpen])
 
   useEffect(() => {
     if (!copiedMessage) return
@@ -126,17 +183,23 @@ export function ChatWidget() {
   }, [copiedMessage])
 
   useEffect(() => {
-    const previous = observedMessages.current
-    observedMessages.current = messages
+    const justCompleted = wasLoading.current && !isLoading
+    wasLoading.current = isLoading
     const latestMessage = messages.at(-1)
-    if (!isOpen || messages.length <= previous.length || latestMessage?.role !== 'assistant' || !latestMessage.ts) return
+    if (!justCompleted || !isOpen || latestMessage?.role !== 'assistant' || !latestMessage.content) return
     setReplyAnnouncement(`ARIA replied: ${latestMessage.content}`)
-  }, [messages, isOpen])
+  }, [messages, isLoading, isOpen])
 
+  const displayMessages = messages.filter(message => message.ts)
   const latest = messages.at(-1)
-  const hasConversation = messages.some(message => message.ts)
+  const hasConversation = displayMessages.length > 0
   const lastQuestion = messages.filter(message => message.role === 'user').at(-1)?.content ?? ''
-  const followUps = latest?.role === 'assistant' && availability === 'online' ? getFollowUpQuestions(lastQuestion) : []
+  const followUps = latest?.role === 'assistant' && availability === 'online' && !failedQuestion
+    ? getFollowUpQuestions(lastQuestion, latest.sources)
+    : []
+  const starters = getStarterQuestions(pathname)
+  const charactersRemaining = MAX_CHAT_INPUT_CHARS - input.length
+  const activeStreamTurn = isLoading && latest?.role === 'assistant' && Boolean(latest.content)
 
   const submitQuestion = (question: string) => {
     setConfirmClear(false)
@@ -145,7 +208,7 @@ export function ChatWidget() {
 
   const copyResponse = async (content: string, timestamp: string) => {
     try {
-      await navigator.clipboard.writeText(content)
+      await navigator.clipboard.writeText(stripGeneratedRolePrefix(content, 'assistant'))
       setCopiedMessage(timestamp)
       setNotice('Response copied to clipboard.')
     } catch {
@@ -166,13 +229,6 @@ export function ChatWidget() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
     setNotice('Markdown download started.')
   }
-
-  const openAssistant = useCallback(() => {
-    window.clearTimeout(closeTimer.current)
-    if (dialog.current) delete dialog.current.dataset.closing
-    if (closeButton.current) closeButton.current.disabled = false
-    openChat()
-  }, [openChat])
 
   const stopResponse = () => {
     cancelRequest()
@@ -255,58 +311,82 @@ export function ChatWidget() {
                   </div>
                   <div className="chat-starters" aria-label="Suggested questions">
                     <p className="chat-section-label">Start with a useful question</p>
-                    {STARTERS.map(({ Icon, label, question }) => (
-                      <button key={question} type="button" disabled={isLoading} onClick={() => submitQuestion(question)}>
-                        <span className="chat-starter-icon"><Icon size={16} aria-hidden /></span>
-                        <span><span className="chat-starter-label">{label}</span><span className="chat-starter-question">{question}</span></span>
-                        <ArrowRight className="chat-starter-arrow" size={16} aria-hidden />
-                      </button>
-                    ))}
+                    {starters.map(({ icon, label, question }) => {
+                      const Icon = STARTER_ICONS[icon]
+                      return (
+                        <button key={question} type="button" disabled={isLoading} onClick={() => submitQuestion(question)}>
+                          <span className="chat-starter-icon"><Icon size={16} aria-hidden /></span>
+                          <span><span className="chat-starter-label">{label}</span><span className="chat-starter-question">{question}</span></span>
+                          <ArrowRight className="chat-starter-arrow" size={16} aria-hidden />
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               ) : null}
 
               <div className="chat-messages">
-                {messages.filter(message => message.ts).map((message, index) => (
+                {displayMessages.map((message, index) => (
                   <article key={`${message.ts}-${index}`} className={`chat-turn ${message.role === 'user' ? 'chat-turn-user' : ''}`}>
                     <div className="chat-turn-meta">
                       <span className={`chat-avatar ${message.role === 'user' ? 'chat-avatar-user' : ''}`} aria-hidden>{message.role === 'user' ? <User size={12} /> : <Bot size={12} />}</span>
                       <span>{message.role === 'user' ? 'You' : 'ARIA'}</span>
                       <time dateTime={message.ts}>{TIME_FORMAT.format(new Date(message.ts))}</time>
                     </div>
-                    <div className={`chat-message ${message.role === 'user' ? 'chat-message-user' : ''}`}>
-                      <span className="sr-only">{message.role === 'user' ? 'You: ' : 'ARIA: '}</span>{message.content}
+                    <div className={`chat-message ${message.role === 'user' ? 'chat-message-user' : 'chat-message-assistant'}`}>
+                      <span className="sr-only">{message.role === 'user' ? 'You: ' : 'ARIA: '}</span>
+                      {message.role === 'assistant' ? <ChatMarkdown content={message.content} /> : message.content}
                     </div>
+                    {activeStreamTurn && index === displayMessages.length - 1 ? (
+                      <p className="chat-stream-status" data-testid="chat-loading">
+                        <span className="chat-signal-pulse" aria-hidden><i /><i /><i /></span>
+                        {THINKING_COPY.streaming}
+                      </p>
+                    ) : null}
+                    {message.role === 'assistant' && message.reasoning ? (
+                      <details className="chat-reasoning">
+                        <summary>Reasoning trace</summary>
+                        <p className="chat-reasoning-note">Provider-returned reasoning, not verified evidence or hidden instructions.</p>
+                        <div className="chat-reasoning-body"><ChatMarkdown content={message.reasoning} /></div>
+                      </details>
+                    ) : null}
                     {message.role === 'assistant' && message.sources?.length ? (
                       <nav className="chat-sources" aria-label="Related public records">
                         <span>Inspect the public record</span>
                         <ul>
                           {message.sources.map(source => (
                             <li key={source.href}>
+                              <span className="chat-source-meta">{sourceKind(source.href)}</span>
                               {source.href.startsWith('/') ? (
-                                <Link href={source.href}>{source.title}<ArrowUpRight size={12} aria-hidden /></Link>
+                                <Link href={source.href} onClick={requestClose}><span>{source.title}</span><ArrowUpRight size={13} aria-hidden /></Link>
                               ) : (
-                                <a href={source.href} target="_blank" rel="noopener noreferrer">{source.title}<span className="sr-only"> (opens in a new tab)</span><ArrowUpRight size={12} aria-hidden /></a>
+                                <a href={source.href} target="_blank" rel="noopener noreferrer"><span>{source.title}</span><span className="sr-only"> (opens in a new tab)</span><ArrowUpRight size={13} aria-hidden /></a>
                               )}
                             </li>
                           ))}
                         </ul>
                       </nav>
                     ) : null}
-                    {message.role === 'assistant' ? (
+                    {message.role === 'assistant' && !(isLoading && index === displayMessages.length - 1) ? (
                       <div className="chat-message-actions">
                         <button type="button" onClick={() => void copyResponse(message.content, message.ts)} aria-label={`Copy response from ${TIME_FORMAT.format(new Date(message.ts))}`}>
                           {copiedMessage === message.ts ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
                           {copiedMessage === message.ts ? 'Copied' : 'Copy response'}
                         </button>
+                        {failedQuestion && index === displayMessages.length - 1 ? (
+                          <button type="button" className="chat-retry" onClick={retryMessage} aria-label="Retry response"><RotateCcw size={13} aria-hidden />Retry</button>
+                        ) : null}
                       </div>
                     ) : null}
                   </article>
                 ))}
-                {isLoading ? (
-                  <div className="chat-turn" data-testid="chat-loading">
-                    <div className="chat-turn-meta"><span className="chat-avatar" aria-hidden><Bot size={12} /></span><span>ARIA</span><span>Working</span></div>
-                    <div className="chat-thinking"><span className="chat-thinking-dots" aria-hidden><i /><i /><i /></span><span>Reading public project context</span></div>
+                {isLoading && !activeStreamTurn ? (
+                  <div className="chat-turn chat-thinking-turn" data-testid="chat-loading" data-stage={thinkingPhase}>
+                    <div className="chat-turn-meta"><span className="chat-avatar" aria-hidden><Bot size={12} /></span><span>ARIA</span><span>Thinking</span></div>
+                    <div className="chat-thinking">
+                      <span className="chat-signal-pulse" aria-hidden><i /><i /><i /></span>
+                      <span>{THINKING_COPY[thinkingPhase]}</span>
+                    </div>
                   </div>
                 ) : null}
                 {followUps.length > 0 && !isLoading ? (
@@ -330,13 +410,22 @@ export function ChatWidget() {
                   id="chat-message"
                   className="chat-input"
                   rows={1}
-                  maxLength={500}
+                  maxLength={MAX_CHAT_INPUT_CHARS}
                   value={input}
                   onChange={event => setInput(event.target.value)}
                   placeholder="Ask about architecture, evaluation or leadership..."
                   aria-describedby="chat-composer-guidance"
                   onKeyDown={event => {
                     if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return
+                    if (event.key === 'ArrowUp' && !input && !isLoading) {
+                      event.preventDefault()
+                      recallLastPrompt()
+                      requestAnimationFrame(() => {
+                        const length = inputRef.current?.value.length ?? 0
+                        inputRef.current?.setSelectionRange(length, length)
+                      })
+                      return
+                    }
                     if (event.key !== 'Enter' || event.shiftKey || isLoading) return
                     event.preventDefault()
                     submitQuestion(input)
@@ -348,7 +437,10 @@ export function ChatWidget() {
                   <button key="send" type="button" className="chat-send" onClick={() => submitQuestion(input)} disabled={!input.trim()} aria-label="Send message" title="Send message"><ArrowUp size={18} aria-hidden /></button>
                 )}
               </div>
-              <div data-chat-hint id="chat-composer-guidance" className="chat-composer-meta"><span>Enter to send / Shift+Enter for a new line</span><span className="tnum">{input.length}/500</span></div>
+              <div data-chat-hint id="chat-composer-guidance" className="chat-composer-meta">
+                <span>Enter to send / Shift+Enter for a new line</span>
+                <span className={`tnum ${charactersRemaining <= 80 ? 'chat-counter-near-limit' : ''}`}>{charactersRemaining <= 80 ? `${charactersRemaining} characters remaining` : `${input.length}/${MAX_CHAT_INPUT_CHARS}`}</span>
+              </div>
             </div>
             <div className="chat-footer-row">
               <p>AI-generated. Verify important details.</p>

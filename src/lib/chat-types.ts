@@ -10,6 +10,8 @@ export interface ChatMessage {
   ts: string
   /** Static editorial evidence links returned by the API, not generated citations. */
   sources?: ChatSource[]
+  /** Optional provider-returned reasoning, never replayed to the provider. */
+  reasoning?: string
 }
 
 export type ChatAvailability = 'online' | 'unavailable' | 'rate_limited'
