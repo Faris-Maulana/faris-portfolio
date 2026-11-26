@@ -572,13 +572,13 @@ textarea.field { min-height: 9rem; resize: vertical; line-height: 1.55; }
 
 /* Composited cartographic atmosphere */
 .ambient-field { --ambient-x: 0; --ambient-y: 0; position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.ambient-aura { position: absolute; top: 4%; right: -12%; width: min(58rem, 85vw); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, var(--accent-glow), transparent 64%); opacity: 0.8; transform: translate3d(var(--ambient-x), var(--ambient-y), 0); transition: transform 0.9s var(--ease-spring), opacity 0.5s; }
+.ambient-aura { position: absolute; top: 4svh; right: -12%; width: min(58rem, 85vw); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, var(--accent-glow), transparent 64%); opacity: 0.8; transform: translate3d(var(--ambient-x), var(--ambient-y), 0); transition: transform 0.9s var(--ease-spring), opacity 0.5s; }
 .ambient-route { position: absolute; width: 52vw; height: 1px; background: linear-gradient(90deg, transparent, var(--color-line-3), transparent); opacity: 0.55; transform-origin: left; }
-.ambient-route-a { top: 28%; left: 42%; transform: rotate(-13deg); }
-.ambient-route-b { top: 72%; left: 12%; transform: rotate(9deg); }
+.ambient-route-a { top: 28svh; left: 42%; transform: rotate(-13deg); }
+.ambient-route-b { top: 72svh; left: 12%; transform: rotate(9deg); }
 .ambient-packet { position: absolute; width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--color-signal); box-shadow: 0 0 0 0.35rem var(--color-signal-glow); opacity: 0; }
-.ambient-packet-a { top: 27.4%; left: 46%; }
-.ambient-packet-b { top: 71%; left: 16%; background: var(--color-data); }
+.ambient-packet-a { top: 27.4svh; left: 46%; }
+.ambient-packet-b { top: 71svh; left: 16%; background: var(--color-data); }
 @keyframes packet-a { 0% { opacity: 0; transform: translate3d(0, 0, 0); } 16%, 70% { opacity: 0.9; } 100% { opacity: 0; transform: translate3d(38vw, -8.5vw, 0); } }
 @keyframes packet-b { 0% { opacity: 0; transform: translate3d(0, 0, 0); } 16%, 70% { opacity: 0.8; } 100% { opacity: 0; transform: translate3d(36vw, 5.5vw, 0); } }
 @keyframes aura-breathe { from { opacity: 0.56; transform: translate3d(-1.5rem, 0.5rem, 0) scale(0.96); } to { opacity: 0.9; transform: translate3d(1.5rem, -0.5rem, 0) scale(1.04); } }

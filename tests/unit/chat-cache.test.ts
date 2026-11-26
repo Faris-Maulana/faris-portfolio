@@ -7,7 +7,7 @@ import {
   writeChatResponseCache,
   type CachedChatResponse,
 } from '@/lib/chat-cache'
-import type { ChatRequestMessage } from '@/lib/chat-schema'
+import { MAX_CHAT_MESSAGE_CHARS, type ChatRequestMessage } from '@/lib/chat-schema'
 
 function messages(content: string): ChatRequestMessage[] {
   return [{ role: 'user', content }]
@@ -98,6 +98,11 @@ describe('chat response cache lifecycle', () => {
     expect(readChatResponseCache('bounded-key-0', 20_001)).toBeNull()
     expect(readChatResponseCache('bounded-key-1', 20_001)?.reply).toBe('Answer 1')
     expect(readChatResponseCache('bounded-key-100', 20_001)?.reply).toBe('Answer 100')
+  })
+
+  it('rejects replies that exceed the shared transcript limit', () => {
+    writeChatResponseCache('oversize-key', cachedResponse('x'.repeat(MAX_CHAT_MESSAGE_CHARS + 1)), 25_000)
+    expect(readChatResponseCache('oversize-key', 25_001)).toBeNull()
   })
 
   it('returns independent response objects instead of exposing stored top-level state', () => {

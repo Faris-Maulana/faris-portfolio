@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { buildProviderMessages } from '@/lib/chat-context'
-import type { ChatRequestMessage } from '@/lib/chat-schema'
+import { boundedRetryAfter, MAX_CHAT_MESSAGE_CHARS, type ChatRequestMessage } from '@/lib/chat-schema'
 import { SITE_URL } from '@/lib/site'
 
 const DEFAULT_MODELS = [
@@ -12,30 +12,43 @@ const MAX_MODEL_ATTEMPTS = 3
 const OPENROUTER_TIMEOUT_MS = 10_000
 
 const messageSchema = z.object({
-  content: z.string().max(8_000).nullable().optional(),
+  content: z.string().max(MAX_CHAT_MESSAGE_CHARS).nullable().optional(),
   reasoning: z.string().max(16_000).nullable().optional(),
+})
+const providerErrorSchema = z.object({
+  code: z.union([z.number(), z.string().max(100)]).optional(),
+  message: z.string().max(1_000).optional(),
 })
 const completionSchema = z.object({
   model: z.string().max(200).optional(),
-  choices: z.array(z.object({ message: messageSchema })).min(1).max(4),
+  choices: z.array(z.object({
+    message: messageSchema.optional(),
+    finish_reason: z.string().max(100).nullable().optional(),
+    error: providerErrorSchema.optional(),
+  })).min(1).max(4).optional(),
+  error: providerErrorSchema.optional(),
 })
 const streamChunkSchema = z.object({
   model: z.string().max(200).optional(),
-  choices: z.array(z.object({ delta: messageSchema })).max(4).optional(),
-  error: z.object({
-    code: z.union([z.number(), z.string().max(100)]).optional(),
-    message: z.string().max(1_000).optional(),
-  }).optional(),
+  choices: z.array(z.object({
+    delta: messageSchema,
+    finish_reason: z.string().max(100).nullable().optional(),
+    error: providerErrorSchema.optional(),
+  })).max(4).optional(),
+  error: providerErrorSchema.optional(),
 })
 
 export class ChatProviderStreamError extends Error {
   readonly status?: number
+  readonly retryAfter?: number
 
-  constructor(code?: number | string) {
+  constructor(code?: number | string, retryAfter?: number) {
     super('Provider stream failed')
     this.name = 'ChatProviderStreamError'
     const status = typeof code === 'string' ? Number(code) : code
     if (typeof status === 'number' && Number.isFinite(status)) this.status = status
+    const delay = boundedRetryAfter(retryAfter)
+    if (delay) this.retryAfter = delay
   }
 }
 
@@ -115,10 +128,10 @@ function sanitiseReasoning(raw: string): string | undefined {
 function parseRetryAfter(value: string | null): number | undefined {
   if (!value) return undefined
   const seconds = Number(value)
-  if (Number.isFinite(seconds)) return Math.max(1, Math.ceil(seconds))
+  if (Number.isFinite(seconds)) return boundedRetryAfter(seconds) || undefined
   const date = Date.parse(value)
   if (Number.isNaN(date)) return undefined
-  return Math.max(1, Math.ceil((date - Date.now()) / 1000))
+  return boundedRetryAfter((date - Date.now()) / 1000) || undefined
 }
 
 function providerBody(options: ChatCompletionOptions, model: string, stream: boolean) {
@@ -182,12 +195,25 @@ export async function completeChat(options: ChatCompletionOptions): Promise<Comp
     const parsed = completionSchema.safeParse(data)
     if (!parsed.success) continue
 
-    const reply = sanitiseReply(parsed.data.choices[0]?.message.content ?? '')
+    const choice = parsed.data.choices?.[0]
+    const providerError = parsed.data.error ?? choice?.error
+    if (providerError) {
+      const { status } = new ChatProviderStreamError(providerError.code)
+      if (status === 429) {
+        return { availability: 'rate_limited', retryAfter: parseRetryAfter(response.headers.get('retry-after')) }
+      }
+      if (status !== undefined && status >= 400 && status < 500 && status !== 404 && status !== 408) {
+        return { availability: 'unavailable' }
+      }
+      continue
+    }
+    if (!choice?.message || choice.finish_reason !== 'stop') continue
+    const reply = sanitiseReply(choice.message.content ?? '')
     if (reply) {
       return {
         availability: 'ok',
         reply,
-        reasoning: sanitiseReasoning(parsed.data.choices[0]?.message.reasoning ?? ''),
+        reasoning: sanitiseReasoning(choice.message.reasoning ?? ''),
         model: parsed.data.model ?? model,
         mode: 'model',
       }
@@ -250,14 +276,20 @@ export async function readChatCompletionStream(
 ): Promise<StreamSnapshot> {
   const { response } = stream
   let selectedModel: string | null = stream.model
+  const retryAfter = parseRetryAfter(response.headers.get('retry-after'))
 
   if (response.headers.get('content-type')?.includes('application/json')) {
     const parsed = completionSchema.safeParse(await response.json())
     if (!parsed.success) throw new Error('Invalid provider completion')
     selectedModel = parsed.data.model ?? selectedModel
+    const choice = parsed.data.choices?.[0]
+    const providerError = parsed.data.error ?? choice?.error
+    if (providerError) throw new ChatProviderStreamError(providerError.code, retryAfter)
+    if (choice?.finish_reason === 'length') throw new Error('Provider stopped at its token limit')
+    if (choice?.finish_reason !== 'stop' || !choice.message) throw new Error('Provider completed without a successful stop')
     const snapshot = {
-      reply: sanitiseReply(parsed.data.choices[0]?.message.content ?? ''),
-      reasoning: sanitiseReasoning(parsed.data.choices[0]?.message.reasoning ?? ''),
+      reply: sanitiseReply(choice.message.content ?? ''),
+      reasoning: sanitiseReasoning(choice.message.reasoning ?? ''),
       model: selectedModel,
     }
     if (!snapshot.reply) throw new Error('Empty provider completion')
@@ -272,12 +304,14 @@ export async function readChatCompletionStream(
   let rawReasoning = ''
   let lastReply = ''
   let lastReasoning = ''
+  let completed = false
 
   const publish = () => {
     if (rawReply.length > 32_000 || rawReasoning.length > 32_000) {
       throw new Error('Provider stream exceeded output bounds')
     }
     const reply = sanitiseReply(rawReply)
+    if (reply.length > MAX_CHAT_MESSAGE_CHARS) throw new Error('Provider reply exceeded output bounds')
     const reasoning = sanitiseReasoning(rawReasoning) ?? ''
     if (reply === lastReply && reasoning === lastReasoning) return
     lastReply = reply
@@ -288,7 +322,11 @@ export async function readChatCompletionStream(
   const consume = (line: string) => {
     if (!line.startsWith('data:')) return
     const payload = line.slice(5).trimStart()
-    if (!payload || payload === '[DONE]') return
+    if (!payload) return
+    if (payload === '[DONE]') {
+      completed = true
+      return
+    }
     let data: unknown
     try {
       data = JSON.parse(payload)
@@ -296,10 +334,16 @@ export async function readChatCompletionStream(
       return
     }
     const parsed = streamChunkSchema.safeParse(data)
-    if (!parsed.success) return
-    if (parsed.data.error) throw new ChatProviderStreamError(parsed.data.error.code)
+    if (!parsed.success) throw new Error('Invalid provider stream chunk')
     selectedModel = parsed.data.model ?? selectedModel
-    const delta = parsed.data.choices?.[0]?.delta
+    const choice = parsed.data.choices?.[0]
+    const providerError = parsed.data.error ?? choice?.error
+    if (providerError) throw new ChatProviderStreamError(providerError.code, retryAfter)
+    const finishReason = choice?.finish_reason
+    if (finishReason === 'length') throw new Error('Provider stopped at its token limit')
+    if (finishReason === 'error') throw new ChatProviderStreamError(undefined, retryAfter)
+    if (finishReason && finishReason !== 'stop') throw new Error(`Provider ended with ${finishReason}`)
+    const delta = choice?.delta
     if (!delta) return
     rawReply += delta.content ?? ''
     rawReasoning += delta.reasoning ?? ''
@@ -317,11 +361,14 @@ export async function readChatCompletionStream(
     }
     if (buffer) consume(buffer.replace(/\r$/, ''))
     publish()
+    const final = { reply: sanitiseReply(rawReply), reasoning: sanitiseReasoning(rawReasoning), model: selectedModel }
+    if (!final.reply) throw new Error('Provider stream ended without a response')
+    if (!completed) throw new Error('Provider stream ended before its completion marker')
+    return final
+  } catch (error) {
+    try { await reader.cancel(error) } catch { /* Best-effort cancellation must not mask the provider failure. */ }
+    throw error
   } finally {
     reader.releaseLock()
   }
-
-  const final = { reply: sanitiseReply(rawReply), reasoning: sanitiseReasoning(rawReasoning), model: selectedModel }
-  if (!final.reply) throw new Error('Provider stream ended without a response')
-  return final
 }

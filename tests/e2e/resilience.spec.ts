@@ -27,6 +27,31 @@ test.describe('with reduced motion', () => {
   })
 })
 
+test('the hydrating hero clock introduces no layout shift', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'LayoutShift PerformanceObserver is Chromium-only')
+  await page.setViewportSize({ width: 360, height: 800 })
+  await page.addInitScript(() => {
+    const shifts: Array<{ value: number; hadRecentInput: boolean }> = []
+    Object.assign(window, { heroLayoutShifts: shifts })
+    new PerformanceObserver(list => {
+      for (const entry of list.getEntries()) {
+        const shift = entry as PerformanceEntry & { value: number; hadRecentInput: boolean }
+        shifts.push({ value: shift.value, hadRecentInput: shift.hadRecentInput })
+      }
+    }).observe({ type: 'layout-shift', buffered: true })
+  })
+
+  await page.goto('/')
+  await page.evaluate(() => document.fonts.ready)
+  await expect(page.locator('.hero-copy .tnum')).toHaveText(/^\d{2}:\d{2}:\d{2}$/)
+  await page.waitForTimeout(1_100)
+
+  const shifts = await page.evaluate(() =>
+    (window as Window & { heroLayoutShifts?: Array<{ value: number; hadRecentInput: boolean }> }).heroLayoutShifts ?? [],
+  )
+  expect(shifts.filter(shift => !shift.hadRecentInput)).toEqual([])
+})
+
 test('desktop hero headline does not collide with the infrastructure atlas', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')

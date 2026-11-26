@@ -83,6 +83,7 @@ test('mobile menu closes with Escape and restores focus across responsive change
 
   const dialog = page.getByRole('dialog', { name: 'Site navigation', exact: true })
   await expect(dialog).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Close menu', exact: true })).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
   await expect(menuButton).toHaveAccessibleName('Open menu')
@@ -92,9 +93,35 @@ test('mobile menu closes with Escape and restores focus across responsive change
   await expect(dialog).toBeVisible()
   await page.setViewportSize({ width: 1440, height: 900 })
   await expect(dialog).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Close menu', exact: true })).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
   await expect(page.getByRole('navigation', { name: 'Primary navigation', exact: true }).getByRole('link', { name: 'Work', exact: true })).toBeFocused()
+})
+
+test('leadership fragment and mobile navigation emit no autofocus or unused-preload warnings', async ({ page }) => {
+  const warnings: string[] = []
+  page.on('console', message => {
+    if (/auto\s*focus|autofocus|preloaded using link preload but not used|preload.*unused|unused.*preload/i.test(message.text())) {
+      warnings.push(message.text())
+    }
+  })
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/#leadership')
+  await expect(page.locator('#leadership')).toBeVisible()
+  await expect(page.locator('#leadership')).toBeInViewport()
+
+  const menuButton = page.getByRole('button', { name: 'Open menu', exact: true })
+  await menuButton.click()
+  const dialog = page.getByRole('dialog', { name: 'Site navigation', exact: true })
+  await expect(dialog.getByRole('button', { name: 'Close menu', exact: true })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+
+  // Chromium reports unused preloads a few seconds after the window load event.
+  await page.waitForTimeout(5_000)
+  expect(warnings).toEqual([])
 })
 
 for (const slug of caseStudies) {

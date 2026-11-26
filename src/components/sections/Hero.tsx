@@ -40,7 +40,7 @@ export function Hero() {
             <div className="hero-copy-footer">
               <p className="hero-lead t-lead">Governed data, evaluated models and explicit execution controls for infrastructure that cannot afford demo-only AI.</p>
               <div className="hero-cta flex flex-wrap gap-3">
-                <Link href="/simpul" className="btn btn-primary">Run SIMPUL reference <Play size={16} aria-hidden /></Link>
+                <Link href="/simpul" prefetch={false} className="btn btn-primary">Run SIMPUL reference <Play size={16} aria-hidden /></Link>
                 <TrackedLink href={SITE_CONFIG.cvPath} download event={{ name: 'cv_download', document: 'executive', placement: 'hero' }} className="btn btn-ghost">
                   <Download size={17} aria-hidden /> Executive CV
                 </TrackedLink>

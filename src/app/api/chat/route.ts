@@ -35,7 +35,7 @@ type ChatStreamEvent =
   | { type: 'meta'; availability: 'ok'; sources: ChatSource[]; model: string | null; mode: 'model' | 'deterministic' }
   | { type: 'delta'; content: string; reasoning?: string }
   | ({ type: 'done'; availability: 'ok' } & CachedChatResponse)
-  | { type: 'error'; availability: 'unavailable' | 'rate_limited'; reply: string }
+  | { type: 'error'; availability: 'unavailable' | 'rate_limited'; reply: string; retryAfter?: number }
 
 function visitorName(messages: ChatRequestMessage[]): string | undefined {
   const userText = messages
@@ -168,12 +168,13 @@ function providerStreamResponse({
         } catch (streamError) {
           if (req.signal.aborted) return
           if (streamError instanceof ChatProviderStreamError) {
-            const { status } = streamError
+            const { status, retryAfter } = streamError
             if (status === 429) {
               send(controller, {
                 type: 'error',
                 availability: 'rate_limited',
                 reply: 'The AI service is busy right now. Please try again shortly.',
+                retryAfter,
               })
               return
             }
@@ -192,6 +193,7 @@ function providerStreamResponse({
               reply: recovery.availability === 'rate_limited'
                 ? 'The AI service is busy right now. Please try again shortly.'
                 : UNAVAILABLE_REPLY,
+              retryAfter: recovery.availability === 'rate_limited' ? recovery.retryAfter : undefined,
             })
             return
           }
@@ -290,6 +292,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const controlledReply = controlledPortfolioReply(messages)
+    if (req.headers.get('x-aria-deterministic-only') === '1' && !controlledReply) {
+      return NextResponse.json(
+        { reply: UNAVAILABLE_REPLY, availability: 'unavailable' },
+        { status: 503, headers: telemetry(startedAt, 'MISS') },
+      )
+    }
     if (stream) {
       if (controlledReply) {
         await notifyLatestEmail({ req, messages, sessionId, deadline })

@@ -45,7 +45,7 @@ export function ChatWidget() {
   const {
     isOpen, openChat, beginClose, closeChat, messages, input, setInput, isLoading, sendMessage,
     hasNewReply, availability, clearHistory, cancelRequest, thinkingPhase, failedQuestion,
-    retryMessage, recallLastPrompt,
+    retryMessage, retryAfterSeconds, recallLastPrompt,
   } = useChatSession(pathname)
   const dialog = useRef<HTMLDialogElement>(null)
   const closeButton = useRef<HTMLButtonElement>(null)
@@ -314,7 +314,7 @@ export function ChatWidget() {
                     {starters.map(({ icon, label, question }) => {
                       const Icon = STARTER_ICONS[icon]
                       return (
-                        <button key={question} type="button" disabled={isLoading} onClick={() => submitQuestion(question)}>
+                        <button key={question} type="button" disabled={isLoading || retryAfterSeconds > 0} onClick={() => submitQuestion(question)}>
                           <span className="chat-starter-icon"><Icon size={16} aria-hidden /></span>
                           <span><span className="chat-starter-label">{label}</span><span className="chat-starter-question">{question}</span></span>
                           <ArrowRight className="chat-starter-arrow" size={16} aria-hidden />
@@ -374,7 +374,7 @@ export function ChatWidget() {
                           {copiedMessage === message.ts ? 'Copied' : 'Copy response'}
                         </button>
                         {failedQuestion && index === displayMessages.length - 1 ? (
-                          <button type="button" className="chat-retry" onClick={retryMessage} aria-label="Retry response"><RotateCcw size={13} aria-hidden />Retry</button>
+                          <button type="button" className="chat-retry" onClick={retryMessage} disabled={retryAfterSeconds > 0} aria-label="Retry response" title={retryAfterSeconds > 0 ? `Retry available in ${retryAfterSeconds}s` : 'Retry response'}><RotateCcw size={13} aria-hidden />{retryAfterSeconds > 0 ? `Retry in ${retryAfterSeconds}s` : 'Retry'}</button>
                         ) : null}
                       </div>
                     ) : null}
@@ -401,7 +401,7 @@ export function ChatWidget() {
           </div>
 
           <footer data-chat-footer className="chat-footer">
-            {availability !== 'online' ? <p className={`chat-availability ${availability === 'rate_limited' ? 'text-cred' : 'text-threat'}`} role="alert">{availability === 'rate_limited' ? 'Request limit reached. Retry later or use direct contact.' : 'Model service unavailable. Your message is preserved; direct contact remains available.'}</p> : null}
+            {availability !== 'online' ? <p className={`chat-availability ${availability === 'rate_limited' ? 'text-cred' : 'text-threat'}`} role="alert">{availability === 'rate_limited' ? retryAfterSeconds > 0 ? `Request limit reached. Retry in ${retryAfterSeconds}s; no automatic retry.` : 'Request limit reached. Retry now or use direct contact.' : 'Model service unavailable. Your message is preserved; direct contact remains available.'}</p> : null}
             <div aria-busy={isLoading}>
               <label htmlFor="chat-message" className="sr-only">Message</label>
               <div className={`chat-input-shell ${isLoading ? 'is-loading' : ''}`}>
@@ -434,7 +434,7 @@ export function ChatWidget() {
                 {isLoading ? (
                   <button key="stop" type="button" className="chat-send chat-stop" onClick={stopResponse} aria-label="Stop generating response" title="Stop response"><Square size={13} aria-hidden /></button>
                 ) : (
-                  <button key="send" type="button" className="chat-send" onClick={() => submitQuestion(input)} disabled={!input.trim()} aria-label="Send message" title="Send message"><ArrowUp size={18} aria-hidden /></button>
+                  <button key="send" type="button" className="chat-send" onClick={() => submitQuestion(input)} disabled={!input.trim() || retryAfterSeconds > 0} aria-label="Send message" title="Send message"><ArrowUp size={18} aria-hidden /></button>
                 )}
               </div>
               <div data-chat-hint id="chat-composer-guidance" className="chat-composer-meta">

@@ -1,10 +1,20 @@
 import { z } from 'zod'
 
+// Avoid Zod's Function constructor probe in the browser. Even when caught, it
+// violates an enforced CSP that intentionally omits 'unsafe-eval'.
+z.config({ jitless: true })
+
 export const MAX_CHAT_MESSAGES = 30
 export const MAX_CHAT_MESSAGE_CHARS = 4000
 export const MAX_CHAT_TOTAL_CHARS = 24_000
 export const MAX_CHAT_SESSION_ID_CHARS = 100
 export const MAX_CHAT_INPUT_CHARS = 800
+export const MAX_CHAT_RETRY_AFTER_SECONDS = 300
+
+export function boundedRetryAfter(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value) || value <= 0) return 0
+  return Math.min(MAX_CHAT_RETRY_AFTER_SECONDS, Math.max(1, Math.ceil(value)))
+}
 
 const activeRouteSchema = z.string().trim().max(120).regex(
   /^\/(?:work\/[a-z0-9-]+|simpul)?\/?$/,
