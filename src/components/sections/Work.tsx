@@ -64,7 +64,7 @@ export function Work({ repos }: { repos: ArchiveRepo[] }) {
                   <div><h4 className="t-meta mb-3 text-signal">Evidence boundary</h4><p>{flagship.outcome}</p></div>
                 </div>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link href="/simpul" className="btn btn-primary">Open proving ground <Play size={16} aria-hidden /></Link>
+                  <Link href="/simpul" prefetch={false} className="btn btn-primary">Open proving ground <Play size={16} aria-hidden /></Link>
                   <Link href={`/work/${flagship.id}`} className="btn btn-ghost">Read case study <ArrowUpRight size={17} aria-hidden /></Link>
                 </div>
               </div>

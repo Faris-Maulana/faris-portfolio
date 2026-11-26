@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatAvailability, ChatMessage, ChatSource } from '@/lib/chat-types'
 import { CHAT_MAX_MESSAGES, retainChatMessages } from '@/lib/chat-retention'
-import { MAX_CHAT_INPUT_CHARS } from '@/lib/chat-schema'
+import { boundedRetryAfter, MAX_CHAT_INPUT_CHARS, MAX_CHAT_MESSAGE_CHARS } from '@/lib/chat-schema'
 import { trackPortfolioEvent } from '@/lib/analytics'
 import { clearSessionId, getOrCreateSessionId } from '@/lib/utils'
 
 const MESSAGES_KEY = 'aria_chat_messages_v2'
+const DEFAULT_RATE_LIMIT_RETRY_SECONDS = 5
 
 const INTRO: ChatMessage = {
   role: 'assistant',
@@ -55,7 +56,26 @@ function restoreSources(value: unknown): ChatSource[] | undefined {
 }
 
 function restoreReasoning(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value.slice(0, 4000) : undefined
+  return typeof value === 'string' && value.trim() ? value.slice(0, MAX_CHAT_MESSAGE_CHARS) : undefined
+}
+
+function validReply(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() && value.length <= MAX_CHAT_MESSAGE_CHARS ? value : null
+}
+
+function retryDelaySeconds(response: Response): number {
+  const value = response.headers.get('Retry-After')
+  if (!value) return 0
+  const seconds = Number(value)
+  if (Number.isFinite(seconds)) return boundedRetryAfter(seconds)
+  const date = Date.parse(value)
+  return Number.isNaN(date) ? 0 : boundedRetryAfter((date - Date.now()) / 1000)
+}
+
+function rateLimitedReply(cooldown: number): string {
+  return cooldown > 0
+    ? `Request limit reached. Retry in ${cooldown} second${cooldown === 1 ? '' : 's'}; no automatic retry will be sent.`
+    : 'Request limit reached. Please retry later or use direct contact.'
 }
 
 function discardStoredMessages() {
@@ -74,7 +94,7 @@ function restoreMessages(): ChatMessage[] {
     }
     const normalized = parsed.filter(isMessage).map(item => ({
       role: item.role,
-      content: item.content.slice(0, 4000),
+      content: item.content.slice(0, MAX_CHAT_MESSAGE_CHARS),
       ts: item.ts,
       sources: item.role === 'assistant' ? restoreSources(item.sources) : undefined,
       reasoning: item.role === 'assistant' ? restoreReasoning(item.reasoning) : undefined,
@@ -118,6 +138,7 @@ export function useChatSession(activeRoute = '/') {
   const [availability, setAvailability] = useState<ChatAvailability>('online')
   const [thinkingPhase, setThinkingPhase] = useState<ChatThinkingPhase>('idle')
   const [failedQuestion, setFailedQuestion] = useState<string | null>(null)
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0)
   const generation = useRef(0)
   const openRef = useRef(false)
   const pending = useRef<AbortController | null>(null)
@@ -131,6 +152,11 @@ export function useChatSession(activeRoute = '/') {
   }, [])
 
   useEffect(() => { openRef.current = isOpen }, [isOpen])
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return
+    const timer = window.setTimeout(() => setRetryAfterSeconds(0), retryAfterSeconds * 1000)
+    return () => window.clearTimeout(timer)
+  }, [retryAfterSeconds])
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       setMessages(current => current.length === 1 && current[0] === INTRO ? restoreMessages() : current)
@@ -168,6 +194,7 @@ export function useChatSession(activeRoute = '/') {
     setLoading(false)
     setThinkingPhase('idle')
     setFailedQuestion(null)
+    setRetryAfterSeconds(0)
     setMessages([INTRO])
     setHasNewReply(false)
     clearSessionId()
@@ -176,7 +203,7 @@ export function useChatSession(activeRoute = '/') {
 
   const sendMessage = useCallback(async (content: string, retry = false) => {
     const trimmed = content.trim().slice(0, MAX_CHAT_INPUT_CHARS)
-    if (!trimmed || pending.current) return
+    if (!trimmed || pending.current || retryAfterSeconds > 0) return
 
     const requestGeneration = ++generation.current
     const history = retry ? messages.slice(0, Math.max(0, messages.length - 2)) : messages
@@ -213,6 +240,8 @@ export function useChatSession(activeRoute = '/') {
     let streamedReasoning: string | undefined
     let streamedSources: ChatSource[] | undefined
     let streamTs = ''
+    let streamReader: ReadableStreamDefaultReader<Uint8Array> | null = null
+    let cancelStream = false
 
     const complete = (
       nextAvailability: ChatAvailability,
@@ -223,7 +252,7 @@ export function useChatSession(activeRoute = '/') {
       if (generation.current !== requestGeneration) return
       const reply: ChatMessage = {
         role: 'assistant',
-        content: replyContent.slice(0, 4000),
+        content: replyContent,
         ts: streamTs || new Date().toISOString(),
         sources: nextAvailability === 'online' ? sources : undefined,
         reasoning: nextAvailability === 'online' ? reasoning : undefined,
@@ -265,11 +294,16 @@ export function useChatSession(activeRoute = '/') {
       if (!response.headers.get('content-type')?.includes('application/x-ndjson')) {
         const body = await response.json().catch(() => ({})) as ChatResponse
         if (generation.current !== requestGeneration) return
-        const nextAvailability = stateFrom(body)
+        const reply = validReply(body.reply)
+        const nextAvailability = response.ok && !reply ? 'unavailable' : stateFrom(body)
+        const cooldown = response.status === 429
+          ? retryDelaySeconds(response) || DEFAULT_RATE_LIMIT_RETRY_SECONDS
+          : 0
+        setRetryAfterSeconds(cooldown)
         const fallback = response.status === 429
-          ? 'The assistant is receiving too many requests. Please wait a moment or use the contact form.'
+          ? rateLimitedReply(cooldown)
           : 'The model is unavailable right now. Faris’s email and the direct contact form still work.'
-        const content = typeof body.reply === 'string' ? body.reply : fallback
+        const content = response.status === 429 ? fallback : reply ?? fallback
         complete(
           nextAvailability,
           content,
@@ -278,7 +312,8 @@ export function useChatSession(activeRoute = '/') {
         )
       } else {
         if (!response.body) throw new Error('Missing stream body')
-        const reader = response.body.getReader()
+        streamReader = response.body.getReader()
+        const reader = streamReader
         const decoder = new TextDecoder()
         let buffer = ''
         let finished = false
@@ -294,7 +329,8 @@ export function useChatSession(activeRoute = '/') {
           if (event.type === 'delta' && typeof event.content === 'string') {
             if (generation.current !== requestGeneration) return
             clearPhaseTimers()
-            streamedContent = event.content.slice(0, 4000)
+            if (event.content.length > MAX_CHAT_MESSAGE_CHARS) throw new Error('Completion delta exceeded output bounds')
+            streamedContent = event.content
             streamedReasoning = restoreReasoning(event.reasoning)
             if (!streamTs) streamTs = new Date().toISOString()
             setThinkingPhase('streaming')
@@ -310,15 +346,26 @@ export function useChatSession(activeRoute = '/') {
           }
           if (event.type === 'done') {
             finished = true
-            const content = typeof event.reply === 'string' ? event.reply : streamedContent
-            if (!content.trim()) throw new Error('Empty completion stream')
+            const content = validReply(event.reply === undefined ? streamedContent : event.reply)
+            if (!content) throw new Error('Invalid completion stream')
             complete('online', content, restoreSources(event.sources) ?? streamedSources, restoreReasoning(event.reasoning) ?? streamedReasoning)
             return
           }
           if (event.type === 'error') {
             finished = true
+            cancelStream = true
             const unavailable = event.availability === 'rate_limited' ? 'rate_limited' : 'unavailable'
-            fail(unavailable, typeof event.reply === 'string' ? event.reply : UNAVAILABLE_CLIENT_REPLY)
+            const cooldown = unavailable === 'rate_limited'
+              ? boundedRetryAfter(typeof event.retryAfter === 'number' ? event.retryAfter : undefined)
+                || DEFAULT_RATE_LIMIT_RETRY_SECONDS
+              : 0
+            setRetryAfterSeconds(cooldown)
+            fail(
+              unavailable,
+              unavailable === 'rate_limited'
+                ? rateLimitedReply(cooldown)
+                : validReply(event.reply) ?? UNAVAILABLE_CLIENT_REPLY,
+            )
           }
         }
 
@@ -334,9 +381,17 @@ export function useChatSession(activeRoute = '/') {
         if (!finished) throw new Error('Incomplete completion stream')
       }
     } catch {
+      cancelStream = true
+      controller.abort()
       if (generation.current !== requestGeneration) return
       fail('unavailable', 'The request was interrupted or timed out. Your message is preserved in this browser; please retry or use direct email.')
     } finally {
+      if (streamReader) {
+        if (cancelStream) {
+          try { await streamReader.cancel() } catch { /* Closing an already-aborted response is harmless. */ }
+        }
+        streamReader.releaseLock()
+      }
       window.clearTimeout(timeout)
       if (generation.current === requestGeneration) {
         clearPhaseTimers()
@@ -346,7 +401,7 @@ export function useChatSession(activeRoute = '/') {
         pendingDraft.current = null
       }
     }
-  }, [activeRoute, clearPhaseTimers, messages])
+  }, [activeRoute, clearPhaseTimers, messages, retryAfterSeconds])
 
   const cancelRequest = useCallback(() => {
     const draft = pendingDraft.current
@@ -377,7 +432,7 @@ export function useChatSession(activeRoute = '/') {
     isOpen, openChat, beginClose, closeChat,
     messages, input, setInput, isLoading, sendMessage,
     hasNewReply, availability, clearHistory, cancelRequest,
-    thinkingPhase, failedQuestion, retryMessage, recallLastPrompt,
+    thinkingPhase, failedQuestion, retryMessage, retryAfterSeconds, recallLastPrompt,
   }
 }
 

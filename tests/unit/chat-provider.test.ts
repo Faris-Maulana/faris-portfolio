@@ -3,6 +3,7 @@ import {
   readChatCompletionStream,
   type StreamSnapshot,
 } from '@/lib/chat-provider'
+import { MAX_CHAT_MESSAGE_CHARS } from '@/lib/chat-schema'
 
 function sseResponse(bytes: Uint8Array, cuts: number[] = []): Response {
   const boundaries = [...new Set([...cuts, bytes.length])]
@@ -105,5 +106,110 @@ describe('OpenRouter completion stream parsing', () => {
       onSnapshot,
     )).rejects.toMatchObject({ name: 'ChatProviderStreamError', status: 502 })
     expect(onSnapshot).toHaveBeenCalledWith(expect.objectContaining({ reply: 'A partial answer' }))
+  })
+
+  it('rejects a non-empty stream that ends before its completion marker', async () => {
+    const response = sseResponse(new TextEncoder().encode(deltaEvent({ content: 'Incomplete answer' })))
+    const onSnapshot = vi.fn<(snapshot: StreamSnapshot) => void>()
+
+    await expect(readChatCompletionStream(
+      { availability: 'ok', response, model: 'unit/test-model' },
+      onSnapshot,
+    )).rejects.toThrow('Provider stream ended before its completion marker')
+  })
+
+  it('rejects token-limited SSE output instead of accepting a partial answer', async () => {
+    const event = `data: ${JSON.stringify({
+      choices: [{ delta: { content: 'Incomplete answer' }, finish_reason: 'length' }],
+    })}`
+    const response = sseResponse(new TextEncoder().encode(`${event}\n\ndata: [DONE]\n\n`))
+
+    await expect(readChatCompletionStream(
+      { availability: 'ok', response, model: 'unit/test-model' },
+      () => {},
+    )).rejects.toThrow('Provider stopped at its token limit')
+  })
+
+  it('rejects token-limited whole-JSON output', async () => {
+    const response = Response.json({
+      choices: [{ message: { content: 'Incomplete answer' }, finish_reason: 'length' }],
+    })
+
+    await expect(readChatCompletionStream(
+      { availability: 'ok', response, model: 'unit/test-model' },
+      () => {},
+    )).rejects.toThrow('Provider stopped at its token limit')
+  })
+
+  it('accepts only an explicit successful stop for whole-JSON output', async () => {
+    const response = Response.json({
+      model: 'unit/selected-model',
+      choices: [{ message: { content: 'Complete answer' }, finish_reason: 'stop' }],
+    })
+
+    await expect(readChatCompletionStream(
+      { availability: 'ok', response, model: 'unit/test-model' },
+      () => {},
+    )).resolves.toMatchObject({ reply: 'Complete answer', model: 'unit/selected-model' })
+  })
+
+  it('maps a choice-level HTTP 200 error and preserves its retry delay', async () => {
+    const response = Response.json({
+      choices: [{
+        message: { content: 'Partial answer' },
+        finish_reason: 'error',
+        error: { code: 429, message: 'Rate limit exceeded' },
+      }],
+    }, { headers: { 'retry-after': '12' } })
+
+    await expect(readChatCompletionStream(
+      { availability: 'ok', response, model: 'unit/test-model' },
+      () => {},
+    )).rejects.toMatchObject({ name: 'ChatProviderStreamError', status: 429, retryAfter: 12 })
+  })
+
+  it('rejects abnormal terminal SSE reasons instead of accepting partial output', async () => {
+    for (const finishReason of ['content_filter', 'tool_calls', 'provider_specific_stop']) {
+      const event = `data: ${JSON.stringify({
+        choices: [{ delta: { content: 'Incomplete answer' }, finish_reason: finishReason }],
+      })}`
+      const response = sseResponse(new TextEncoder().encode(`${event}\n\ndata: [DONE]\n\n`))
+
+      await expect(readChatCompletionStream(
+        { availability: 'ok', response, model: 'unit/test-model' },
+        () => {},
+      )).rejects.toThrow()
+    }
+  })
+
+  it('cancels a failed provider body before releasing its reader', async () => {
+    const cancel = vi.fn()
+    const event = `data: ${JSON.stringify({
+      choices: [{ delta: { content: 'Filtered output' }, finish_reason: 'content_filter' }],
+    })}\n\n`
+    const response = new Response(new ReadableStream<Uint8Array>({
+      start(controller) { controller.enqueue(new TextEncoder().encode(event)) },
+      cancel,
+    }), { headers: { 'content-type': 'text/event-stream' } })
+
+    await expect(readChatCompletionStream(
+      { availability: 'ok', response, model: 'unit/test-model' },
+      () => {},
+    )).rejects.toThrow('Provider ended with content_filter')
+    expect(cancel).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects oversized output rather than silently clipping its final character', async () => {
+    const response = sseResponse(new TextEncoder().encode([
+      deltaEvent({ content: 'x'.repeat(MAX_CHAT_MESSAGE_CHARS + 1) }),
+      'data: [DONE]',
+    ].join('\n\n')))
+    const onSnapshot = vi.fn<(snapshot: StreamSnapshot) => void>()
+
+    await expect(readChatCompletionStream(
+      { availability: 'ok', response, model: 'unit/test-model' },
+      onSnapshot,
+    )).rejects.toThrow('Invalid provider stream chunk')
+    expect(onSnapshot).not.toHaveBeenCalled()
   })
 })

@@ -1,4 +1,4 @@
-import type { ChatRequestMessage } from '@/lib/chat-schema'
+import { MAX_CHAT_MESSAGE_CHARS, type ChatRequestMessage } from '@/lib/chat-schema'
 import { getChatSources } from '@/lib/chat-sources'
 import type { ChatSource } from '@/lib/chat-types'
 
@@ -67,7 +67,7 @@ export function writeChatResponseCache(
   response: CachedChatResponse,
   now = Date.now(),
 ): void {
-  if (!response.reply || response.reply.length > 8_000) return
+  if (!response.reply || response.reply.length > MAX_CHAT_MESSAGE_CHARS) return
   responseCache.delete(key)
   responseCache.set(key, { ...response, expiresAt: now + CHAT_RESPONSE_CACHE_TTL_MS })
   while (responseCache.size > MAX_CACHE_ENTRIES) {

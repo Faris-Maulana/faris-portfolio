@@ -102,6 +102,48 @@ test('chat discloses AI output and handles a failed message request', async ({ p
   await expect(sendButton).toBeEnabled()
 })
 
+test('a rate limit honors Retry-After without automatic retry storms', async ({ page }) => {
+  let requests = 0
+  await page.route('**/api/chat', async route => {
+    requests += 1
+    if (requests > 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ reply: 'Recovered after the cooldown.', availability: 'ok' }),
+      })
+      return
+    }
+    await route.fulfill({
+      status: 429,
+      headers: { 'Retry-After': '2' },
+      contentType: 'application/json',
+      body: JSON.stringify({ reply: 'Provider detail must not replace the cooldown.', availability: 'rate_limited' }),
+    })
+  })
+  await page.goto('/')
+  const { dialog } = await openAssistant(page)
+  const composer = dialog.getByRole('textbox', { name: 'Message', exact: true })
+  await composer.fill('What does Faris own as an engineering lead?')
+  await composer.press('Enter')
+
+  const retry = dialog.getByRole('button', { name: 'Retry response', exact: true })
+  await expect(retry).toBeDisabled()
+  await expect(dialog.getByRole('alert')).toHaveText('Request limit reached. Retry in 2s; no automatic retry.')
+  await expect(dialog.locator('.chat-message-assistant')).toContainText('Retry in 2 seconds; no automatic retry will be sent.')
+  await expect(dialog.locator('.chat-message-assistant')).not.toContainText('Provider detail')
+  await composer.fill('A second request must remain blocked during the cooldown.')
+  await expect(dialog.getByRole('button', { name: 'Send message', exact: true })).toBeDisabled()
+  await expect.poll(() => requests).toBe(1)
+
+  await expect(retry).toBeEnabled({ timeout: 4_000 })
+  expect(requests).toBe(1)
+  await retry.click()
+  await expect(dialog.locator('.chat-message-assistant')).toContainText('Recovered after the cooldown.')
+  await expect(dialog.locator('.chat-message')).toHaveCount(2)
+  expect(requests).toBe(2)
+})
+
 test('contact preserves a direct-delivery draft when notifications are unavailable', async ({ page }) => {
   await page.route('**/api/contact', async route => {
     await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ fallback: true }) })

@@ -10,6 +10,7 @@ test('built HTTP responses publish the enforced security policy and transport he
   expect(headers['x-frame-options']).toBe('SAMEORIGIN')
   expect(headers['strict-transport-security']).toBe('max-age=63072000; includeSubDomains; preload')
   expect(headers['content-security-policy-report-only']).toBeUndefined()
+  expect(headers['permissions-policy']).toBe('camera=(), microphone=(), geolocation=()')
 
   const csp = headers['content-security-policy']
   expect(csp).toContain("object-src 'none'")
@@ -19,7 +20,7 @@ test('built HTTP responses publish the enforced security policy and transport he
   expect(csp).not.toContain("'unsafe-eval'")
 })
 
-test('enforced CSP permits application hydration and contact validation without violations', async ({ page }) => {
+test('enforced CSP permits application hydration and shared validation without violations', async ({ page }) => {
   await page.addInitScript(() => {
     const target = window as Window & { __cspViolations?: Array<{ blockedURI: string; effectiveDirective: string; disposition: string }> }
     target.__cspViolations = []
@@ -38,13 +39,17 @@ test('enforced CSP permits application hydration and contact validation without 
     if (/content security policy|refused to|violates/i.test(message.text())) consoleViolations.push(message.text())
   })
 
-  await page.goto('/')
-  await expect(page.locator('#main')).toBeVisible()
-  await page.locator('#contact').getByRole('button', { name: 'Send message', exact: true }).click()
-  await expect(page.getByText('Name is required', { exact: true })).toBeVisible()
+  for (const route of ['/', '/work/simpul', '/work/text2sql']) {
+    await page.goto(route)
+    await expect(page.locator('#main')).toBeVisible()
+    if (route === '/') {
+      await page.locator('#contact').getByRole('button', { name: 'Send message', exact: true }).click()
+      await expect(page.getByText('Name is required', { exact: true })).toBeVisible()
+    }
 
-  const violations = await page.evaluate(() => (window as Window & { __cspViolations?: unknown[] }).__cspViolations ?? [])
-  expect(violations).toEqual([])
+    const violations = await page.evaluate(() => (window as Window & { __cspViolations?: unknown[] }).__cspViolations ?? [])
+    expect(violations, route).toEqual([])
+  }
   expect(consoleViolations).toEqual([])
   expect(pageErrors).toEqual([])
 })

@@ -39,13 +39,13 @@ function providerResponse(reply = 'A streamed public answer'): Response {
   )
 }
 
-function providerErrorResponse(code: number, partial?: string): Response {
+function providerErrorResponse(code: number, partial?: string, retryAfter?: string): Response {
   const prefix = partial
     ? `data: ${JSON.stringify({ model: 'unit/test-model', choices: [{ delta: { content: partial } }] })}\n\n`
     : ''
   return new Response(
     `${prefix}data: ${JSON.stringify({ error: { code, message: 'Provider stream failed' }, choices: [] })}\n\ndata: [DONE]\n\n`,
-    { headers: { 'content-type': 'text/event-stream' } },
+    { headers: { 'content-type': 'text/event-stream', ...(retryAfter ? { 'retry-after': retryAfter } : {}) } },
   )
 }
 
@@ -154,7 +154,7 @@ describe('opt-in NDJSON chat response caching', () => {
       .mockResolvedValueOnce(providerErrorResponse(502))
       .mockResolvedValueOnce(Response.json({
         model: 'unit/recovered-model',
-        choices: [{ message: { content: 'Recovered complete answer' } }],
+        choices: [{ message: { content: 'Recovered complete answer' }, finish_reason: 'stop' }],
       }))
     const question = 'What public validation trade-offs are visible in Faris\'s architecture?'
 
@@ -182,7 +182,7 @@ describe('opt-in NDJSON chat response caching', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     fetchMock
       .mockResolvedValueOnce(providerErrorResponse(502, 'Incomplete draft'))
-      .mockResolvedValueOnce(Response.json({ choices: [{ message: { content: 'Complete fallback answer' } }] }))
+      .mockResolvedValueOnce(Response.json({ choices: [{ message: { content: 'Complete fallback answer' }, finish_reason: 'stop' }] }))
 
     const response = await POST(chatRequest('Which public constraints govern ARIA recommendations?'))
     const events = parseNdjson(await response.text())
@@ -193,13 +193,54 @@ describe('opt-in NDJSON chat response caching', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
+  it('recovers EOF before a completion marker without caching the partial answer', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    fetchMock
+      .mockResolvedValueOnce(new Response(
+        'data: {"choices":[{"delta":{"content":"Incomplete draft"}}]}',
+        { headers: { 'content-type': 'text/event-stream' } },
+      ))
+      .mockResolvedValueOnce(Response.json({
+        model: 'unit/recovered-model',
+        choices: [{ message: { content: 'Complete fallback answer' }, finish_reason: 'stop' }],
+      }))
+    const question = 'What public evidence in Faris\'s portfolio bounds the ARIA completion contract?'
+
+    const response = await POST(chatRequest(question))
+    const events = parseNdjson(await response.text())
+    expect(events.map(event => event.type)).toEqual(['meta', 'delta', 'delta', 'done'])
+    expect(events.at(-1)).toMatchObject({
+      type: 'done', availability: 'ok', reply: 'Complete fallback answer', model: 'unit/recovered-model',
+    })
+    expect(events.at(-1)?.reply).not.toContain('Incomplete draft')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+
+    const cached = await POST(chatRequest(question))
+    expect(cached.headers.get('x-aria-cache')).toBe('HIT')
+    expect(parseNdjson(await cached.text()).at(-1)).toMatchObject({ reply: 'Complete fallback answer' })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
   it('maps an upstream mid-stream rate limit without starting another provider attempt', async () => {
-    fetchMock.mockResolvedValueOnce(providerErrorResponse(429))
+    fetchMock.mockResolvedValueOnce(providerErrorResponse(429, undefined, '9'))
     const response = await POST(chatRequest('How should Faris approach public evaluation release gates?'))
     const events = parseNdjson(await response.text())
 
     expect(events).toHaveLength(2)
-    expect(events.at(-1)).toMatchObject({ type: 'error', availability: 'rate_limited' })
+    expect(events.at(-1)).toMatchObject({ type: 'error', availability: 'rate_limited', retryAfter: 9 })
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('preserves Retry-After when stream recovery is rate-limited', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    fetchMock
+      .mockResolvedValueOnce(providerErrorResponse(502))
+      .mockResolvedValueOnce(new Response(null, { status: 429, headers: { 'retry-after': '11' } }))
+
+    const response = await POST(chatRequest('What public reliability controls are visible in Faris\'s work?'))
+    const events = parseNdjson(await response.text())
+
+    expect(events.at(-1)).toMatchObject({ type: 'error', availability: 'rate_limited', retryAfter: 11 })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })

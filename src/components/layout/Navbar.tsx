@@ -109,7 +109,7 @@ export function Navbar() {
           }}>
             <span ref={pill} className="nav-active-pill" data-visible="false" aria-hidden />
             {NAV_LINKS.map(link => (
-              <Link key={link.href} href={href(link.href)} aria-current={current(link.href)} className="nav-link" onMouseEnter={hoverLink} onFocus={focusLink}>{link.label}</Link>
+              <Link key={link.href} href={href(link.href)} prefetch={link.href === '/simpul' ? false : undefined} aria-current={current(link.href)} className="nav-link" onMouseEnter={hoverLink} onFocus={focusLink}>{link.label}</Link>
             ))}
           </nav>
           <div className="header-actions">
@@ -141,13 +141,13 @@ export function Navbar() {
       >
         <div className="safe-top safe-x flex min-h-20 items-center justify-between border-b border-line">
           <span className="t-meta text-signal">Navigation / 07 coordinates</span>
-          <button type="button" className="icon-btn" aria-label="Close menu" onClick={closeMenu} autoFocus><X size={20} aria-hidden /></button>
+          <button type="button" className="icon-btn" aria-label="Close menu" onClick={closeMenu}><X size={20} aria-hidden /></button>
         </div>
         <nav className="mobile-drawer-links safe-x max-h-[calc(100dvh-5rem)] overflow-y-auto" aria-label="Mobile navigation">
           <ol>
             {NAV_LINKS.map((link, index) => (
               <li key={link.href}>
-                <Link href={href(link.href)} onClick={closeMenu} className="mobile-drawer-link">
+                <Link href={href(link.href)} prefetch={link.href === '/simpul' ? false : undefined} onClick={closeMenu} className="mobile-drawer-link">
                   <span className="t-meta text-signal">0{index + 1}</span><span className="flex-1">{link.label}</span><ArrowUpRight size={19} className="text-ink-3" aria-hidden />
                 </Link>
               </li>

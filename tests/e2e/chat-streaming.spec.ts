@@ -98,16 +98,18 @@ test('assistant renders cumulative NDJSON as Markdown and optional provider reas
   }
 })
 
-test('assistant retries a rate-limited turn without retaining the failed response', async ({ page }) => {
+test('assistant honors a streamed rate-limit cooldown before retrying', async ({ page }) => {
   let requests = 0
   await page.route('**/api/chat', async route => {
     requests += 1
     if (requests === 1) {
       await route.fulfill({
-        status: 429,
-        contentType: 'application/json',
-        headers: { 'Retry-After': '17' },
-        body: JSON.stringify({ availability: 'rate_limited', reply: 'The AI service is busy right now. Please try again shortly.' }),
+        status: 200,
+        contentType: 'application/x-ndjson',
+        body: [
+          JSON.stringify({ type: 'meta', availability: 'ok', sources: [], model: 'unit/test-model', mode: 'model' }),
+          JSON.stringify({ type: 'error', availability: 'rate_limited', reply: 'Provider detail must not replace the cooldown.', retryAfter: 2 }),
+        ].join('\n'),
       })
       return
     }
@@ -121,13 +123,57 @@ test('assistant retries a rate-limited turn without retaining the failed respons
   const composer = dialog.getByRole('textbox', { name: 'Message', exact: true })
   await composer.fill('What does Faris own as an engineering lead?')
   await composer.press('Enter')
-  await expect(dialog.getByRole('alert')).toContainText('Request limit reached')
-  await expect(dialog.getByRole('button', { name: 'Retry response', exact: true })).toBeVisible()
-  await dialog.getByRole('button', { name: 'Retry response', exact: true }).click()
+  await expect(dialog.getByRole('alert')).toHaveText('Request limit reached. Retry in 2s; no automatic retry.')
+  await expect(dialog.locator('.chat-message-assistant')).toContainText('Retry in 2 seconds; no automatic retry will be sent.')
+  const retry = dialog.getByRole('button', { name: 'Retry response', exact: true })
+  await expect(retry).toBeDisabled()
+  await expect.poll(() => requests).toBe(1)
+  await expect(retry).toBeEnabled({ timeout: 4_000 })
+  expect(requests).toBe(1)
+  await retry.click()
   await expect(dialog.locator('.chat-message-assistant')).toContainText('Faris owns architecture and delivery tradeoffs.')
   await expect(dialog.locator('.chat-message')).toHaveCount(2)
   expect(requests).toBe(2)
 })
+
+const invalidSuccessfulResponses = [
+  { label: 'non-JSON body', contentType: 'text/html', body: '<html>upstream error page</html>' },
+  { label: 'missing reply', contentType: 'application/json', body: '{}' },
+  { label: 'empty reply', contentType: 'application/json', body: '{"availability":"ok","reply":""}' },
+] as const
+
+for (const scenario of invalidSuccessfulResponses) {
+  test(`an HTTP 200 ${scenario.label} is retryable without duplicate turns`, async ({ page }) => {
+    let requests = 0
+    await page.route('**/api/chat', async route => {
+      requests += 1
+      if (requests === 1) {
+        await route.fulfill({ status: 200, contentType: scenario.contentType, body: scenario.body })
+        return
+      }
+      const payload = route.request().postDataJSON() as { messages: Array<{ role: string; content: string }> }
+      expect(payload.messages).toEqual([{ role: 'user', content: 'What does Faris own as an engineering lead?' }])
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ availability: 'ok', reply: 'Faris owns architecture and delivery tradeoffs.' }),
+      })
+    })
+    await page.goto('/')
+    await page.getByRole('button', { name: /open portfolio assistant/i }).click()
+    const dialog = page.getByRole('dialog', { name: 'Portfolio assistant', exact: true })
+    const composer = dialog.getByRole('textbox', { name: 'Message', exact: true })
+    await composer.fill('What does Faris own as an engineering lead?')
+    await composer.press('Enter')
+
+    await expect(dialog.getByTestId('chat-loading')).toHaveCount(0)
+    await expect(dialog.getByRole('alert')).toContainText('Model service unavailable')
+    await dialog.getByRole('button', { name: 'Retry response', exact: true }).click()
+    await expect(dialog.locator('.chat-message-assistant')).toContainText('Faris owns architecture and delivery tradeoffs.')
+    await expect(dialog.locator('.chat-message')).toHaveCount(2)
+    expect(requests).toBe(2)
+  })
+}
 
 test('route starters, five-line composer, shortcuts and prompt recall stay usable', async ({ page }) => {
   await page.route('**/api/chat', async route => {

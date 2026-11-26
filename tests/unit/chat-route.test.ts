@@ -20,12 +20,12 @@ function fakeAbortTimeouts() {
 }
 
 function completion(content = 'A useful answer') {
-  return Response.json({ choices: [{ message: { content } }] })
+  return Response.json({ choices: [{ message: { content }, finish_reason: 'stop' }] })
 }
 
 function chatRequest(
   messages: TestMessage[],
-  options: { rawBody?: string; contentLength?: number; signal?: AbortSignal } = {}
+  options: { rawBody?: string; contentLength?: number; signal?: AbortSignal; deterministicOnly?: boolean } = {}
 ) {
   requestNumber += 1
   const headers: Record<string, string> = {
@@ -35,6 +35,7 @@ function chatRequest(
   if (options.contentLength !== undefined) {
     headers['content-length'] = String(options.contentLength)
   }
+  if (options.deterministicOnly) headers['x-aria-deterministic-only'] = '1'
 
   return new NextRequest('http://localhost/api/chat', {
     method: 'POST',
@@ -127,6 +128,74 @@ describe('chat route validation and availability', () => {
       availability: 'ok',
       reply: 'Validated reply',
     })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('serves the production-health starter deterministically without provider calls', async () => {
+    const messages = [{ role: 'user' as const, content: 'What does the RAG 20-query retrieval report actually show?' }]
+
+    const first = await POST(chatRequest(messages, { deterministicOnly: true }))
+    expect(first.status).toBe(200)
+    expect(await first.json()).toMatchObject({ availability: 'ok', mode: 'deterministic' })
+
+    const cached = await POST(chatRequest(messages, { deterministicOnly: true }))
+    expect(cached.headers.get('x-aria-cache')).toBe('HIT')
+    expect(await cached.json()).toMatchObject({ availability: 'ok', mode: 'deterministic' })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('fails closed when deterministic-only monitoring has no registered answer', async () => {
+    const response = await POST(
+      chatRequest([{ role: 'user', content: 'Give me an unregistered model answer.' }], { deterministicOnly: true }),
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toMatchObject({ availability: 'unavailable' })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('maps a documented HTTP 200 choice error to a bounded rate limit', async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({
+      choices: [{
+        message: { content: 'Partial answer that must not escape' },
+        finish_reason: 'error',
+        error: { code: 429, message: 'Rate limit exceeded' },
+      }],
+    }, { headers: { 'retry-after': '23' } }))
+
+    const response = await POST(chatRequest([{ role: 'user', content: 'Hello' }]))
+
+    expect(response.status).toBe(429)
+    expect(response.headers.get('retry-after')).toBe('23')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('falls back from top-level HTTP 200 errors and content-filtered output', async () => {
+    fetchMock
+      .mockResolvedValueOnce(Response.json({ error: { code: 502, message: 'Provider disconnected' } }))
+      .mockResolvedValueOnce(Response.json({
+        choices: [{ message: { content: 'Filtered partial answer' }, finish_reason: 'content_filter' }],
+      }))
+      .mockImplementationOnce(async () => completion('Complete fallback answer'))
+
+    const response = await POST(chatRequest([{ role: 'user', content: 'Hello' }]))
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({ availability: 'ok', reply: 'Complete fallback answer' })
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('falls back when a JSON provider stops at its token limit', async () => {
+    fetchMock
+      .mockResolvedValueOnce(Response.json({
+        choices: [{ message: { content: 'Incomplete draft' }, finish_reason: 'length' }],
+      }))
+      .mockImplementationOnce(async () => completion('Complete fallback answer'))
+
+    const res = await POST(chatRequest([{ role: 'user', content: 'Hello' }]))
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({ availability: 'ok', reply: 'Complete fallback answer' })
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
