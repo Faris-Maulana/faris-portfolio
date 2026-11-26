@@ -207,7 +207,7 @@ export function useChatSession(activeRoute = '/') {
         if (generation.current === requestGeneration) setThinkingPhase('composing')
       }, 1400),
     ]
-    const timeout = window.setTimeout(() => controller.abort(), 35_000)
+    const timeout = window.setTimeout(() => controller.abort(), 65_000)
 
     let streamedContent = ''
     let streamedReasoning: string | undefined

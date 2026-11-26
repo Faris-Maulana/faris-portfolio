@@ -39,6 +39,16 @@ function providerResponse(reply = 'A streamed public answer'): Response {
   )
 }
 
+function providerErrorResponse(code: number, partial?: string): Response {
+  const prefix = partial
+    ? `data: ${JSON.stringify({ model: 'unit/test-model', choices: [{ delta: { content: partial } }] })}\n\n`
+    : ''
+  return new Response(
+    `${prefix}data: ${JSON.stringify({ error: { code, message: 'Provider stream failed' }, choices: [] })}\n\ndata: [DONE]\n\n`,
+    { headers: { 'content-type': 'text/event-stream' } },
+  )
+}
+
 function parseNdjson(body: string): StreamEvent[] {
   return body.trim().split('\n').map(line => JSON.parse(line) as StreamEvent)
 }
@@ -106,9 +116,12 @@ describe('opt-in NDJSON chat response caching', () => {
 
   it('returns stream error metadata without caching an empty provider response', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
-    fetchMock.mockResolvedValueOnce(new Response('data: [DONE]\n\n', {
-      headers: { 'content-type': 'text/event-stream' },
-    }))
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    fetchMock
+      .mockResolvedValueOnce(new Response('data: [DONE]\n\n', {
+        headers: { 'content-type': 'text/event-stream' },
+      }))
+      .mockResolvedValue(Response.json({ choices: [] }))
     const question = 'What public production development work is in Faris\'s portfolio?'
 
     const failed = await POST(chatRequest(question))
@@ -121,7 +134,9 @@ describe('opt-in NDJSON chat response caching', () => {
       availability: 'unavailable',
       reply: expect.any(String),
     })
+    expect(fetchMock).toHaveBeenCalledTimes(3)
 
+    fetchMock.mockReset().mockImplementation(async () => providerResponse())
     const recovered = await POST(chatRequest(question))
     expect(recovered.status).toBe(200)
     expectMissMetadata(recovered)
@@ -130,6 +145,61 @@ describe('opt-in NDJSON chat response caching', () => {
       availability: 'ok',
       reply: 'A streamed public answer',
     })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('recovers a committed provider error through a different model and caches only the full answer', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    fetchMock
+      .mockResolvedValueOnce(providerErrorResponse(502))
+      .mockResolvedValueOnce(Response.json({
+        model: 'unit/recovered-model',
+        choices: [{ message: { content: 'Recovered complete answer' } }],
+      }))
+    const question = 'What public validation trade-offs are visible in Faris\'s architecture?'
+
+    const response = await POST(chatRequest(question))
+    const events = parseNdjson(await response.text())
+    expect(events.map(event => event.type)).toEqual(['meta', 'delta', 'done'])
+    expect(events.at(-1)).toMatchObject({
+      type: 'done',
+      availability: 'ok',
+      reply: 'Recovered complete answer',
+      model: 'unit/recovered-model',
+    })
     expect(fetchMock).toHaveBeenCalledTimes(2)
+    const bodies = fetchMock.mock.calls.map(([, init]) => JSON.parse(String(init?.body)) as { model: string; stream: boolean })
+    expect(bodies[0]).toMatchObject({ model: 'unit/test-model', stream: true })
+    expect(bodies[1]).toMatchObject({ model: 'mistralai/mistral-nemo', stream: false })
+
+    const cached = await POST(chatRequest(question))
+    expect(cached.headers.get('x-aria-cache')).toBe('HIT')
+    expect(parseNdjson(await cached.text()).at(-1)).toMatchObject({ reply: 'Recovered complete answer' })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('replaces a partial failed stream with a complete fallback answer', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    fetchMock
+      .mockResolvedValueOnce(providerErrorResponse(502, 'Incomplete draft'))
+      .mockResolvedValueOnce(Response.json({ choices: [{ message: { content: 'Complete fallback answer' } }] }))
+
+    const response = await POST(chatRequest('Which public constraints govern ARIA recommendations?'))
+    const events = parseNdjson(await response.text())
+    expect(events.map(event => event.type)).toEqual(['meta', 'delta', 'delta', 'done'])
+    expect(events.at(-2)).toMatchObject({ type: 'delta', content: 'Complete fallback answer' })
+    expect(events.at(-1)).toMatchObject({ type: 'done', availability: 'ok', reply: 'Complete fallback answer' })
+    expect(events.at(-1)?.reply).not.toContain('Incomplete draft')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('maps an upstream mid-stream rate limit without starting another provider attempt', async () => {
+    fetchMock.mockResolvedValueOnce(providerErrorResponse(429))
+    const response = await POST(chatRequest('How should Faris approach public evaluation release gates?'))
+    const events = parseNdjson(await response.text())
+
+    expect(events).toHaveLength(2)
+    expect(events.at(-1)).toMatchObject({ type: 'error', availability: 'rate_limited' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
