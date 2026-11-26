@@ -9,5 +9,6 @@ type TrackedLinkProps = Omit<ComponentProps<typeof Link>, 'onClick'> & {
 }
 
 export function TrackedLink({ event, children, ...props }: TrackedLinkProps) {
-  return <Link {...props} onClick={() => trackPortfolioEvent(event)}>{children}</Link>
+  const prefetch = props.download === undefined ? props.prefetch : false
+  return <Link {...props} prefetch={prefetch} onClick={() => trackPortfolioEvent(event)}>{children}</Link>
 }

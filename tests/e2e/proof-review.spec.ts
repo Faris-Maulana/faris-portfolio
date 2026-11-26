@@ -53,7 +53,13 @@ test('instrumented document CTAs still start the actual PDF downloads', async ({
     expect((await response.body()).subarray(0, 4).toString()).toBe('%PDF')
   }
 
-  await page.goto('/')
+  const documentPrefetches: string[] = []
+  page.on('request', request => {
+    const url = new URL(request.url())
+    if (url.pathname.endsWith('.pdf') && url.searchParams.has('_rsc')) documentPrefetches.push(request.url())
+  })
+
+  await page.goto('/', { waitUntil: 'networkidle' })
   const cvDownload = page.waitForEvent('download')
   await page.locator('#hero').getByRole('link', { name: 'Executive CV', exact: true }).click()
   expect((await cvDownload).suggestedFilename()).toBe('Faris_Maulana_CV.pdf')
@@ -61,6 +67,7 @@ test('instrumented document CTAs still start the actual PDF downloads', async ({
   const quantDownload = page.waitForEvent('download')
   await page.getByRole('link', { name: 'Download quantitative methods and evidence boundaries', exact: true }).click()
   expect((await quantDownload).suggestedFilename()).toBe('Faris_Maulana_Quantitative_Portfolio.pdf')
+  expect(documentPrefetches).toEqual([])
 })
 
 test('every case study preserves narrow-screen reachability and wide-screen layout', async ({ page }) => {
