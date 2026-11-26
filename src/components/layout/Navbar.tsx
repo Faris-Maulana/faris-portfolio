@@ -22,7 +22,7 @@ export function Navbar() {
   const [closing, setClosing] = useState(false)
   const href = (path: string) => path.startsWith('#') && pathname !== '/' ? `/${path}` : path
   const current = (path: string) => path.startsWith('#')
-    ? active === path.slice(1) ? 'location' as const : undefined
+    ? pathname === '/' && active === path.slice(1) ? 'location' as const : undefined
     : pathname === path ? 'page' as const : undefined
 
   const movePill = (target?: Element | null) => {
