@@ -7,11 +7,13 @@ import { detectIntent, extractEmail } from '../../../lib/utils'
 import { getChatSources } from '../../../lib/chat-sources'
 import { controlledPortfolioReply } from '../../../lib/chat-guard'
 import {
+  ChatProviderStreamError,
   completeChat,
   openChatStream,
   readChatCompletionStream,
   type CompletionResult,
   type ProviderStreamResult,
+  type StreamSnapshot,
 } from '../../../lib/chat-provider'
 import {
   getChatResponseCacheKey,
@@ -22,6 +24,7 @@ import {
 import type { ChatSource } from '../../../lib/chat-types'
 
 export const CHAT_REQUEST_TIMEOUT_MS = 30_000
+const CHAT_STREAM_TIMEOUT_MS = 60_000
 const MAX_BODY_BYTES = 128 * 1024
 const CHAT_LIMIT = 20
 const CHAT_WINDOW_MS = 5 * 60 * 1000
@@ -129,6 +132,7 @@ interface ProviderStreamOptions extends NotifyOptions {
   cacheKey: string | null
   sources: ChatSource[]
   headers: Headers
+  recover: () => Promise<CompletionResult>
 }
 
 function providerStreamResponse({
@@ -136,6 +140,7 @@ function providerStreamResponse({
   cacheKey,
   sources,
   headers,
+  recover,
   req,
   messages,
   sessionId,
@@ -155,9 +160,49 @@ function providerStreamResponse({
         mode: 'model',
       })
       try {
-        const final = await readChatCompletionStream(provider, snapshot => {
-          send(controller, { type: 'delta', content: snapshot.reply, reasoning: snapshot.reasoning })
-        })
+        let final: StreamSnapshot
+        try {
+          final = await readChatCompletionStream(provider, snapshot => {
+            send(controller, { type: 'delta', content: snapshot.reply, reasoning: snapshot.reasoning })
+          })
+        } catch (streamError) {
+          if (req.signal.aborted) return
+          if (streamError instanceof ChatProviderStreamError) {
+            const { status } = streamError
+            if (status === 429) {
+              send(controller, {
+                type: 'error',
+                availability: 'rate_limited',
+                reply: 'The AI service is busy right now. Please try again shortly.',
+              })
+              return
+            }
+            if (status !== undefined && status >= 400 && status < 500 && status !== 404 && status !== 408) {
+              send(controller, { type: 'error', availability: 'unavailable', reply: UNAVAILABLE_REPLY })
+              return
+            }
+          }
+
+          console.warn('[chat] recovering interrupted provider stream', streamError instanceof Error ? streamError.name : 'unknown')
+          const recovery = await recover()
+          if (recovery.availability !== 'ok') {
+            send(controller, {
+              type: 'error',
+              availability: recovery.availability,
+              reply: recovery.availability === 'rate_limited'
+                ? 'The AI service is busy right now. Please try again shortly.'
+                : UNAVAILABLE_REPLY,
+            })
+            return
+          }
+          final = {
+            reply: recovery.reply,
+            reasoning: recovery.reasoning,
+            model: recovery.model,
+          }
+          send(controller, { type: 'delta', content: final.reply, reasoning: final.reasoning })
+        }
+
         await notifyLatestEmail({ req, messages, sessionId, deadline })
         const result: CachedChatResponse = {
           reply: final.reply,
@@ -240,7 +285,7 @@ export async function POST(req: NextRequest) {
     }, { headers })
   }
 
-  const deadline = Date.now() + CHAT_REQUEST_TIMEOUT_MS
+  const deadline = Date.now() + (stream ? CHAT_STREAM_TIMEOUT_MS : CHAT_REQUEST_TIMEOUT_MS)
   const providerOptions = { messages, apiKey, requestSignal: req.signal, deadline, sessionId, activeRoute: route }
 
   try {
@@ -285,6 +330,10 @@ export async function POST(req: NextRequest) {
         messages,
         sessionId,
         deadline,
+        recover: () => completeChat({
+          ...providerOptions,
+          excludedModels: [provider.model],
+        }),
       })
     }
 

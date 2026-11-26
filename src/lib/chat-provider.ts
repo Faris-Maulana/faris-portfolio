@@ -22,7 +22,22 @@ const completionSchema = z.object({
 const streamChunkSchema = z.object({
   model: z.string().max(200).optional(),
   choices: z.array(z.object({ delta: messageSchema })).max(4).optional(),
+  error: z.object({
+    code: z.union([z.number(), z.string().max(100)]).optional(),
+    message: z.string().max(1_000).optional(),
+  }).optional(),
 })
+
+export class ChatProviderStreamError extends Error {
+  readonly status?: number
+
+  constructor(code?: number | string) {
+    super('Provider stream failed')
+    this.name = 'ChatProviderStreamError'
+    const status = typeof code === 'string' ? Number(code) : code
+    if (typeof status === 'number' && Number.isFinite(status)) this.status = status
+  }
+}
 
 export type CompletionResult =
   | {
@@ -47,6 +62,7 @@ export interface ChatCompletionOptions {
   deadline: number
   sessionId: string
   activeRoute: string
+  excludedModels?: string[]
 }
 
 export interface StreamSnapshot {
@@ -55,14 +71,15 @@ export interface StreamSnapshot {
   model: string | null
 }
 
-function models(): string[] {
+function models(excludedModels: string[] = []): string[] {
+  const excluded = new Set(excludedModels)
   return [
     ...new Set(
       [process.env.OPENROUTER_MODEL, ...DEFAULT_MODELS].filter(
         (model): model is string => Boolean(model),
       ),
     ),
-  ].slice(0, MAX_MODEL_ATTEMPTS)
+  ].slice(0, MAX_MODEL_ATTEMPTS).filter(model => !excluded.has(model))
 }
 
 export function sanitiseReply(raw: string): string {
@@ -128,7 +145,7 @@ function providerHeaders(apiKey: string) {
 /** Preserve bounded provider fallback and the existing whole-JSON API contract. */
 export async function completeChat(options: ChatCompletionOptions): Promise<CompletionResult> {
   const { apiKey, requestSignal, deadline } = options
-  for (const model of models()) {
+  for (const model of models(options.excludedModels)) {
     const remainingMs = deadline - Date.now()
     if (requestSignal.aborted || remainingMs <= 0) break
     let response: Response
@@ -180,7 +197,7 @@ export async function completeChat(options: ChatCompletionOptions): Promise<Comp
   return { availability: 'unavailable' }
 }
 
-/** Select a healthy provider before exposing its stream; partial streams never fall through. */
+/** Select an HTTP-healthy provider; the caller recovers errors committed after the headers. */
 export async function openChatStream(options: ChatCompletionOptions): Promise<ProviderStreamResult> {
   const { apiKey, requestSignal, deadline } = options
   for (const model of models()) {
@@ -280,6 +297,7 @@ export async function readChatCompletionStream(
     }
     const parsed = streamChunkSchema.safeParse(data)
     if (!parsed.success) return
+    if (parsed.data.error) throw new ChatProviderStreamError(parsed.data.error.code)
     selectedModel = parsed.data.model ?? selectedModel
     const delta = parsed.data.choices?.[0]?.delta
     if (!delta) return

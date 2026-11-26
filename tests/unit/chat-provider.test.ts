@@ -91,4 +91,19 @@ describe('OpenRouter completion stream parsing', () => {
     )).rejects.toThrow('Provider stream ended without a response')
     expect(onSnapshot).not.toHaveBeenCalled()
   })
+
+  it('surfaces an OpenRouter mid-stream error instead of silently discarding it', async () => {
+    const response = sseResponse(new TextEncoder().encode([
+      deltaEvent({ content: 'A partial answer' }),
+      `data: ${JSON.stringify({ error: { code: 502, message: 'Provider disconnected unexpectedly' }, choices: [] })}`,
+      'data: [DONE]',
+    ].join('\n\n')))
+    const onSnapshot = vi.fn<(snapshot: StreamSnapshot) => void>()
+
+    await expect(readChatCompletionStream(
+      { availability: 'ok', response, model: 'unit/test-model' },
+      onSnapshot,
+    )).rejects.toMatchObject({ name: 'ChatProviderStreamError', status: 502 })
+    expect(onSnapshot).toHaveBeenCalledWith(expect.objectContaining({ reply: 'A partial answer' }))
+  })
 })
